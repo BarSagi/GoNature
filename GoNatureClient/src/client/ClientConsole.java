@@ -3,14 +3,29 @@ package client;
 import ocsf.client.AbstractClient;
 
 public class ClientConsole extends AbstractClient {
-
+	
     public ClientConsole(String host, int port) {
         super(host, port);
     }
 
 	@Override
 	protected void handleMessageFromServer(Object msg) {
-		// TODO Auto-generated method stub
+		System.out.println("Message received from server: " + msg);
 		
+	}
+	
+	@Override
+	protected void connectionEstablished() {
+		System.out.println("Connected to server.");
+	}
+
+	@Override
+	protected void connectionClosed() {
+		System.out.println("Connection closed.");
+	}
+
+	@Override
+	protected void connectionException(Exception exception) {
+		System.out.println("Connection error: " + exception.getMessage());
 	}
 }
