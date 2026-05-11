@@ -1,23 +1,31 @@
 package database;
 
-import common.Order;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Properties;
 
+/*Handle all database operations of the server*/
 public class DBController {
 	
 	private Connection conn;
 	
-	public void connect() throws SQLException{
-		conn = DriverManager.getConnection(
-			    "jdbc:mysql://localhost:3306/gonature?allowLoadLocalInfile=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem&useSSL=false",
-			    "root",
-			    "YOUR PASSWORD HERE" //אין לי מושג איך לעשות את זה
-			);
+	public void connect() throws SQLException, IOException{
+		Properties props = new Properties();
+        FileInputStream fis = new FileInputStream("db.properties");
+        props.load(fis);
+
+        String url = props.getProperty("db.url");
+        String user = props.getProperty("db.user");
+        String password = props.getProperty("db.password");
+
+        conn = DriverManager.getConnection(url, user, password);
 	}
 	
 	public boolean isConnected() {
@@ -28,7 +36,8 @@ public class DBController {
         }
     }
 	
-	public Order getOrderByNumber(int orderNumber) throws SQLException {
+	//reads an order from the database by order number
+	public ArrayList<String> getOrderByNumber(int orderNumber) throws SQLException {
         String sql = "SELECT * FROM `Order` WHERE order_number = ?";
         PreparedStatement ps = conn.prepareStatement(sql);
         ps.setInt(1, orderNumber);
@@ -36,23 +45,24 @@ public class DBController {
         ResultSet rs = ps.executeQuery();
 
         if (rs.next()) {
-            return new Order(
-                rs.getInt("order_number"),
-                rs.getDate("order_date"),
-                rs.getInt("number_of_visitors"),
-                rs.getInt("confirmation_code"),
-                rs.getInt("subscriber_id"),
-                rs.getDate("date_of_placing_order")
-            );
+            ArrayList<String> result = new ArrayList<>();
+            result.add("ORDER_RESULT");
+            result.add(String.valueOf(rs.getInt("order_number")));
+            result.add(String.valueOf(rs.getDate("order_date")));
+            result.add(String.valueOf(rs.getInt("number_of_visitors")));
+            result.add(String.valueOf(rs.getInt("confirmation_code")));
+            result.add(String.valueOf(rs.getInt("subscriber_id")));
+            result.add(String.valueOf(rs.getDate("date_of_placing_order")));
+            return result;
         }
-
         return null;
     }
-
-    public boolean updateOrder(int orderNumber, Date orderDate, int numberOfVisitors) throws SQLException {
+	
+	//update order date and number of visitors
+	public boolean updateOrder(int orderNumber, String orderDate, int numberOfVisitors) throws SQLException {
         String sql = "UPDATE `Order` SET order_date = ?, number_of_visitors = ? WHERE order_number = ?";
         PreparedStatement ps = conn.prepareStatement(sql);
-        ps.setDate(1, orderDate);
+        ps.setDate(1, Date.valueOf(orderDate));
         ps.setInt(2, numberOfVisitors);
         ps.setInt(3, orderNumber);
 

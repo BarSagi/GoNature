@@ -1,17 +1,12 @@
 package server;
 
-import common.Message;
-import common.MessageType;
-import common.Order;
-import common.UpdateOrderRequest;
 import database.DBController;
 import ocsf.server.ConnectionToClient;
 import servergui.ServerUI;
-
 import java.io.IOException;
-import java.sql.Date;
-import java.sql.SQLException;
+import java.util.ArrayList;
 
+/*Handles the server-side business logic*/
 public class ServerLogic {
 
     private DBController dbController;
@@ -22,19 +17,26 @@ public class ServerLogic {
         this.serverUI = serverUI;
     }
 
-    public void handleMessage(Message message, ConnectionToClient client) {
+    public void handleMessage(ArrayList<String> request, ConnectionToClient client) {
+        if (request == null || request.isEmpty()) {
+            sendError(client, "Empty request received.");
+            return;
+        }
+
+        String action = request.get(0);
+
         try {
-            switch (message.getType()) {
-                case GET_ORDER:
-                    handleGetOrder(message, client);
+            switch (action) {
+                case "GET_ORDER":
+                    handleGetOrder(request, client);
                     break;
 
-                case UPDATE_ORDER:
-                    handleUpdateOrder(message, client);
+                case "UPDATE_ORDER":
+                    handleUpdateOrder(request, client);
                     break;
 
                 default:
-                    sendError(client, "Unsupported message type.");
+                    sendError(client, "Unknown request.");
                     break;
             }
         } catch (Exception e) {
@@ -42,41 +44,33 @@ public class ServerLogic {
         }
     }
 
-    private void handleGetOrder(Message message, ConnectionToClient client) throws SQLException, IOException {
-        if (!(message.getData() instanceof Integer)) {
-            sendError(client, "GET_ORDER requires Integer order number.");
-            return;
-        }
+    private void handleGetOrder(ArrayList<String> request, ConnectionToClient client) throws Exception {
+        int orderNumber = Integer.parseInt(request.get(1));
 
-        int orderNumber = (Integer) message.getData();
-        Order order = dbController.getOrderByNumber(orderNumber);
+        ArrayList<String> result = dbController.getOrderByNumber(orderNumber);
 
-        if (order == null) {
+        if (result == null) {
             sendError(client, "Order not found.");
             return;
         }
 
-        client.sendToClient(new Message(MessageType.ORDER_RESULT, order));
+        client.sendToClient(result);
         serverUI.log("Order " + orderNumber + " sent to client.");
     }
 
-    private void handleUpdateOrder(Message message, ConnectionToClient client) throws SQLException, IOException {
-        if (!(message.getData() instanceof UpdateOrderRequest)) {
-            sendError(client, "UPDATE_ORDER requires UpdateOrderRequest.");
-            return;
-        }
+    private void handleUpdateOrder(ArrayList<String> request, ConnectionToClient client) throws Exception {
+        int orderNumber = Integer.parseInt(request.get(1));
+        String orderDate = request.get(2);
+        int numberOfVisitors = Integer.parseInt(request.get(3));
 
-        UpdateOrderRequest request = (UpdateOrderRequest) message.getData();
-
-        boolean updated = dbController.updateOrder(
-                request.getOrderNumber(),
-                Date.valueOf(request.getOrderDate()),
-                request.getNumberOfVisitors()
-        );
+        boolean updated = dbController.updateOrder(orderNumber, orderDate, numberOfVisitors);
 
         if (updated) {
-            client.sendToClient(new Message(MessageType.UPDATE_RESULT, "Order updated successfully."));
-            serverUI.log("Order " + request.getOrderNumber() + " updated.");
+            ArrayList<String> response = new ArrayList<>();
+            response.add("UPDATE_RESULT");
+            response.add("Order updated successfully.");
+            client.sendToClient(response);
+            serverUI.log("Order " + orderNumber + " updated.");
         } else {
             sendError(client, "Update failed. Order not found.");
         }
@@ -84,7 +78,10 @@ public class ServerLogic {
 
     private void sendError(ConnectionToClient client, String text) {
         try {
-            client.sendToClient(new Message(MessageType.ERROR, text));
+            ArrayList<String> error = new ArrayList<>();
+            error.add("ERROR");
+            error.add(text);
+            client.sendToClient(error);
             serverUI.log("Error sent: " + text);
         } catch (IOException e) {
             serverUI.log("Failed sending error to client.");

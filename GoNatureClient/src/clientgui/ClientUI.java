@@ -4,6 +4,10 @@ import client.ClientLogic;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+
+/*Basic client user interface for connection to the server, 
+ loading an order, and updating order details*/
 
 public class ClientUI extends JFrame {
     private static final long serialVersionUID = 1L;
@@ -21,6 +25,7 @@ public class ClientUI extends JFrame {
 
     private ClientLogic clientLogic;
 
+    //build the client window and connects button action to client logic
     public ClientUI() {
         setTitle("GoNature Client");
         setSize(600, 450);
@@ -61,20 +66,29 @@ public class ClientUI extends JFrame {
         add(new JScrollPane(statusArea), BorderLayout.CENTER);
         add(updateButton, BorderLayout.SOUTH);
 
-        connectButton.addActionListener(e ->
-                clientLogic.connect(hostField.getText().trim(), Integer.parseInt(portField.getText().trim()))
+        connectButton.addActionListener(e -> clientLogic.connect(hostField.getText().trim(), Integer.parseInt(portField.getText().trim()))
         );
 
-        loadButton.addActionListener(e ->
-                clientLogic.getOrder(Integer.parseInt(orderNumberField.getText().trim()))
+        loadButton.addActionListener(e -> clientLogic.getOrder(Integer.parseInt(orderNumberField.getText().trim()))
         );
 
-        updateButton.addActionListener(e ->
-                showMessage("Update button pressed - update logic will be added next.")
+        updateButton.addActionListener(e -> clientLogic.updateOrder(
+                Integer.parseInt(orderNumberField.getText().trim()),
+                orderDateField.getText().trim(),
+                Integer.parseInt(visitorsField.getText().trim())
+        	)
         );
     }
 
     public void showMessage(String text) {
         statusArea.append(text + "\n");
+    }
+    
+    //displays order details received from the server
+    public void displayOrder(ArrayList<String> orderData) {
+        orderNumberField.setText(orderData.get(1));
+        orderDateField.setText(orderData.get(2));
+        visitorsField.setText(orderData.get(3));
+        showMessage("Order loaded successfully.");
     }
 }

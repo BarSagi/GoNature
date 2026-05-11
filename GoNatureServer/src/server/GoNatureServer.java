@@ -1,18 +1,18 @@
 package server;
 
-import common.Message;
 import database.DBController;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
 import servergui.ServerUI;
-
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.ArrayList;
 
+/*Handles server-side communication with clients*/
 public class GoNatureServer extends AbstractServer {
 
-    private ServerLogic serverLogic;
     private ServerUI serverUI;
+    private ServerLogic serverLogic;
 
     public GoNatureServer(int port, DBController dbController, ServerUI serverUI) {
         super(port);
@@ -24,7 +24,7 @@ public class GoNatureServer extends AbstractServer {
     protected void clientConnected(ConnectionToClient client) {
         try {
             InetAddress address = client.getInetAddress();
-            String key = address.getHostAddress() + ":" + client.getId();
+            String key = address.getHostAddress();
             String value = "CONNECTED | IP: " + address.getHostAddress() + " | Host: " + address.getHostName();
             client.setInfo("ClientKey", key);
             serverUI.addClient(key, value);
@@ -66,13 +66,15 @@ public class GoNatureServer extends AbstractServer {
 
     @Override
     public void handleMessageFromClient(Object msg, ConnectionToClient client) {
-        if (!(msg instanceof Message)) {
-            serverUI.log("Received invalid object from client.");
+        if (!(msg instanceof ArrayList<?>)) {
+            serverUI.log("Invalid object received from client.");
             return;
         }
 
-        Message message = (Message) msg;
-        serverUI.log("Received: " + message);
-        serverLogic.handleMessage(message, client);
+        @SuppressWarnings("unchecked")
+        ArrayList<String> request = (ArrayList<String>) msg;
+
+        serverUI.log("Received request: " + request);
+        serverLogic.handleMessage(request, client);
     }
 }

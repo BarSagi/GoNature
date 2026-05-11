@@ -1,10 +1,11 @@
 package client;
 
 import clientgui.ClientUI;
-import common.Message;
-import common.MessageType;
 
 import java.io.IOException;
+import java.util.ArrayList;
+
+/*Handle the client-side ligic and communication with the server*/
 
 public class ClientLogic {
 
@@ -24,13 +25,30 @@ public class ClientLogic {
             clientUI.showMessage("Connection failed: " + e.getMessage());
         }
     }
-
+    //get a request to get an order by its number
     public void getOrder(int orderNumber) {
         try {
-            Message msg = new Message(MessageType.GET_ORDER, orderNumber);
+        	ArrayList<String> msg = new ArrayList<>();
+            msg.add("GET_ORDER");
+            msg.add(String.valueOf(orderNumber));
+            
             clientConsole.sendToServer(msg);
         } catch (IOException e) {
             clientUI.showMessage("Failed to send request: " + e.getMessage());
+        }
+    }
+    //sends a request to update order date and number of visitors
+    public void updateOrder(int orderNumber, String orderDate, int numberOfVisitors) {
+        try {
+            ArrayList<String> msg = new ArrayList<>();
+            msg.add("UPDATE_ORDER");
+            msg.add(String.valueOf(orderNumber));
+            msg.add(orderDate);
+            msg.add(String.valueOf(numberOfVisitors));
+            
+            clientConsole.sendToServer(msg);
+        } catch (IOException e) {
+            clientUI.showMessage("Failed to send update: " + e.getMessage());
         }
     }
 

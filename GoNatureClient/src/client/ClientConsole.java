@@ -2,6 +2,8 @@ package client;
 
 import ocsf.client.AbstractClient;
 
+/*Handle the client-side connection to the server using OCSF*/
+
 public class ClientConsole extends AbstractClient {
 	
     public ClientConsole(String host, int port) {
