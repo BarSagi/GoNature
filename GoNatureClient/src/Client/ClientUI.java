@@ -6,36 +6,51 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-
 // client will run this program
 public class ClientUI extends Application {
 
-    public static ClientController controller;
+	public static ClientController controller;
 
-    public static OrderClient client;
+	public static OrderClient client;
 
-    @Override
-    public void start(Stage primaryStage) throws Exception {
+	private static Stage mainStage;
 
-        FXMLLoader loader =
-                new FXMLLoader(getClass().getResource("/GUI/Client.fxml"));
+	@Override
+	public void start(Stage primaryStage) {
+		try {
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/GUI/Connection.fxml"));
 
-        Scene scene = new Scene(loader.load());
+			Scene scene = new Scene(loader.load());
 
-        controller = loader.getController();
+			controller = loader.getController();
 
-        primaryStage.setTitle("Order Client");
-        primaryStage.setScene(scene);
-        primaryStage.show();
+			primaryStage.setTitle("Connect to Server");
+			primaryStage.setScene(scene);
+			primaryStage.show();
 
-        client = new OrderClient("localhost", 5555);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
-        client.openConnection();
-        System.out.println("Connected!");
-    }
+	public static void startClient(String ip, int port) {
+		try {
+			client = new OrderClient(ip, port);
+			client.openConnection();
+			System.out.println("Connected to " + ip + ":" + port);
 
-    public static void main(String[] args) {
+			FXMLLoader loader = new FXMLLoader(ClientUI.class.getResource("/GUI/Client.fxml"));
+			Scene scene = new Scene(loader.load());
+			controller = loader.getController();
 
-        launch(args);
-    }
+			mainStage.setTitle("Order Client");
+			mainStage.setScene(scene);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void main(String[] args) {
+		launch(args);
+	}
 }

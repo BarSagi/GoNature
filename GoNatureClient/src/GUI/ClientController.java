@@ -2,7 +2,7 @@ package GUI;
 
 import Client.ClientUI;
 import Entity.Order;
-import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -28,13 +28,13 @@ public class ClientController {
 
 	// send a request to server to return all orders
 	@FXML
-	public void getOrders() {
+	public void getOrders(ActionEvent event) {
 		ClientUI.client.getOrders();
 	}
 	
 	// collect user input to update an order and send the server the details
 	@FXML
-	public void updateOrder() {
+	public void updateOrder(ActionEvent event) {
 		try {
 			int orderNumber = Integer.parseInt(orderNumberField.getText());
 			Date orderDate = Date.valueOf(orderDateField.getText());
@@ -71,6 +71,11 @@ public class ClientController {
 	}
 	// this method will print to GUI if order is updated successfuly or not
     public void showSuccess(String msg) {
-        ordersArea.setText(msg);
+		ordersArea.setText(msg);
+	}
+    
+    @FXML
+    void exit(ActionEvent event) {
+        System.exit(0);
     }
 }

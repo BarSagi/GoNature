@@ -6,7 +6,6 @@ import javafx.stage.Stage;
 import GUI.ServerPortFrameController;
 
 public class ServerUI extends Application {
-	final public static int DEFAULT_PORT = 5555;
 
 	public static void main(String args[]) throws Exception {
 		launch(args);
@@ -25,8 +24,9 @@ public class ServerUI extends Application {
 		try {
 			port = Integer.parseInt(p); // Set port to 5555
 
-		} catch (Throwable t) {
-			System.out.println("ERROR - Could not connect!");
+		} catch (Exception e) {
+			System.out.println("ERROR - port parsing!");
+			e.printStackTrace();
 		}
 
 		EchoServer sv = new EchoServer(port);

@@ -5,26 +5,21 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox spacing="10"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="GUI.ClientController">
+<VBox spacing="10" xmlns:fx="http://javafx.com/fxml"
+	fx:controller="GUI.ClientController">
 
-    <Button text="Get Orders"
-            onAction="#getOrders"/>
+	<Button text="Get Orders" onAction="#getOrders" />
 
-    <TextField fx:id="orderNumberField"
-               promptText="Order Number"/>
+	<TextField fx:id="orderNumberField" promptText="Order Number" />
 
-    <TextField fx:id="orderDateField"
-               promptText="yyyy-mm-dd"/>
+	<TextField fx:id="orderDateField" promptText="yyyy-mm-dd" />
 
-    <TextField fx:id="visitorsField"
-               promptText="Visitors"/>
+	<TextField fx:id="visitorsField" promptText="Visitors" />
 
-    <Button text="Update Order"
-            onAction="#updateOrder"/>
+	<Button text="Update Order" onAction="#updateOrder" />
 
-    <TextArea fx:id="ordersArea"
-              prefHeight="300"/>
+	<TextArea fx:id="ordersArea" prefHeight="300" />
+
+	<Button text="Exit" onAction="#exit" />
 
 </VBox>

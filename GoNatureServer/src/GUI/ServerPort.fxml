@@ -5,23 +5,20 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox spacing="15"
-      alignment="CENTER"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="GUI.ServerPortFrameController">
+<VBox alignment="CENTER" prefHeight="200.0" prefWidth="184.0"
+	spacing="15" xmlns:fx="http://javafx.com/fxml/1"
+	xmlns="http://javafx.com/javafx/26"
+	fx:controller="GUI.ServerPortFrameController">
 
-    <Label text="Enter Server Port" />
+	<Label text="Enter Server Port" />
 
-    <TextField fx:id="portxt"
-               promptText="e.g. 5555"
-               maxWidth="200"/>
+	<TextField fx:id="portxt" maxWidth="200"
+		promptText="e.g. 5555" />
 
-    <Button text="Connect"
-            onAction="#Done"
-            prefWidth="150"/>
+	<Label fx:id="errorLabel" textFill="RED" />
 
-    <Button text="Exit"
-            onAction="#Exit"
-            prefWidth="150"/>
+	<Button onAction="#done" prefWidth="150" text="Connect" />
+
+	<Button onAction="#exit" prefWidth="150" text="Exit" />
 
 </VBox>

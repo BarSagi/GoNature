@@ -12,7 +12,6 @@ public class OrderClient extends AbstractClient {
 	public static ArrayList<Order> orders;
 
 	public OrderClient(String host, int port) {
-
 		super(host, port);
 	}
 
@@ -21,38 +20,37 @@ public class OrderClient extends AbstractClient {
 	@Override
 	protected void handleMessageFromServer(Object msg) {
 
-	    if (msg instanceof ArrayList<?>) { // first case: server sent ArrayList
+		if (msg instanceof ArrayList<?>) { // first case: server sent ArrayList
 
-	        ArrayList<ArrayList<String>> orders =
-	                (ArrayList<ArrayList<String>>) msg;
-	        
-	        // ensure UI updates happen on javafx thread
-	        Platform.runLater(new Runnable() {
-	            @Override
-	            public void run() {
-	                ClientUI.controller.showOrders(orders);
-	            }
-	        });
+			ArrayList<ArrayList<String>> orders = (ArrayList<ArrayList<String>>) msg;
 
-	    } else if (msg instanceof Boolean) { // case 2: server sent a boolean variable
+			// ensure UI updates happen on javafx thread
+			Platform.runLater(new Runnable() {
+				@Override
+				public void run() {
+					ClientUI.controller.showOrders(orders);
+				}
+			});
 
-	        Boolean success = (Boolean) msg;
-	        
-	        // ensure UI updates happen on javafx thread
-	        Platform.runLater(new Runnable() {
-	            @Override
-	            public void run() {
-	                if (success) {
-	                    ClientUI.controller.showSuccess("Order updated successfully");
-	                } else {
-	                    ClientUI.controller.showSuccess("Update failed");
-	                }
-	            }
-	        });
+		} else if (msg instanceof Boolean) { // case 2: server sent a boolean variable
 
-	    } else { // handles unkown message
-	        System.out.println("Unknown message: " + msg);
-	    }
+			Boolean success = (Boolean) msg;
+
+			// ensure UI updates happen on javafx thread
+			Platform.runLater(new Runnable() {
+				@Override
+				public void run() {
+					if (success) {
+						ClientUI.controller.showSuccess("Order updated successfully");
+					} else {
+						ClientUI.controller.showSuccess("Update failed");
+					}
+				}
+			});
+
+		} else { // handles unkown message
+			System.out.println("Unknown message: " + msg);
+		}
 	}
 
 	// sends a request to the server to return all orders
@@ -63,6 +61,7 @@ public class OrderClient extends AbstractClient {
 			e.printStackTrace();
 		}
 	}
+
 	// sends a request to the server to update an order
 	public void updateOrder(Order order) {
 		try {
@@ -75,15 +74,17 @@ public class OrderClient extends AbstractClient {
 			e.printStackTrace();
 		}
 	}
+
 	// this method show us if the socket is closed
 	@Override
 	protected void connectionClosed() {
-	    System.out.println("SOCKET CLOSED");
+		System.out.println("SOCKET CLOSED");
 	}
-	//this method will show us if the connection is interupted
+
+	// this method will show us if the connection is interupted
 	@Override
 	protected void connectionException(Exception exception) {
-	    System.out.println("CONNECTION ERROR");
-	    exception.printStackTrace();
+		System.out.println("CONNECTION ERROR");
+		exception.printStackTrace();
 	}
 }
