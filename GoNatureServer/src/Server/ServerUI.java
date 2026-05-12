@@ -14,13 +14,13 @@ public class ServerUI extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		ServerPortFrameController aFrame = new ServerPortFrameController(); // create StudentFrame
+		ServerPortFrameController aFrame = new ServerPortFrameController(); // create a frame to input port number
 
 		aFrame.start(primaryStage);
 	}
 
 	public static void runServer(String p) {
-		int port = 0; // Port to listen on
+		int port = 0; // port to listen on
 
 		try {
 			port = Integer.parseInt(p); // Set port to 5555

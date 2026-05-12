@@ -55,24 +55,24 @@ public class EchoServer extends AbstractServer {
 	 * @param client The connection from which the message originated.
 	 * @param
 	 */
+	@SuppressWarnings("unchecked")
 	public void handleMessageFromClient(Object msg, ConnectionToClient client) {
-		System.out.println("Message received: " + msg);
+		System.out.println("Message received: " + msg); // print the command
 		try {
 			Message message = (Message) msg;
-			switch (message.getCommand()) {
-				case "GET_ORDERS":
-					ArrayList<ArrayList<String>> orders = database.getAllOrders();
-					client.sendToClient(orders);
+			switch (message.getCommand()) { 
+				case "GET_ORDERS": // this case will handle getting all orders from DB
+					ArrayList<ArrayList<String>> orders = database.getAllOrders(); // this 2 dimensional array will save all orders data
+					client.sendToClient(orders); // send all orders data to client
 					break;
 					
-				case "UPDATE_ORDER":
-					ArrayList<Object> data = (ArrayList<Object>) message.getData();
-					int orderNum = (int) data.get(0);
+				case "UPDATE_ORDER": // this case will handle updating an order in DB
+					ArrayList<Object> data = (ArrayList<Object>) message.getData();  // create a list of the data that needs to be updated
+					int orderNumber = (int) data.get(0);
 					String date = (String) data.get(1);
 					int numberOfVisitors = (int) data.get(2);
-					
-					boolean success = database.updateOrder(orderNum,  date,  numberOfVisitors);
-					client.sendToClient(success);
+					boolean success = database.updateOrder(orderNumber,  date,  numberOfVisitors); // call DB controller to update the order
+					client.sendToClient(success); // send feedback to the client
 					break;
 					
 				default:

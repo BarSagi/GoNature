@@ -9,7 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-/*Handle all database operations of the server*/
+//Handle all database operations of the server
 public class DBController {
 	
     private Connection conn;
@@ -17,7 +17,7 @@ public class DBController {
     public DBController() {
         connectToDB();
     }
-    public void connectToDB() {
+    public void connectToDB() { // connection to database
         try {
 			conn = DriverManager.getConnection(
 					"jdbc:mysql://localhost:3306/GoNature?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
@@ -43,9 +43,9 @@ public class DBController {
 
 	}
 
-	// reads an order from the database by order number
+	// this method will create a 2 dimensional array that will contain all orders
 	public ArrayList<ArrayList<String>> getAllOrders() throws SQLException {
-		String query = "SELECT * FROM `Orders`";
+		String query = "SELECT * FROM `orders`";
 		PreparedStatement prepareStatement = conn.prepareStatement(query);
 		ResultSet resultSet = prepareStatement.executeQuery();
 		ArrayList<ArrayList<String>> result = new ArrayList<>();
@@ -63,9 +63,9 @@ public class DBController {
 		return result;
 	}
 
-	// update order date and number of visitors
+	// this method will update order date and number of visitors
 	public boolean updateOrder(int orderNumber, String orderDate, int numberOfVisitors) throws SQLException {
-		String sql = "UPDATE `Order` SET order_date = ?, number_of_visitors = ? WHERE order_number = ?";
+		String sql = "UPDATE `orders` SET order_date = ?, number_of_visitors = ? WHERE order_number = ?";
 		PreparedStatement ps = conn.prepareStatement(sql);
 		ps.setDate(1, Date.valueOf(orderDate));
 		ps.setInt(2, numberOfVisitors);

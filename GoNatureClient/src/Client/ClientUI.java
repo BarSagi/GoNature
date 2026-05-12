@@ -6,6 +6,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+
+// client will run this program
 public class ClientUI extends Application {
 
     public static ClientController controller;
@@ -29,6 +31,7 @@ public class ClientUI extends Application {
         client = new OrderClient("localhost", 5555);
 
         client.openConnection();
+        System.out.println("Connected!");
     }
 
     public static void main(String[] args) {

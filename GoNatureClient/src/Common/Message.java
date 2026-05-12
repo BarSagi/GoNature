@@ -2,6 +2,8 @@ package Common;
 
 import java.io.Serializable;
 
+//this class will handle command types
+@SuppressWarnings("serial")
 public class Message implements Serializable {
 
     private String command;
@@ -19,5 +21,9 @@ public class Message implements Serializable {
 
     public Object getData() {
         return data;
+    }
+    @Override
+    public String toString() {
+        return "command=" + command + " data=" + data;
     }
 }

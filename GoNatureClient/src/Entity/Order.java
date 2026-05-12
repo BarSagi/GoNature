@@ -2,7 +2,8 @@ package Entity;
 
 import java.io.Serializable;
 import java.sql.Date;
-
+// this class will handle order logic
+@SuppressWarnings("serial")
 public class Order implements Serializable {
 
     private int orderNumber;
@@ -22,8 +23,7 @@ public class Order implements Serializable {
         this.dateOfPlacingOrder = dateOfPlacingOrder;
     }
 
-    public Order() {
-		// TODO Auto-generated constructor stub
+    public Order() { // empty constructor
 	}
 
 	public int getOrderNumber() {
