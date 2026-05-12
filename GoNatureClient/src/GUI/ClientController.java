@@ -78,4 +78,8 @@ public class ClientController {
     void exit(ActionEvent event) {
         System.exit(0);
     }
+    // this method will show feedback to the client
+    public void showLog(String msg) {
+        ordersArea.setText(msg);
+    }
 }

@@ -3,7 +3,6 @@ package GUI;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -14,7 +13,7 @@ import Server.ServerUI;
 
 // controller class for the server port. this class handles port input
 public class ServerPortFrameController {
-
+	public static ServerPortFrameController instance;
 	@FXML
 	private TextField portxt;
 
@@ -47,9 +46,6 @@ public class ServerPortFrameController {
 			// start the server with the given port
 			ServerUI.runServer(portNumber.trim());
 
-			// close the window
-			((Node) event.getSource()).getScene().getWindow().hide();
-			
 		} catch (Exception e) {
 			errorLabel.setText("Error starting server");
 		}
@@ -64,11 +60,33 @@ public class ServerPortFrameController {
 
 	// start the window display
 	public void start(Stage primaryStage) throws Exception {
-		Parent root = FXMLLoader.load(getClass().getResource("/gui/ServerPort.fxml"));
+
+		FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ServerPort.fxml"));
+
+		Parent root = loader.load();
+
+		ServerPortFrameController controller = loader.getController();
+		instance = controller;
+
 		Scene scene = new Scene(root);
 
 		primaryStage.setTitle("Server Port Setup");
 		primaryStage.setScene(scene);
 		primaryStage.show();
+	}
+
+	// this method will show errors regarding the server GUI
+	public void showError(String msg) {
+		errorLabel.setText(msg);
+	}
+
+	// this method will show the messages the server recieves in the server GUI
+	public void log(String msg) {
+		javafx.application.Platform.runLater(new Runnable() {
+			@Override
+			public void run() {
+				errorLabel.setText(msg); // או append אם תשדרג ל-TextArea
+			}
+		});
 	}
 }

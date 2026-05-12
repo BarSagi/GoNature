@@ -1,15 +1,9 @@
 package Server;
 
-import java.io.*;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import Common.Message;
 import Database.DBController;
+import GUI.ServerPortFrameController;
 import OCSFUtils.AbstractServer;
 import OCSFUtils.ConnectionToClient;
 
@@ -40,7 +34,7 @@ public class EchoServer extends AbstractServer {
 	 * @param port The port number to connect on.
 	 * 
 	 */
-	private Connection conn;
+	
 	private DBController database;
 	public EchoServer(int port) {
 		super(port);
@@ -57,7 +51,11 @@ public class EchoServer extends AbstractServer {
 	 */
 	@SuppressWarnings("unchecked")
 	public void handleMessageFromClient(Object msg, ConnectionToClient client) {
-		System.out.println("Message received: " + msg); // print the command
+		if (database == null) {
+		    log("DB not initialized yet!");
+		    return;
+		}
+		log("Message received: " + msg); // print the command
 		try {
 			Message message = (Message) msg;
 			switch (message.getCommand()) { 
@@ -76,7 +74,7 @@ public class EchoServer extends AbstractServer {
 					break;
 					
 				default:
-					System.out.println("Unkown command: " + message.getCommand());
+					log("Unkown command: " + message.getCommand());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -89,8 +87,8 @@ public class EchoServer extends AbstractServer {
 	 * starts listening for connections.
 	 */
 	protected void serverStarted() {
-			System.out.println("Server listening for connections on port " + getPort());
-			database = new DBController();
+			log("Server listening for connections on port " + getPort());
+			database = new DBController(this);
 	}
 
 	/**
@@ -98,6 +96,19 @@ public class EchoServer extends AbstractServer {
 	 * listening for connections.
 	 */
 	protected void serverStopped() {
-		System.out.println("Server has stopped listening for connections.");
+		log("Server has stopped listening for connections.");
+	}
+	// this method will handle prints in side the GUI
+	public void log(String msg) {
+	    System.out.println(msg); // תמיד לוג בסיסי
+
+	    if (ServerPortFrameController.instance != null) {
+	        javafx.application.Platform.runLater(new Runnable() {
+	            @Override
+	            public void run() {
+	                ServerPortFrameController.instance.log(msg);
+	            }
+	        });
+	    }
 	}
 }

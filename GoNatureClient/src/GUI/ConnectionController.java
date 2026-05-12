@@ -5,6 +5,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import java.util.regex.Pattern;
 
 public class ConnectionController {
 
@@ -20,22 +21,49 @@ public class ConnectionController {
 	@FXML
 	void connectToServer(ActionEvent event) {
 		errorLabel.setText("");
-
+		String ip = txtIP.getText();
+		String portNumber = txtPort.getText().trim();
+		int port;
 		try {
-			String ip = txtIP.getText();
 
 			if (ip.trim().isEmpty() || txtPort.getText().trim().isEmpty()) {
 				errorLabel.setText("Please enter IP and Port.");
 				return;
 			}
 
-			int port = Integer.parseInt(txtPort.getText());
-			ClientUI.startClient(ip, port);
+			port = Integer.parseInt(portNumber);
 
 		} catch (Exception e) {
-			errorLabel.setText("Connection failed!");
-			e.printStackTrace();
+			errorLabel.setText("Port number failure");
+			return;
 		}
+		// handle the correct ip configuration
+		String ipv4Pattern = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}"
+				+ "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+
+		String ipv6Pattern = "^[0-9a-fA-F:]+$";
+		// check if the ip is formatted correctly
+		if (!Pattern.matches(ipv4Pattern, ip) && !Pattern.matches(ipv6Pattern, ip)) {
+
+			errorLabel.setText("Invalid IP address");
+			return;
+		}
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					ClientUI.startClient(ip, port);
+				} catch (Exception e) {
+					javafx.application.Platform.runLater(new Runnable() {
+						@Override
+						public void run() {
+							errorLabel.setText("Connection failed");
+						}
+					});
+				}
+			}
+		}).start();
 	}
 
 	@FXML

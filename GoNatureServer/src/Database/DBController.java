@@ -9,12 +9,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import Server.EchoServer;
+
 //Handle all database operations of the server
 public class DBController {
-	
+	private EchoServer server;
     private Connection conn;
 
-    public DBController() {
+    public DBController(EchoServer server) {
+    	this.server = server;
         connectToDB();
     }
     public void connectToDB() { // connection to database
@@ -22,7 +25,9 @@ public class DBController {
 			conn = DriverManager.getConnection(
 					"jdbc:mysql://localhost:3306/GoNature?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
 					"root", "2066");
-            System.out.println("Connected to MySQL");
+			if (server != null) {
+				server.log("Connected to MySQL");
+			}
         }
         catch (SQLException e) {
 

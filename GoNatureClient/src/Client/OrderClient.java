@@ -78,13 +78,26 @@ public class OrderClient extends AbstractClient {
 	// this method show us if the socket is closed
 	@Override
 	protected void connectionClosed() {
-		System.out.println("SOCKET CLOSED");
+		log("SOCKET CLOSED");
 	}
 
 	// this method will show us if the connection is interupted
 	@Override
 	protected void connectionException(Exception exception) {
-		System.out.println("CONNECTION ERROR");
-		exception.printStackTrace();
+		log("Connection interupted by server");
+
+	}
+
+	private void log(String msg) {
+	    Platform.runLater(new Runnable() {
+	        @Override
+	        public void run() {
+	            if (ClientUI.controller != null) {
+	                ClientUI.controller.showLog(msg);
+	            } else {
+	                System.out.println("UI not ready: " + msg);
+	            }
+	        }
+	    });
 	}
 }
