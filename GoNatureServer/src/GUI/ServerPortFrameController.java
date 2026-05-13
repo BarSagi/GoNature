@@ -1,12 +1,13 @@
 package GUI;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import Server.ServerUI;
@@ -24,7 +25,7 @@ public class ServerPortFrameController {
 	private Button btnExit;
 
 	@FXML
-	private Label errorLabel;
+	private TextArea logArea;
 
 	private String getPort() {
 		return portxt.getText();
@@ -34,11 +35,11 @@ public class ServerPortFrameController {
 	@FXML
 	public void done(ActionEvent event) {
 
-		errorLabel.setText("");
+		logArea.setText("");
 		String portNumber = getPort();
 
 		if (portNumber == null || portNumber.trim().isEmpty()) { // make sure the input is valid
-			errorLabel.setText("You must enter a port number");
+			logArea.appendText("You must enter a port number\n");
 			return;
 		}
 
@@ -47,7 +48,7 @@ public class ServerPortFrameController {
 			ServerUI.runServer(portNumber.trim());
 
 		} catch (Exception e) {
-			errorLabel.setText("Error starting server");
+			logArea.appendText("Error starting server\n");
 		}
 	}
 
@@ -61,7 +62,7 @@ public class ServerPortFrameController {
 	// start the window display
 	public void start(Stage primaryStage) throws Exception {
 
-		FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ServerPort.fxml"));
+		FXMLLoader loader = new FXMLLoader(getClass().getResource("/GUI/ServerPort.fxml"));
 
 		Parent root = loader.load();
 
@@ -77,15 +78,15 @@ public class ServerPortFrameController {
 
 	// this method will show errors regarding the server GUI
 	public void showError(String msg) {
-		errorLabel.setText(msg);
+		logArea.appendText(msg + "\n");
 	}
-
+	
 	// this method will show the messages the server recieves in the server GUI
 	public void log(String msg) {
-		javafx.application.Platform.runLater(new Runnable() {
+		Platform.runLater(new Runnable() {
 			@Override
 			public void run() {
-				errorLabel.setText(msg); // או append אם תשדרג ל-TextArea
+				logArea.appendText(msg + "\n"); 
 			}
 		});
 	}

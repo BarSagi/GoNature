@@ -47,7 +47,7 @@ public class DBController {
 		}
 
 	}
-
+	
 	// this method will create a 2 dimensional array that will contain all orders
 	public ArrayList<ArrayList<String>> getAllOrders() throws SQLException {
 		String query = "SELECT * FROM `orders`";
@@ -63,19 +63,18 @@ public class DBController {
 			row.add(String.valueOf(resultSet.getInt("subscriber_id")));
 			row.add(String.valueOf(resultSet.getDate("date_of_placing_order")));
 			result.add(row);
-
 		}
 		return result;
 	}
-
+	
 	// this method will update order date and number of visitors
 	public boolean updateOrder(int orderNumber, String orderDate, int numberOfVisitors) throws SQLException {
-		String sql = "UPDATE `orders` SET order_date = ?, number_of_visitors = ? WHERE order_number = ?";
-		PreparedStatement ps = conn.prepareStatement(sql);
-		ps.setDate(1, Date.valueOf(orderDate));
-		ps.setInt(2, numberOfVisitors);
-		ps.setInt(3, orderNumber);
-		return ps.executeUpdate() > 0;
+		String query = "UPDATE `orders` SET order_date = ?, number_of_visitors = ? WHERE order_number = ?";
+		PreparedStatement prepareStatement = conn.prepareStatement(query);
+		prepareStatement.setDate(1, Date.valueOf(orderDate));
+		prepareStatement.setInt(2, numberOfVisitors);
+		prepareStatement.setInt(3, orderNumber);
+		return prepareStatement.executeUpdate() > 0; // returns true if 1 or more rows affected
 	}
 
 }

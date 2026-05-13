@@ -1,6 +1,7 @@
 package GUI;
 
 import Client.ClientUI;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -55,7 +56,7 @@ public class ConnectionController {
 				try {
 					ClientUI.startClient(ip, port);
 				} catch (Exception e) {
-					javafx.application.Platform.runLater(new Runnable() {
+					Platform.runLater(new Runnable() {
 						@Override
 						public void run() {
 							errorLabel.setText("Connection failed");
@@ -69,5 +70,9 @@ public class ConnectionController {
 	@FXML
 	void exit(ActionEvent event) {
 		System.exit(0);
+	}
+	
+	public void showErrorInGUI(String msg) {
+	    errorLabel.setText(msg);
 	}
 }

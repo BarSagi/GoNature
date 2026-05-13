@@ -8,14 +8,14 @@ import GUI.ServerPortFrameController;
 public class ServerUI extends Application {
 	public static ServerPortFrameController controller; // this will hold a reference to the gui
 	public static void main(String args[]) throws Exception {
-		launch(args);
+		launch();
 	} // end main
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		ServerPortFrameController aFrame = new ServerPortFrameController(); // create a frame to input port number
-		controller = aFrame;
-		aFrame.start(primaryStage);
+		ServerPortFrameController frame = new ServerPortFrameController(); // create a frame to input port number
+		controller = frame;
+		frame.start(primaryStage);
 	}
 
 	public static void runServer(String p) {

@@ -79,7 +79,7 @@ public class ClientController {
         System.exit(0);
     }
     // this method will show feedback to the client
-    public void showLog(String msg) {
+    public void log(String msg) {
         ordersArea.setText(msg);
     }
 }

@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.TextArea?>
 
 <VBox alignment="CENTER" prefHeight="200.0" prefWidth="184.0"
 	spacing="15" xmlns:fx="http://javafx.com/fxml/1"
@@ -15,7 +16,8 @@
 	<TextField fx:id="portxt" maxWidth="200"
 		promptText="e.g. 5555" />
 
-	<Label fx:id="errorLabel" textFill="RED" />
+	<TextArea fx:id="logArea" editable="false" prefHeight="150"
+		prefWidth="250" wrapText="true" />
 
 	<Button onAction="#done" prefWidth="150" text="Connect" />
 

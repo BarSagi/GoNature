@@ -21,7 +21,7 @@
 
 		<VBox spacing="5.0">
 			<children>
-				<Label text="IP Address (IPv6):" />
+				<Label text="IP Address:" />
 				<TextField fx:id="txtIP" />
 			</children>
 			<VBox.margin>
