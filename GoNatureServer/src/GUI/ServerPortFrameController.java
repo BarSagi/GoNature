@@ -10,6 +10,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import Server.EchoServer;
 import Server.ServerUI;
 
 // controller class for the server port. this class handles port input
@@ -26,6 +27,7 @@ public class ServerPortFrameController {
 
 	@FXML
 	private TextArea logArea;
+	
 
 	private String getPort() {
 		return portxt.getText();
@@ -74,6 +76,21 @@ public class ServerPortFrameController {
 		primaryStage.setTitle("Server Port Setup");
 		primaryStage.setScene(scene);
 		primaryStage.show();
+	}
+	
+	@FXML
+	void showClients(ActionEvent event) {
+
+	    EchoServer server = ServerUI.server;
+
+	    if (server == null) {
+	        logArea.setText("Server not running");
+	        return;
+	    }
+
+	    String info = server.getConnectedClientInfo();
+
+	    logArea.appendText(info);
 	}
 
 	// this method will show errors regarding the server GUI

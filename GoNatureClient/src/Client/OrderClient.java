@@ -145,8 +145,9 @@ public class OrderClient extends AbstractClient {
 	// this method show us if the socket is closed
 	@Override
 	protected void connectionClosed() {
-		log("SOCKET CLOSED");
+	    log("CLIENT DISCONNECTED");
 	}
+	
 
 	// this method will show us if the connection is interupted
 	@Override
@@ -165,6 +166,16 @@ public class OrderClient extends AbstractClient {
 	        }
 	    });
 	}
+	
+	public void disconnectClient() {
+	    try {
+	        if (isConnected()) {
+	            closeConnection();
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
 
 	private void log(String msg) {
 	    Platform.runLater(new Runnable() {
@@ -178,4 +189,6 @@ public class OrderClient extends AbstractClient {
 	        }
 	    });
 	}
+	
+	
 }

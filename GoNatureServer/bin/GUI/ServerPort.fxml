@@ -1,26 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.*?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.control.TextArea?>
 
-<VBox alignment="CENTER" prefHeight="200.0" prefWidth="184.0"
-	spacing="15" xmlns:fx="http://javafx.com/fxml/1"
-	xmlns="http://javafx.com/javafx/26"
-	fx:controller="GUI.ServerPortFrameController">
+<VBox alignment="CENTER" prefHeight="300.0" prefWidth="300.0"
+      spacing="10"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="GUI.ServerPortFrameController">
 
-	<Label text="Enter Server Port" />
+    <Label text="Enter Server Port" />
 
-	<TextField fx:id="portxt" maxWidth="200"
-		promptText="e.g. 5555" />
+    <TextField fx:id="portxt" maxWidth="200" promptText="e.g. 5555" />
 
-	<TextArea fx:id="logArea" editable="false" prefHeight="150"
-		prefWidth="250" wrapText="true" />
+    <Button text="Connect" onAction="#done" prefWidth="150"/>
 
-	<Button onAction="#done" prefWidth="150" text="Connect" />
+    <Button text="Show Clients" onAction="#showClients" prefWidth="150"/>
 
-	<Button onAction="#exit" prefWidth="150" text="Exit" />
+    <TextArea fx:id="logArea"
+              prefHeight="150"
+              prefWidth="250"
+              editable="false"
+              wrapText="true"/>
+
+    <Button text="Exit" onAction="#exit" prefWidth="150"/>
 
 </VBox>

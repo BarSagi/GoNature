@@ -7,6 +7,7 @@ import GUI.ServerPortFrameController;
 
 public class ServerUI extends Application {
 	public static ServerPortFrameController controller; // this will hold a reference to the gui
+	public static EchoServer server; // this will hold a reference to the server
 	public static void main(String args[]) throws Exception {
 		launch();
 	} // end main
@@ -29,10 +30,10 @@ public class ServerUI extends Application {
 			return;
 		}
 
-		EchoServer sv = new EchoServer(port);
+		server = new EchoServer(port);
 
 		try {
-			sv.listen(); // Start listening for connections
+			server.listen(); // Start listening for connections
 		} catch (Exception e) {
 			ServerPortFrameController.instance.showError("ERROR - Could not listen for clients!");
 			return;

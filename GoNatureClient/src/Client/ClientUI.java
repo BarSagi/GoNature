@@ -19,6 +19,10 @@ public class ClientUI extends Application {
 	private static Stage mainStage;
 	
 	public static volatile boolean uiReady = false;
+	
+	public static void main(String[] args) {
+		launch(); // call start method
+	}
 
 	@Override
 	public void start(Stage primaryStage) {
@@ -77,8 +81,11 @@ public class ClientUI extends Application {
 	        }
 	    });
 	}
-
-	public static void main(String[] args) {
-		launch(); // call start method
+	
+	public static void disconnect() {
+	    if (client != null) {
+	        client.disconnectClient();
+	    }
 	}
+
 }

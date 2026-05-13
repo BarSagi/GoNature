@@ -2,6 +2,7 @@ package GUI;
 
 import Client.ClientUI;
 import Entity.Order;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextArea;
@@ -76,7 +77,16 @@ public class ClientController {
     
     @FXML
     void exit(ActionEvent event) {
-        System.exit(0);
+
+        try {
+            if (ClientUI.client != null) {
+                ClientUI.client.closeConnection();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Platform.exit(); 
     }
     // this method will show feedback to the client
     public void log(String msg) {
