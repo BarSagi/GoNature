@@ -24,7 +24,7 @@ public class DBController {
         try {
 			conn = DriverManager.getConnection(
 					"jdbc:mysql://localhost:3306/GoNature?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
-					"root", "galdolev123");
+					"root", "2066");
 			if (server != null) {
 				server.log("Connected to MySQL");
 			}
