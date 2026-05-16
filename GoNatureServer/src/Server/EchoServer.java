@@ -28,6 +28,37 @@ public class EchoServer extends AbstractServer {
 		try {
 
 			Message message = (Message) msg;
+
+			if (message.getCommand().equals("DISCONNECT")) {
+
+				String compName = (String) client.getInfo("hostName");
+				if (compName == null)
+					compName = "Unknown";
+
+				log("--------------------");
+				log("CLIENT DISCONNECTED");
+				log("Host name: " + compName);
+				log("IP address: " + client.getInetAddress().getHostAddress());
+				log("Status: DISCONNECTED");
+				log("--------------------");
+
+				return;
+			}
+
+			else if (message.getCommand().equals("CONNECT")) {
+
+				client.setInfo("hostName", message.getData());
+
+				log("--------------------");
+				log("CLIENT CONNECTED");
+				log("Host name: " + message.getData());
+				log("IP address: " + client.getInetAddress().getHostAddress());
+				log("Status: CONNECTED");
+				log("--------------------");
+
+				return;
+			}
+
 			log("Message received: " + message.getCommand());
 
 			MessageStrategy strategy = StrategyFactory.getStrategy(message.getCommand());
@@ -72,7 +103,7 @@ public class EchoServer extends AbstractServer {
 		}
 	}
 
-	@Override
+	/*@Override we tried using this but it works without it, therefore we put it as a comment.
 	protected void clientConnected(ConnectionToClient client) {
 
 		log("--------------------");
@@ -88,35 +119,41 @@ public class EchoServer extends AbstractServer {
 		log("--------------------");
 		log("CLIENT DISCONNECTED");
 		log("IP address: " + client.getInetAddress().getHostAddress());
+		log("Host name: " + client.getInetAddress().getHostName());
 		log("Status: DISCONNECTED");
 		log("--------------------");
-	}
+	}*/
 
 	public String getConnectedClientInfo() {
-	    StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new StringBuilder();
 
-	    sb.append("Connected clients:\n");
+		Thread[] clients = getClientConnections();
 
-	    Thread[] clients = getClientConnections();
+		if (clients.length == 0)
+			return "NO CONNECTED CLIENTS!\n";
 
-	    for (Thread t : clients) {
+		sb.append("Connected clients:\n");
 
-	        ConnectionToClient client = (ConnectionToClient) t;
+		for (Thread t : clients) {
+			ConnectionToClient client = (ConnectionToClient) t;
 
-	        sb.append("--------------------\n");
-	        sb.append("IP address: ")
-	          .append(client.getInetAddress().getHostAddress())
-	          .append("\n");
+			// Fetch the host name we saved during CONNECT
+			String compName = (String) client.getInfo("hostName");
+			if (compName == null)
+				compName = "Unknown";
 
-	        sb.append("Host name: ")
-	          .append(client.getInetAddress().getHostName())
-	          .append("\n");
+			sb.append("--------------------\n");
 
-	        sb.append("Status: CONNECTED\n");
-	        sb.append("--------------------\n");
-	    }
+			sb.append("Host name: ").append(compName).append("\n");
 
-	    return sb.toString();
+			sb.append("IP address: ").append(client.getInetAddress().getHostAddress()).append("\n");
+
+			sb.append("Status: CONNECTED\n");
+
+			sb.append("--------------------\n");
+		}
+
+		return sb.toString();
 	}
 
 	public DBController getDatabase() {

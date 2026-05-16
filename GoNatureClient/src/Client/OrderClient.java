@@ -19,12 +19,12 @@ public class OrderClient extends AbstractClient {
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void handleMessageFromServer(Object msg) {
-		
-	    if (!ClientUI.uiReady || ClientUI.clientController == null) {
-	        System.out.println("UI NOT READY - ignoring message: " + msg);
-	        return;
-	    }
-	   
+
+		if (!ClientUI.uiReady || ClientUI.clientController == null) {
+			System.out.println("UI NOT READY - ignoring message: " + msg);
+			return;
+		}
+
 		if (msg instanceof ArrayList<?>) { // first case: server sent ArrayList
 
 			ArrayList<ArrayList<String>> orders = (ArrayList<ArrayList<String>>) msg;
@@ -61,134 +61,146 @@ public class OrderClient extends AbstractClient {
 	// sends a request to the server to return all orders
 	public void getOrders() {
 
-	    // check if server is connected
-	    if (!isConnected()) {
+		// check if server is connected
+		if (!isConnected()) {
 
-	        Platform.runLater(new Runnable() {
+			Platform.runLater(new Runnable() {
 
-	            @Override
-	            public void run() {
+				@Override
+				public void run() {
 
-	                if (ClientUI.clientController != null) {
-	                    ClientUI.clientController.log("Server disconnected");
-	                }
-	            }
-	        });
+					if (ClientUI.clientController != null) {
+						ClientUI.clientController.log("Server disconnected");
+					}
+				}
+			});
 
-	        return;
-	    }
+			return;
+		}
 
-	    try {
+		try {
 
-	        sendToServer(new Message("GET_ORDERS", null));
+			sendToServer(new Message("GET_ORDERS", null));
 
-	    } catch (Exception e) {
+		} catch (Exception e) {
 
-	        Platform.runLater(new Runnable() {
+			Platform.runLater(new Runnable() {
 
-	            @Override
-	            public void run() {
+				@Override
+				public void run() {
 
-	                if (ClientUI.clientController != null) {
-	                    ClientUI.clientController.log("Failed to communicate with server");
-	                }
-	            }
-	        });
-	    }
+					if (ClientUI.clientController != null) {
+						ClientUI.clientController.log("Failed to communicate with server");
+					}
+				}
+			});
+		}
 	}
 
 	// sends a request to the server to update an order
 	public void updateOrder(Order order) {
 
-	    // check if server is connected
-	    if (!isConnected()) {
+		// check if server is connected
+		if (!isConnected()) {
 
-	        Platform.runLater(new Runnable() {
+			Platform.runLater(new Runnable() {
 
-	            @Override
-	            public void run() {
+				@Override
+				public void run() {
 
-	                if (ClientUI.clientController != null) {
-	                    ClientUI.clientController.log("Server disconnected");
-	                }
-	            }
-	        });
+					if (ClientUI.clientController != null) {
+						ClientUI.clientController.log("Server disconnected");
+					}
+				}
+			});
 
-	        return;
-	    }
+			return;
+		}
 
-	    try {
+		try {
 
-	        ArrayList<Object> data = new ArrayList<>();
+			ArrayList<Object> data = new ArrayList<>();
 
-	        data.add(order.getOrderNumber());
-	        data.add(order.getOrderDate().toString());
-	        data.add(order.getNumberOfVisitors());
+			data.add(order.getOrderNumber());
+			data.add(order.getOrderDate().toString());
+			data.add(order.getNumberOfVisitors());
 
-	        sendToServer(new Message("UPDATE_ORDER", data));
+			sendToServer(new Message("UPDATE_ORDER", data));
 
-	    } catch (Exception e) {
+		} catch (Exception e) {
 
-	        Platform.runLater(new Runnable() {
+			Platform.runLater(new Runnable() {
 
-	            @Override
-	            public void run() {
+				@Override
+				public void run() {
 
-	                if (ClientUI.clientController != null) {
-	                    ClientUI.clientController.log("Failed to communicate with server");
-	                }
-	            }
-	        });
-	    }
+					if (ClientUI.clientController != null) {
+						ClientUI.clientController.log("Failed to communicate with server");
+					}
+				}
+			});
+		}
 	}
 
 	// this method show us if the socket is closed
 	@Override
 	protected void connectionClosed() {
-	    log("CLIENT DISCONNECTED");
+		log("CLIENT DISCONNECTED");
 	}
-	
 
 	// this method will show us if the connection is interupted
 	@Override
 	protected void connectionException(Exception exception) {
 
-	    Platform.runLater(new Runnable() {
+		Platform.runLater(new Runnable() {
 
-	        @Override
-	        public void run() {
+			@Override
+			public void run() {
 
-	            if (ClientUI.connectionController != null) {
-	                ClientUI.connectionController.showErrorInGUI("Connection failed");
-	            }
+				if (ClientUI.connectionController != null) {
+					ClientUI.connectionController.showErrorInGUI("Connection failed");
+				}
 
-	            log("Connection interrupted by server");
-	        }
-	    });
+				log("Connection interrupted by server");
+			}
+		});
 	}
-	
+
 	public void disconnectClient() {
-	    try {
-	        if (isConnected()) {
-	            closeConnection();
-	        }
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
+		try {
+			if (isConnected()) {
+				closeConnection();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	protected void connectionEstablished() {
+
+		try {
+
+			String pcName = java.net.InetAddress.getLocalHost().getHostName(); // get the host name
+
+			sendToServer(new Message("CONNECT", pcName));
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void log(String msg) {
-	    Platform.runLater(new Runnable() {
-	        @Override
-	        public void run() {
-	            if (ClientUI.clientController != null) {
-	                ClientUI.clientController.log(msg);
-	            } else {
-	                System.out.println("UI not ready: " + msg);
-	            }
-	        }
-	    });
+		Platform.runLater(new Runnable() {
+			@Override
+			public void run() {
+				if (ClientUI.clientController != null) {
+					ClientUI.clientController.log(msg);
+				} else {
+					System.out.println("UI not ready: " + msg);
+				}
+			}
+		});
 	}
-	
-	
+
 }
