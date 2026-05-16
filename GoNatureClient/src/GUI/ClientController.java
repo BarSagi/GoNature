@@ -93,4 +93,25 @@ public class ClientController {
 	public void log(String msg) {
 		ordersArea.setText(msg);
 	}
+<<<<<<< HEAD
+=======
+    
+    @FXML
+    void exit(ActionEvent event) {
+
+        try {
+            if (ClientUI.client != null) {
+                ClientUI.client.closeConnection();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Platform.exit(); 
+    }
+    // this method will show feedback to the client
+    public void log(String msg) {
+        ordersArea.setText(msg);
+    }
+>>>>>>> 4bba51f1bf110a2c47e64329925ab7f56ec490e4
 }

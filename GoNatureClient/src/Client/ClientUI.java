@@ -87,6 +87,7 @@ public class ClientUI extends Application {
 	    if (client != null) {
 	        client.disconnectClient();
 	    }
+<<<<<<< HEAD
 	}
 	
 	@Override
@@ -102,6 +103,8 @@ public class ClientUI extends Application {
 	    }
 
 	    System.out.println("Client application stopped");
+=======
+>>>>>>> 4bba51f1bf110a2c47e64329925ab7f56ec490e4
 	}
 
 }
