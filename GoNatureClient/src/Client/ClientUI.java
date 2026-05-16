@@ -1,6 +1,5 @@
 package Client;
 
-import Common.Message;
 import GUI.ClientController;
 import GUI.ConnectionController;
 import javafx.application.Application;
@@ -87,24 +86,6 @@ public class ClientUI extends Application {
 	    if (client != null) {
 	        client.disconnectClient();
 	    }
-<<<<<<< HEAD
-	}
-	
-	@Override
-	public void stop() {
-	    try {
-	        if (client != null && client.isConnected()) {
-	            client.sendToServer(new Message("DISCONNECT", null));
-	            client.closeConnection();
-	        }
-
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
-
-	    System.out.println("Client application stopped");
-=======
->>>>>>> 4bba51f1bf110a2c47e64329925ab7f56ec490e4
 	}
 
 }

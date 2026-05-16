@@ -6,7 +6,7 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="C:/Users/galdo/OneDrive/Desktop/GoNature/GoNatureServer/lib/mysql-connector-j-9.5.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/barsa/OneDrive/Desktop/Tirgul6-Adi&amp;Bar/Tirgul6-Adi&amp;Bar/ClientServerGUI_FX/ClientServerGUI_FX/lib/mysql-connector-j-9.5.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/javaFx"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

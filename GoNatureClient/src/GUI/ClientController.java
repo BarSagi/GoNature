@@ -1,7 +1,6 @@
 package GUI;
 
 import Client.ClientUI;
-import Common.Message;
 import Entity.Order;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -11,6 +10,7 @@ import javafx.scene.control.TextField;
 
 import java.sql.Date;
 import java.util.ArrayList;
+
 
 // this method handles client actions
 public class ClientController {
@@ -32,7 +32,7 @@ public class ClientController {
 	public void getOrders(ActionEvent event) {
 		ClientUI.client.getOrders();
 	}
-
+	
 	// collect user input to update an order and send the server the details
 	@FXML
 	public void updateOrder(ActionEvent event) {
@@ -49,52 +49,31 @@ public class ClientController {
 			ordersArea.setText("Invalid input!");
 		}
 	}
-
-	// displays a list of orders in the GUI
+	
+	// displays a list of orders in the GUI 
 	public void showOrders(ArrayList<ArrayList<String>> orders) {
 		ordersArea.clear();
-		for (ArrayList<String> row : orders) {
-			String orderNumber = row.get(0);
-			String orderDate = row.get(1);
-			String numberOfVisitors = row.get(2);
-			String confirmationCode = row.get(3);
-			String subscriberId = row.get(4);
-			String dateOfPlacingOrder = row.get(5);
-			ordersArea.appendText("Order Number: " + orderNumber + " " + "Order Date: " + orderDate + " " + "Vistiors: "
-					+ numberOfVisitors + " " + "Confirmation code: " + confirmationCode + " " + "Subscriber ID: "
-					+ subscriberId + " " + "Date of Placing Order: " + dateOfPlacingOrder + " \n");
+	    for (ArrayList<String> row : orders) {
+	    	String orderNumber = row.get(0);
+	        String orderDate = row.get(1);
+	        String numberOfVisitors = row.get(2);
+	        String confirmationCode = row.get(3);
+	        String subscriberId = row.get(4);
+	        String dateOfPlacingOrder = row.get(5);
+	        ordersArea.appendText(
+	        		"Order Number: " + orderNumber + " " +
+	        		"Order Date: " + orderDate + " " +
+	        		"Vistiors: " + numberOfVisitors + " " +
+	        		"Confirmation code: " + confirmationCode + " " +
+	        		"Subscriber ID: " + subscriberId + " " +
+	        		"Date of Placing Order: " + dateOfPlacingOrder + " \n");
 
-		}
+	    }
 	}
-
 	// this method will print to GUI if order is updated successfuly or not
-	public void showSuccess(String msg) {
+    public void showSuccess(String msg) {
 		ordersArea.setText(msg);
 	}
-
-	@FXML
-	void exit(ActionEvent event) {
-
-		try {
-
-			if (ClientUI.client != null) {
-				ClientUI.client.sendToServer(new Message("DISCONNECT", null));
-				ClientUI.client.closeConnection();
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		Platform.exit();
-	}
-
-	// this method will show feedback to the client
-	public void log(String msg) {
-		ordersArea.setText(msg);
-	}
-<<<<<<< HEAD
-=======
     
     @FXML
     void exit(ActionEvent event) {
@@ -113,5 +92,4 @@ public class ClientController {
     public void log(String msg) {
         ordersArea.setText(msg);
     }
->>>>>>> 4bba51f1bf110a2c47e64329925ab7f56ec490e4
 }

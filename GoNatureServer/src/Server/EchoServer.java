@@ -28,38 +28,6 @@ public class EchoServer extends AbstractServer {
 		try {
 
 			Message message = (Message) msg;
-<<<<<<< HEAD
-
-			if (message.getCommand().equals("DISCONNECT")) {
-
-				String compName = (String) client.getInfo("hostName");
-				if (compName == null)
-					compName = "Unknown";
-
-				log("--------------------");
-				log("CLIENT DISCONNECTED");
-				log("Host name: " + compName);
-				log("IP address: " + client.getInetAddress().getHostAddress());
-				log("Status: DISCONNECTED");
-				log("--------------------");
-
-				return;
-			}
-
-			else if (message.getCommand().equals("CONNECT")) {
-
-				client.setInfo("hostName", message.getData());
-
-				log("--------------------");
-				log("CLIENT CONNECTED");
-				log("Host name: " + message.getData());
-				log("IP address: " + client.getInetAddress().getHostAddress());
-				log("Status: CONNECTED");
-				log("--------------------");
-
-				return;
-			}
-
 			log("Message received: " + message.getCommand());
 
 			MessageStrategy strategy = StrategyFactory.getStrategy(message.getCommand());
@@ -73,21 +41,6 @@ public class EchoServer extends AbstractServer {
 				log("Unknown command: " + message.getCommand());
 			}
 
-=======
-			log("Message received: " + message.getCommand());
-
-			MessageStrategy strategy = StrategyFactory.getStrategy(message.getCommand());
-
-			if (strategy != null) {
-
-				strategy.execute(message, client, this);
-
-			} else {
-
-				log("Unknown command: " + message.getCommand());
-			}
-
->>>>>>> 4bba51f1bf110a2c47e64329925ab7f56ec490e4
 		} catch (Exception e) {
 
 			e.printStackTrace();
@@ -119,11 +72,7 @@ public class EchoServer extends AbstractServer {
 		}
 	}
 
-<<<<<<< HEAD
-	/*@Override we tried using this but it works without it, therefore we put it as a comment.
-=======
 	@Override
->>>>>>> 4bba51f1bf110a2c47e64329925ab7f56ec490e4
 	protected void clientConnected(ConnectionToClient client) {
 
 		log("--------------------");
@@ -139,43 +88,6 @@ public class EchoServer extends AbstractServer {
 		log("--------------------");
 		log("CLIENT DISCONNECTED");
 		log("IP address: " + client.getInetAddress().getHostAddress());
-<<<<<<< HEAD
-		log("Host name: " + client.getInetAddress().getHostName());
-		log("Status: DISCONNECTED");
-		log("--------------------");
-	}*/
-
-	public String getConnectedClientInfo() {
-		StringBuilder sb = new StringBuilder();
-
-		Thread[] clients = getClientConnections();
-
-		if (clients.length == 0)
-			return "NO CONNECTED CLIENTS!\n";
-
-		sb.append("Connected clients:\n");
-
-		for (Thread t : clients) {
-			ConnectionToClient client = (ConnectionToClient) t;
-
-			// Fetch the host name we saved during CONNECT
-			String compName = (String) client.getInfo("hostName");
-			if (compName == null)
-				compName = "Unknown";
-
-			sb.append("--------------------\n");
-
-			sb.append("Host name: ").append(compName).append("\n");
-
-			sb.append("IP address: ").append(client.getInetAddress().getHostAddress()).append("\n");
-
-			sb.append("Status: CONNECTED\n");
-
-			sb.append("--------------------\n");
-		}
-
-		return sb.toString();
-=======
 		log("Status: DISCONNECTED");
 		log("--------------------");
 	}
@@ -205,7 +117,6 @@ public class EchoServer extends AbstractServer {
 	    }
 
 	    return sb.toString();
->>>>>>> 4bba51f1bf110a2c47e64329925ab7f56ec490e4
 	}
 
 	public DBController getDatabase() {
