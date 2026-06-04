@@ -4,7 +4,6 @@ import Common.Message;
 import Entity.Order;
 import javafx.application.Platform;
 import OCSFUtils.AbstractClient;
-
 import java.util.ArrayList;
 
 public class OrderClient extends AbstractClient {
@@ -118,7 +117,6 @@ public class OrderClient extends AbstractClient {
 		}
 
 		try {
-
 			ArrayList<Object> data = new ArrayList<>();
 
 			data.add(order.getOrderNumber());

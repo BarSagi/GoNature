@@ -1,26 +1,29 @@
 package Client;
 
 import Common.Message;
-import GUI.ClientController;
+import Entity.*;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import javafx.fxml.FXMLLoader;
 import GUI.ConnectionController;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
+//import GUI.ClientController;
 
 // client will run this program
 public class ClientUI extends Application {
 
 	public static ConnectionController connectionController;
-	public static ClientController clientController;
-	
-	public static OrderClient client;
+
+	// public static OrderClient aaaclient;
+	public static GoNatureClient client;
 
 	private static Stage mainStage;
-	
+
 	public static volatile boolean uiReady = false;
-	
+
+	public static String visitorID;
+
 	public static void main(String[] args) {
 		launch(); // call start method
 	}
@@ -28,7 +31,8 @@ public class ClientUI extends Application {
 	@Override
 	public void start(Stage primaryStage) {
 		try {
-			FXMLLoader loader = new FXMLLoader(getClass().getResource("/GUI/Connection.fxml")); // load the graphical file
+			// load the graphical file
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/GUI/Connection.fxml"));
 
 			Scene scene = new Scene(loader.load()); // create a new scene
 
@@ -45,63 +49,95 @@ public class ClientUI extends Application {
 	}
 
 	public static void startClient(String ip, int port) throws Exception {
+		uiReady = false;
 
-	    uiReady = false;
+		if (client != null) {
+			try {
+				client.closeConnection();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 
-	    if (client != null) {
-	        try {
-	            client.closeConnection();
-	        } catch (Exception e) {}
-	    }
+		// try to connect
+		client = new GoNatureClient(ip, port);
+		client.openConnection();
 
-	    // try to connect
-	    client = new OrderClient(ip, port);
-	    client.openConnection();
+		// if connection failed
+		if (!client.isConnected()) {
+			throw new Exception("Connection failed");
+		}
 
-	    // if connection failed
-	    if (!client.isConnected()) {
-	        throw new Exception("Connection failed");
-	    }
+		// load the UI
+		try {
+			FXMLLoader loader = new FXMLLoader(ClientUI.class.getResource("/GUI/LoginRoute.fxml"));
 
-	    // load the UI
-	    FXMLLoader loader = new FXMLLoader(ClientUI.class.getResource("/GUI/Client.fxml"));
+			Scene scene = new Scene(loader.load());
 
-	    Scene scene = new Scene(loader.load());
+			// this has to be changed later to fit somehow
+			// clientController = loader.getController();
 
-	    clientController = loader.getController();
+			uiReady = true;
 
-	    uiReady = true;
+			Platform.runLater(new Runnable() {
 
-	    Platform.runLater(new Runnable() {
+				@Override
+				public void run() {
 
-	        @Override
-	        public void run() {
-
-	            mainStage.setTitle("Order Client");
-	            mainStage.setScene(scene);
-	        }
-	    });
+					mainStage.setTitle("Order Client");
+					mainStage.setScene(scene);
+				}
+			});
+		} catch (Exception e) {
+			System.out.println("Error loading LoginRoute.fxml");
+			e.printStackTrace();
+		}
 	}
-	
+
+	/**
+	 * A generic method to switch screens in the application.
+	 * 
+	 * @param fxmlPath The path to the FXML file
+	 * @param title    The title to display at the top of the window
+	 */
+	public static void changeScreen(String fxmlPath, String title) {
+		Platform.runLater(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					FXMLLoader loader = new FXMLLoader(ClientUI.class.getResource(fxmlPath));
+					Scene scene = new Scene(loader.load());
+
+					mainStage.setTitle(title);
+					mainStage.setScene(scene);
+
+				} catch (Exception e) {
+					System.out.println("Error loading screen: " + fxmlPath);
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
 	public static void disconnect() {
-	    if (client != null) {
-	        client.disconnectClient();
-	    }
+		if (client != null) {
+			client.disconnectClient();
+		}
 	}
-	
+
 	@Override
 	public void stop() {
-	    try {
-	        if (client != null && client.isConnected()) {
-	            client.sendToServer(new Message("DISCONNECT", null));
-	            client.closeConnection();
-	        }
+		try {
+			if (client != null && client.isConnected()) {
+				client.sendToServer(new Message("DISCONNECT", null));
+				client.closeConnection();
+			}
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
-	    System.out.println("Client application stopped");
+		System.out.println("Client application stopped");
 	}
 
 }

@@ -11,22 +11,21 @@ public class GetOrdersStrategy implements MessageStrategy {
 	@Override
 	public void execute(Message message, ConnectionToClient client, EchoServer server) {
 
-	    try {
+		try {
 
-	        ArrayList<ArrayList<String>> orders =
-	                server.getDatabase().getAllOrders();
+			ArrayList<ArrayList<String>> orders = server.getDatabase().getAllOrders();
 
-	        client.sendToClient(orders);
+			client.sendToClient(orders);
 
-	    } catch (Exception e) {
+		} catch (Exception e) {
 
-	        e.printStackTrace();
+			e.printStackTrace();
 
-	        try {
-	            client.sendToClient("ERROR: Could not fetch orders");
-	        } catch (Exception ex) {
-	            ex.printStackTrace();
-	        }
-	    }
+			try {
+				client.sendToClient("ERROR: Could not fetch orders");
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
 	}
 }

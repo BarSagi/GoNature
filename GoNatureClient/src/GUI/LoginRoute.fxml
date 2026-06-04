@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox alignment="CENTER" prefHeight="450.0" prefWidth="600.0"
+	spacing="40.0" style="-fx-background-color: #f8f9fa;"
+	xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="GUI.LoginRouteController">
+	<children>
+		<VBox alignment="CENTER" spacing="10.0">
+			<children>
+				<Label text="Welcome to GoNature" textFill="#2c3e50">
+					<font>
+						<Font name="System Bold" size="32.0" />
+					</font>
+				</Label>
+			</children>
+		</VBox>
+
+		<VBox alignment="CENTER" spacing="20.0">
+			<children>
+				<Button fx:id="btnVisitor" mnemonicParsing="false"
+					onAction="#openVisitorLogin" prefHeight="55.0" prefWidth="280.0"
+					style="-fx-background-color: #27ae60; -fx-background-radius: 30; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-cursor: hand;"
+					text="🌿 Visitor Entry" />
+
+				<Button fx:id="btnEmployee" mnemonicParsing="false"
+					onAction="#openEmployeeLogin" prefHeight="55.0" prefWidth="280.0"
+					style="-fx-background-color: #2980b9; -fx-background-radius: 30; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-cursor: hand;"
+					text="💼 Employee Login" />
+			</children>
+		</VBox>
+	</children>
+	<padding>
+		<Insets bottom="50.0" left="50.0" right="50.0" top="50.0" />
+	</padding>
+</VBox>

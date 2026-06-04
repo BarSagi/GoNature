@@ -26,7 +26,6 @@ public class ConnectionController {
 		String portNumber = txtPort.getText().trim();
 		int port;
 		try {
-
 			if (ip.trim().isEmpty() || txtPort.getText().trim().isEmpty()) {
 				errorLabel.setText("Please enter IP and Port.");
 				return;
@@ -43,14 +42,13 @@ public class ConnectionController {
 				+ "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
 
 		String ipv6Pattern = "^[0-9a-fA-F:]+$";
+
 		// check if the ip is formatted correctly
 		if (!Pattern.matches(ipv4Pattern, ip) && !Pattern.matches(ipv6Pattern, ip)) {
-
 			errorLabel.setText("Invalid IP address");
 			return;
 		}
 		new Thread(new Runnable() {
-
 			@Override
 			public void run() {
 				try {
@@ -71,8 +69,8 @@ public class ConnectionController {
 	void exit(ActionEvent event) {
 		System.exit(0);
 	}
-	
+
 	public void showErrorInGUI(String msg) {
-	    errorLabel.setText(msg);
+		errorLabel.setText(msg);
 	}
 }
