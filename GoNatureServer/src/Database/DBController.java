@@ -23,7 +23,7 @@ public class DBController {
 		try {
 			conn = DriverManager.getConnection(
 					"jdbc:mysql://localhost:3306/GoNature?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
-					"root", "galdolev123");
+					"root", "RDac2027");
 			if (server != null) {
 				server.log("Connected to MySQL");
 			}
@@ -230,5 +230,35 @@ public class DBController {
 		}
 
 		return ordersList;
+	}
+	
+	public String getEmployeeRole(ArrayList<String> empData) {
+	    String query = "SELECT role FROM Employees WHERE username = ? AND password = ?";
+
+	    try {
+	        PreparedStatement ps = conn.prepareStatement(query);
+	        ps.setString(1, empData.get(0)); // username
+	        ps.setString(2, empData.get(1)); // password
+
+	        ResultSet rs = ps.executeQuery();
+
+	        if (rs.next()) {
+	            String role = rs.getString("role");
+
+	            rs.close();
+	            ps.close();
+
+	            return role;
+	        }
+
+	        rs.close();
+	        ps.close();
+
+	    } catch (SQLException e) {
+	        System.out.println("Error fetching employee role: " + empData.get(0));
+	        e.printStackTrace();
+	    }
+	    
+	    return null; // employee not found
 	}
 }

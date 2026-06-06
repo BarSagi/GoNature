@@ -20,6 +20,9 @@ public class StrategyFactory {
 
 		case "REGISTER_NEW_VISITOR":
 			return new RegisterNewVisitorStrategy();
+			
+		case "CHECK_EMPLOYEE_INFO":
+			return new CheckEmployeeInfoStrategy();
 
 		default:
 			return null;

@@ -95,6 +95,43 @@ public class GoNatureClient extends AbstractClient {
 					}
 				});
 
+		      case "EMPLOYEE_ROLE_RESULT":
+
+		            String role = (String) message.getData();
+
+		            if (role == null) {
+		                Platform.runLater(() ->
+		                    LoginEmployeeController.instance.showError(
+		                        "Invalid username or password"
+		                    )
+		                );
+		                return;
+		            }
+
+		            System.out.println("Role = " + role);
+
+		            Platform.runLater(() -> {
+		                switch (role) {
+		                    case "ParkWorker":
+		                        ClientUI.changeScreen("/GUI/ParkWorker.fxml", "Park Worker");
+		                        break;
+
+		                    case "ServiceRep":
+		                        ClientUI.changeScreen("/GUI/ServiceRep.fxml", "Service Rep");
+		                        break;
+
+		                    case "ParkManager":
+		                        ClientUI.changeScreen("/GUI/ParkManager.fxml", "Park Manager");
+		                        break;
+
+		                    case "DeptManager":
+		                        ClientUI.changeScreen("/GUI/DeptManager.fxml", "Dept Manager");
+		                        break;
+		                }
+		            });
+
+		            break;
+
 				// You can add more cases here later (e.g., "FETCH_PARKS_RESULT",
 				// "LOGIN_EMPLOYEE_RESULT")
 
