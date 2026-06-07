@@ -1,7 +1,7 @@
 package Client;
 
 import Common.Message;
-import Entity.Order;
+import Common.Order;
 import javafx.application.Platform;
 import OCSFUtils.AbstractClient;
 import java.util.ArrayList;

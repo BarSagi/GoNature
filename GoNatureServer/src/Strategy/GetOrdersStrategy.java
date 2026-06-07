@@ -3,6 +3,7 @@ package Strategy;
 import java.util.ArrayList;
 
 import Common.Message;
+import Common.Order;
 import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
@@ -13,7 +14,7 @@ public class GetOrdersStrategy implements MessageStrategy {
 
 		try {
 
-			ArrayList<ArrayList<String>> orders = server.getDatabase().getAllOrders();
+			ArrayList<Order> orders = server.getDatabase().getAllOrders();
 
 			client.sendToClient(orders);
 

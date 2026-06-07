@@ -1,6 +1,7 @@
 package Strategy;
 
 import Common.Message;
+import Common.Order;
 import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
@@ -15,7 +16,8 @@ public class CheckVisitorOrdersStrategy implements MessageStrategy {
 		server.log("[STRATEGY] Checking database for orders belonging to ID: " + visitorId);
 
 		// 2. Query the Database (Now expecting a list of string lists)
-		ArrayList<ArrayList<String>> visitorOrders = server.getDatabase().getVisitorOrders(visitorId);
+		ArrayList<Order> visitorOrders = server.getDatabase().getVisitorOrders(visitorId);
+		System.out.println(visitorOrders);
 
 		// 3. Package the result into your Message and send it back
 		Message response = new Message("RETURN_VISITOR_ORDERS", visitorOrders);

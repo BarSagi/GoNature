@@ -4,10 +4,12 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 
 import GUI.ServerPortFrameController;
+import GUI.ServerConsoleController;
 
 public class ServerUI extends Application {
-	public static ServerPortFrameController controller; // this will hold a reference to the gui
+
 	public static EchoServer server; // this will hold a reference to the server
+
 	public static void main(String args[]) throws Exception {
 		launch();
 	} // end main
@@ -15,7 +17,6 @@ public class ServerUI extends Application {
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		ServerPortFrameController frame = new ServerPortFrameController(); // create a frame to input port number
-		controller = frame;
 		frame.start(primaryStage);
 	}
 
@@ -26,7 +27,10 @@ public class ServerUI extends Application {
 			port = Integer.parseInt(p);
 
 		} catch (Exception e) {
-			ServerPortFrameController.instance.showError("ERROR - port parsing!");
+			// FIXED: Changed to ServerConsoleController
+			if (ServerConsoleController.instance != null) {
+				ServerConsoleController.instance.showError("ERROR - port parsing!");
+			}
 			return;
 		}
 
@@ -35,9 +39,11 @@ public class ServerUI extends Application {
 		try {
 			server.listen(); // Start listening for connections
 		} catch (Exception e) {
-			ServerPortFrameController.instance.showError("ERROR - Could not listen for clients!");
+			// FIXED: Changed to ServerConsoleController
+			if (ServerConsoleController.instance != null) {
+				ServerConsoleController.instance.showError("ERROR - Could not listen for clients!");
+			}
 			return;
 		}
 	}
-
 }

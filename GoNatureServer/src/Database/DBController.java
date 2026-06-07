@@ -7,6 +7,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+
+import Common.Order;
 import Server.EchoServer;
 
 //Handle all database operations of the server
@@ -22,8 +24,13 @@ public class DBController {
 	public void connectToDB() { // connection to database
 		try {
 			conn = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/gonature?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
-					"root", "Shirpot111!");
+					"jdbc:mysql://localhost:3306/GoNature?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
+					"root", "galdolev123");
+			/*
+			 * CHANGE THE PASSWORD HERE!!!! ALSO MAKE SURE MYSQL IS OPEN AND YOU CHANGED THE
+			 * mysql-connetor JAR PATH!!! (BUILD PATH-> CONFIGURE BUILD PATH-> CLASSPATH->
+			 * CLICK THE JAR-> EDIT ON THE RIGHT-> CHOOSE THE JAR'S LOCATION)
+			 */
 			if (server != null) {
 				server.log("Connected to MySQL");
 			}
@@ -47,20 +54,17 @@ public class DBController {
 	}
 
 	// this method will create a 2 dimensional array that will contain all orders
-	public ArrayList<ArrayList<String>> getAllOrders() throws SQLException {
+	public ArrayList<Order> getAllOrders() throws SQLException {
 		String query = "SELECT * FROM `orders`";
 		PreparedStatement prepareStatement = conn.prepareStatement(query);
 		ResultSet resultSet = prepareStatement.executeQuery();
-		ArrayList<ArrayList<String>> result = new ArrayList<>();
+		ArrayList<Order> result = new ArrayList<>();
 		while (resultSet.next()) {
-			ArrayList<String> row = new ArrayList<>();
-			row.add(String.valueOf(resultSet.getInt("order_number")));
-			row.add(String.valueOf(resultSet.getDate("order_date")));
-			row.add(String.valueOf(resultSet.getInt("number_of_visitors")));
-			row.add(String.valueOf(resultSet.getInt("confirmation_code")));
-			row.add(String.valueOf(resultSet.getInt("subscriber_id")));
-			row.add(String.valueOf(resultSet.getDate("date_of_placing_order")));
-			result.add(row);
+			Order order = new Order(resultSet.getInt("orderId"), resultSet.getInt("parkId"),
+					resultSet.getString("visitorId"), resultSet.getDate("visitDate"), resultSet.getTime("visitTime"),
+					resultSet.getInt("visitorCount"), resultSet.getString("email"), resultSet.getString("orderType"),
+					resultSet.getString("status"));
+			result.add(order);
 		}
 		return result;
 	}
@@ -185,8 +189,11 @@ public class DBController {
 		return prepareStatement.executeUpdate() > 0; // returns true if 1 or more rows affected
 	}
 
-	public ArrayList<ArrayList<String>> getVisitorOrders(String visitorId) {
-		ArrayList<ArrayList<String>> ordersList = new ArrayList<>();
+//=======================================================================================================================
+//================================ GET VISITOR ORDERS ===================================================================
+//=======================================================================================================================
+	public ArrayList<Order> getVisitorOrders(String visitorId) {
+		ArrayList<Order> ordersList = new ArrayList<>();
 
 		// Updated query to match the exact table name and column name from your schema
 		String query = "SELECT * FROM Orders WHERE visitorId = ?";
@@ -198,27 +205,10 @@ public class DBController {
 			ResultSet rs = pstmt.executeQuery();
 
 			while (rs.next()) {
-				// Create a list of strings to represent this specific row
-				ArrayList<String> orderRow = new ArrayList<>();
-
-				// Extracting exactly according to the schema you provided:
-				orderRow.add(String.valueOf(rs.getInt("orderId")));
-				orderRow.add(String.valueOf(rs.getInt("parkId")));
-				orderRow.add(rs.getString("visitorId"));
-
-				// Dates and Times
-				orderRow.add(rs.getDate("visitDate").toString());
-				orderRow.add(rs.getTime("visitTime").toString());
-
-				orderRow.add(String.valueOf(rs.getInt("visitorCount")));
-				orderRow.add(rs.getString("email"));
-
-				// ENUMs are safely extracted as Strings
-				orderRow.add(rs.getString("orderType"));
-				orderRow.add(rs.getString("status"));
-
-				// Add the row to our main list
-				ordersList.add(orderRow);
+				Order order = new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
+						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
+						rs.getString("email"), rs.getString("orderType"), rs.getString("status"));
+				ordersList.add(order);
 			}
 
 			rs.close();
@@ -231,54 +221,34 @@ public class DBController {
 
 		return ordersList;
 	}
-	
+
 	public String getEmployeeRole(ArrayList<String> empData) {
-	    String query = "SELECT role FROM Employees WHERE username = ? AND password = ?";
+		String query = "SELECT role FROM Employees WHERE username = ? AND password = ?";
 
-	    try {
-	        PreparedStatement ps = conn.prepareStatement(query);
-	        ps.setString(1, empData.get(0)); // username
-	        ps.setString(2, empData.get(1)); // password
+		try {
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setString(1, empData.get(0)); // username
+			ps.setString(2, empData.get(1)); // password
 
-	        ResultSet rs = ps.executeQuery();
+			ResultSet rs = ps.executeQuery();
 
-	        if (rs.next()) {
-	            String role = rs.getString("role");
+			if (rs.next()) {
+				String role = rs.getString("role");
 
-	            rs.close();
-	            ps.close();
+				rs.close();
+				ps.close();
 
-	            return role;
-	        }
+				return role;
+			}
 
-	        rs.close();
-	        ps.close();
+			rs.close();
+			ps.close();
 
-	    } catch (SQLException e) {
-	        System.out.println("Error fetching employee role: " + empData.get(0));
-	        e.printStackTrace();
-	    }
-	    
-	    return null; // employee not found
-	}
-	
-	public boolean enterVisitor(String visitorId) {
-	    String query = "INSERT INTO Visits (parkId, orderId, visitorId, actualVisitorCount, entryTime) " +
-	                   "SELECT parkId, orderId, visitorId, visitorCount, NOW() " +
-	                   "FROM Orders WHERE visitorId = ? AND status = 'Approved' " +
-	                   "ORDER BY orderId DESC LIMIT 1";
+		} catch (SQLException e) {
+			System.out.println("Error fetching employee role: " + empData.get(0));
+			e.printStackTrace();
+		}
 
-	    try {
-	        PreparedStatement pstmt = conn.prepareStatement(query);
-	        pstmt.setString(1, visitorId);
-
-	        int rowsAffected = pstmt.executeUpdate();
-	        return rowsAffected > 0;
-
-	    } catch (SQLException e) {
-	        System.out.println("Error entering visitor: " + visitorId);
-	        e.printStackTrace();
-	        return false;
-	    }
+		return null; // employee not found
 	}
 }

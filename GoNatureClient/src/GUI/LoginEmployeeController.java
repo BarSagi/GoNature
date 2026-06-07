@@ -26,7 +26,7 @@ public class LoginEmployeeController {
     @FXML
     public void initialize() {
         instance = this;
-        System.out.println("Controller initialized");
+        // System.out.println("Controller initialized"); put this as a comment - dont think we need this, gal.
     }
     
     @FXML

@@ -16,7 +16,7 @@ public class LoginRouteController {
 	@FXML
 	public void openVisitorLogin(ActionEvent event) {
 		// Switch to the Visitor screen
-		ClientUI.changeScreen("/GUI/LoginVisitor.fxml", "GoNature - Visitor Login");
+		ClientUI.changeScreen("/GUI/LoginVisitor.fxml", "GoNature - Enter ID");
 	}
 
 	@FXML

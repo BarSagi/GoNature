@@ -2,7 +2,7 @@ package GUI;
 
 import Client.ClientUI;
 import Common.Message;
-import Entity.Order;
+import Common.Order;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -70,11 +70,6 @@ public class ClientController {
 	// this method will print to GUI if order is updated successfuly or not
 	public void showSuccess(String msg) {
 		ordersArea.setText(msg);
-	}
-	
-	@FXML
-	void goBack(ActionEvent event) {
-	    ClientUI.changeScreen("/GUI/LoginRoute.fxml", "GoNature - Choose Role");
 	}
 
 	@FXML

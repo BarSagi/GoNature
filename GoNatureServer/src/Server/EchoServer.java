@@ -2,7 +2,8 @@ package Server;
 
 import Common.Message;
 import Database.DBController;
-import GUI.ServerPortFrameController;
+// FIXED: Imported the new Console Controller instead of the Port Controller
+import GUI.ServerConsoleController;
 import OCSFUtils.AbstractServer;
 import OCSFUtils.ConnectionToClient;
 import Strategy.MessageStrategy;
@@ -84,16 +85,17 @@ public class EchoServer extends AbstractServer {
 
 	// this method will handle prints inside the GUI and Console with Timestamps
 	public void log(String msg) {
-		// הוספת חותמת זמן לכל הודעה
+
 		String timeStampedMsg = "[" + dtf.format(LocalDateTime.now()) + "] " + msg;
 
 		System.out.println(timeStampedMsg);
 
-		if (ServerPortFrameController.instance != null) {
+		// FIXED: Pointed the GUI logging to the new ServerConsoleController
+		if (ServerConsoleController.instance != null) {
 			Platform.runLater(new Runnable() {
 				@Override
 				public void run() {
-					ServerPortFrameController.instance.log(timeStampedMsg);
+					ServerConsoleController.instance.log(timeStampedMsg);
 				}
 			});
 		}
