@@ -25,7 +25,7 @@ public class DBController {
 		try {
 			conn = DriverManager.getConnection(
 					"jdbc:mysql://localhost:3306/GoNature?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
-					"root", "galdolev123");
+					"root", "RDac2027");
 			/*
 			 * CHANGE THE PASSWORD HERE!!!! ALSO MAKE SURE MYSQL IS OPEN AND YOU CHANGED THE
 			 * mysql-connetor JAR PATH!!! (BUILD PATH-> CONFIGURE BUILD PATH-> CLASSPATH->
@@ -222,33 +222,37 @@ public class DBController {
 		return ordersList;
 	}
 
-	public String getEmployeeRole(ArrayList<String> empData) {
-		String query = "SELECT role FROM Employees WHERE username = ? AND password = ?";
 
-		try {
-			PreparedStatement ps = conn.prepareStatement(query);
-			ps.setString(1, empData.get(0)); // username
-			ps.setString(2, empData.get(1)); // password
+	public ArrayList<String> getEmployee(ArrayList<String> empData) {
+	    String query = "SELECT * FROM Employees WHERE username = ? AND password = ?";
+	    ArrayList<String> employeeFields = new ArrayList<>();
 
-			ResultSet rs = ps.executeQuery();
+	    // Using try-with-resources to automatically close resources and avoid leaks
+	    try (PreparedStatement ps = conn.prepareStatement(query)) {
+	        
+	        ps.setString(1, empData.get(0)); // username
+	        ps.setString(2, empData.get(1)); // password
 
-			if (rs.next()) {
-				String role = rs.getString("role");
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (rs.next()) {
+	                // Extracting all fields according to your CREATE TABLE schema
+	                employeeFields.add(String.valueOf(rs.getInt("employeeId")));
+	                employeeFields.add(rs.getString("firstName"));
+	                employeeFields.add(rs.getString("lastName"));
+	                employeeFields.add(rs.getString("email"));
+	                employeeFields.add(rs.getString("username"));
+	                employeeFields.add(rs.getString("password"));
+	                employeeFields.add(rs.getString("role"));
+	                employeeFields.add(rs.getString("affiliation"));
 
-				rs.close();
-				ps.close();
+	                return employeeFields; // Return the populated list
+	            }
+	        }
+	    } catch (SQLException e) {
+	        System.out.println("Error fetching employee fields for user: " + empData.get(0));
+	        e.printStackTrace();
+	    }
 
-				return role;
-			}
-
-			rs.close();
-			ps.close();
-
-		} catch (SQLException e) {
-			System.out.println("Error fetching employee role: " + empData.get(0));
-			e.printStackTrace();
-		}
-
-		return null; // employee not found
+	    return null; // Return null if employee is not found or an exception occurs
 	}
 }

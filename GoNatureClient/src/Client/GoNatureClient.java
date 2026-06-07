@@ -11,7 +11,9 @@ import Strategy.*;
 public class GoNatureClient extends AbstractClient {
 
 	public static boolean awaitResponse = false;
-
+	
+	public static Employee currentEmployee = null;
+	
 	public GoNatureClient(String host, int port) {
 		super(host, port);
 	}

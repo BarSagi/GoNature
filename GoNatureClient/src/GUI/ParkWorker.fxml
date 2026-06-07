@@ -16,7 +16,10 @@
 
     <Label text="Park Worker Portal"
            style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
-
+	<Label fx:id="welcomeLabel" text="Welcome!"
+           style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2980b9;" />
+    <Label fx:id="parkNameLabel" text="Park: Loading..."
+           style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #34495e;" />
     <Label text="Choose an action"
            style="-fx-font-size: 16px; -fx-text-fill: #7f8c8d;">
         <VBox.margin>
