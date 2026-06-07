@@ -23,6 +23,9 @@ public class StrategyFactory {
 			
 		case "CHECK_EMPLOYEE_INFO":
 			return new CheckEmployeeInfoStrategy();
+			
+		case "ENTER_VISITOR":
+		    return new EnterVisitorStrategy();
 
 		default:
 			return null;

@@ -72,12 +72,21 @@
 
     <Separator/>
 
-    <!-- EXIT -->
+    <!-- BACK + EXIT -->
+<HBox spacing="15" alignment="CENTER">
+    <Button text="Back"
+            onAction="#goBack"
+            prefWidth="180"
+            minWidth="180"
+            maxWidth="180"
+            style="-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-font-weight: bold;" />
+
     <Button text="Exit"
             onAction="#exit"
-            prefWidth="380"
-            minWidth="380"
-            maxWidth="380"
+            prefWidth="180"
+            minWidth="180"
+            maxWidth="180"
             style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold;" />
+</HBox>
 
 </VBox>

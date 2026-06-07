@@ -71,6 +71,11 @@ public class ClientController {
 	public void showSuccess(String msg) {
 		ordersArea.setText(msg);
 	}
+	
+	@FXML
+	void goBack(ActionEvent event) {
+	    ClientUI.changeScreen("/GUI/LoginRoute.fxml", "GoNature - Choose Role");
+	}
 
 	@FXML
 	void exit(ActionEvent event) {

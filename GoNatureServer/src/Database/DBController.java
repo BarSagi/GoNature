@@ -22,8 +22,8 @@ public class DBController {
 	public void connectToDB() { // connection to database
 		try {
 			conn = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/GoNature?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
-					"root", "RDac2027");
+					"jdbc:mysql://localhost:3306/gonature?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
+					"root", "Shirpot111!");
 			if (server != null) {
 				server.log("Connected to MySQL");
 			}
@@ -260,5 +260,25 @@ public class DBController {
 	    }
 	    
 	    return null; // employee not found
+	}
+	
+	public boolean enterVisitor(String visitorId) {
+	    String query = "INSERT INTO Visits (parkId, orderId, visitorId, actualVisitorCount, entryTime) " +
+	                   "SELECT parkId, orderId, visitorId, visitorCount, NOW() " +
+	                   "FROM Orders WHERE visitorId = ? AND status = 'Approved' " +
+	                   "ORDER BY orderId DESC LIMIT 1";
+
+	    try {
+	        PreparedStatement pstmt = conn.prepareStatement(query);
+	        pstmt.setString(1, visitorId);
+
+	        int rowsAffected = pstmt.executeUpdate();
+	        return rowsAffected > 0;
+
+	    } catch (SQLException e) {
+	        System.out.println("Error entering visitor: " + visitorId);
+	        e.printStackTrace();
+	        return false;
+	    }
 	}
 }

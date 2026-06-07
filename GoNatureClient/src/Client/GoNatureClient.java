@@ -17,6 +17,21 @@ public class GoNatureClient extends AbstractClient {
 
 	@Override
 	protected void handleMessageFromServer(Object msg) {
+		if (msg instanceof ArrayList<?>) {
+	        ArrayList<?> outerList = (ArrayList<?>) msg;
+
+	        if (!outerList.isEmpty() && outerList.get(0) instanceof ArrayList<?>) {
+	            @SuppressWarnings("unchecked")
+	            ArrayList<ArrayList<String>> orders = (ArrayList<ArrayList<String>>) msg;
+
+	            Platform.runLater(() -> {
+	                if (ParkWorkerViewOrdersController.instance != null) {
+	                    ParkWorkerViewOrdersController.instance.showOrders(orders);
+	                }
+	            });
+	            return;
+	        }
+	    }
 		// 1. Check if the object is our custom Message class
 		if (msg instanceof Message) {
 			Message message = (Message) msg;
@@ -24,6 +39,20 @@ public class GoNatureClient extends AbstractClient {
 
 			// 2. Route the message based on its command
 			switch (command) {
+			
+			case "ENTER_VISITOR_RESULT":
+			    boolean entered = (boolean) message.getData();
+
+			    Platform.runLater(() -> {
+			        if (ParkWorkerEnterVisitorController.instance != null) {
+			            if (entered) {
+			                ParkWorkerEnterVisitorController.instance.showStatus("Visitor entered successfully.");
+			            } else {
+			                ParkWorkerEnterVisitorController.instance.showStatus("Failed to enter visitor.");
+			            }
+			        }
+			    });
+			    break;
 
 			case "VISITOR_REGISTRATION_RESULT":
 				boolean isRegistered = (boolean) message.getData();
@@ -78,24 +107,22 @@ public class GoNatureClient extends AbstractClient {
 
 			case "RETURN_VISITOR_ORDERS":
 
-				@SuppressWarnings("unchecked")
-				ArrayList<ArrayList<String>> rawOrders = (ArrayList<ArrayList<String>>) message.getData();
+			    @SuppressWarnings("unchecked")
+			    ArrayList<ArrayList<String>> rawOrders = (ArrayList<ArrayList<String>>) message.getData();
 
-				Platform.runLater(() -> {
-					if (rawOrders == null || rawOrders.isEmpty()) {
-						System.out.println("No existing orders found. Routing to Creation Screen.");
-						ClientUI.changeScreen("/GUI/RegisterVisitor.fxml", "Visitor Registration");
-					} else {
-						System.out.println("Found " + rawOrders.size() + " orders. Routing to History Screen.");
+			    Platform.runLater(() -> {
+			        if (rawOrders == null || rawOrders.isEmpty()) {
+			            System.out.println("No existing orders found. Routing to Creation Screen.");
+			            ClientUI.changeScreen("/GUI/RegisterVisitor.fxml", "Visitor Registration");
+			        } else {
+			            System.out.println("Found " + rawOrders.size() + " orders. Routing to History Screen.");
+			            ClientUI.changeScreen("/GUI/OrderHistoryScreen.fxml", "Your Orders");
+			        }
+			    });
 
-						// NOTE: Here on the client side, you can loop through 'rawOrders'
-						// and build your 'Order' entities to display them in a JavaFX TableView!
+			    break;
 
-						ClientUI.changeScreen("/GUI/OrderHistoryScreen.fxml", "Your Orders");
-					}
-				});
-
-		      case "EMPLOYEE_ROLE_RESULT":
+			case "EMPLOYEE_ROLE_RESULT":
 
 		            String role = (String) message.getData();
 
@@ -178,6 +205,24 @@ public class GoNatureClient extends AbstractClient {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public void getOrders() {
+	    try {
+	        Message msg = new Message("GET_ALL_ORDERS", null);
+	        sendToServer(msg);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
+
+	public void updateOrder(Order order) {
+	    try {
+	        Message msg = new Message("UPDATE_ORDER", order);
+	        sendToServer(msg);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
 	}
 
 }
