@@ -9,6 +9,7 @@ import OCSFUtils.ConnectionToClient;
 import Strategy.MessageStrategy;
 import Strategy.StrategyFactory;
 import javafx.application.Platform;
+import Reports.ReportService;
 
 
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 public class EchoServer extends AbstractServer {
 
 	private DBController database;
+	private ReportService reportService;
 
 	private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -78,6 +80,7 @@ public class EchoServer extends AbstractServer {
 	protected void serverStarted() {
 		log("[SYSTEM] Server listening for connections on port " + getPort());
 		database = new DBController(this);
+		reportService = new ReportService(database);
 	}
 
 	protected void serverStopped() {
