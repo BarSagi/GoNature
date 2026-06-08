@@ -25,7 +25,7 @@ public class DBController {
 		try {
 			conn = DriverManager.getConnection(
 					"jdbc:mysql://localhost:3306/GoNature?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
-					"root", "RDac2027");
+					"root", "2066");
 			/*
 			 * CHANGE THE PASSWORD HERE!!!! ALSO MAKE SURE MYSQL IS OPEN AND YOU CHANGED THE
 			 * mysql-connetor JAR PATH!!! (BUILD PATH-> CONFIGURE BUILD PATH-> CLASSPATH->
@@ -222,37 +222,90 @@ public class DBController {
 		return ordersList;
 	}
 
+	public String getEmployeeRole(ArrayList<String> empData) {
+		String query = "SELECT role FROM Employees WHERE username = ? AND password = ?";
 
-	public ArrayList<String> getEmployee(ArrayList<String> empData) {
-	    String query = "SELECT * FROM Employees WHERE username = ? AND password = ?";
-	    ArrayList<String> employeeFields = new ArrayList<>();
+		try {
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setString(1, empData.get(0)); // username
+			ps.setString(2, empData.get(1)); // password
 
-	    // Using try-with-resources to automatically close resources and avoid leaks
-	    try (PreparedStatement ps = conn.prepareStatement(query)) {
-	        
-	        ps.setString(1, empData.get(0)); // username
-	        ps.setString(2, empData.get(1)); // password
+			ResultSet rs = ps.executeQuery();
 
-	        try (ResultSet rs = ps.executeQuery()) {
-	            if (rs.next()) {
-	                // Extracting all fields according to your CREATE TABLE schema
-	                employeeFields.add(String.valueOf(rs.getInt("employeeId")));
-	                employeeFields.add(rs.getString("firstName"));
-	                employeeFields.add(rs.getString("lastName"));
-	                employeeFields.add(rs.getString("email"));
-	                employeeFields.add(rs.getString("username"));
-	                employeeFields.add(rs.getString("password"));
-	                employeeFields.add(rs.getString("role"));
-	                employeeFields.add(rs.getString("affiliation"));
+			if (rs.next()) {
+				String role = rs.getString("role");
 
-	                return employeeFields; // Return the populated list
-	            }
-	        }
-	    } catch (SQLException e) {
-	        System.out.println("Error fetching employee fields for user: " + empData.get(0));
-	        e.printStackTrace();
-	    }
+				rs.close();
+				ps.close();
 
-	    return null; // Return null if employee is not found or an exception occurs
+				return role;
+			}
+
+			rs.close();
+			ps.close();
+
+		} catch (SQLException e) {
+			System.out.println("Error fetching employee role: " + empData.get(0));
+			e.printStackTrace();
+		}
+
+		return null; // employee not found
+	}
+
+	// =======================================================================================================================
+	// ================================ GET REPORTS DATA
+	// ====================================================================
+	// =======================================================================================================================
+	public ArrayList<Order> getVisitReport(int parkId, int month, int year) {
+		ArrayList<Order> result = new ArrayList<>();
+
+		String query = "SELECT * FROM Orders " + "WHERE parkId = ? AND YEAR(visitDate) = ? AND MONTH(visitDate) = ?";
+
+		try (PreparedStatement stmt = conn.prepareStatement(query)) {
+
+			stmt.setInt(1, parkId);
+			stmt.setInt(2, year);
+			stmt.setInt(3, month);
+
+			ResultSet rs = stmt.executeQuery();
+
+			while (rs.next()) {
+				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
+						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
+						rs.getString("email"), rs.getString("orderType"), rs.getString("status")));
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return result;
+	}
+
+	public ArrayList<Order> getCancellationReport(int parkId, int month, int year) {
+		ArrayList<Order> result = new ArrayList<>();
+
+		String query = "SELECT * FROM Orders " + "WHERE parkId = ? " + "AND orderStatus = 'CANCELLED' "
+				+ "AND YEAR(visitDate) = ? AND MONTH(visitDate) = ?";
+
+		try (PreparedStatement stmt = conn.prepareStatement(query)) {
+
+			stmt.setInt(1, parkId);
+			stmt.setInt(2, year);
+			stmt.setInt(3, month);
+
+			ResultSet rs = stmt.executeQuery();
+
+			while (rs.next()) {
+				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
+						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
+						rs.getString("email"), rs.getString("orderType"), rs.getString("status")));
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return result;
 	}
 }

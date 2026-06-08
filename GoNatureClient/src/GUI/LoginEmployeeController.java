@@ -39,23 +39,6 @@ public class LoginEmployeeController {
         String userName = usernameField.getText().trim();
         String password = passwordField.getText().trim();
 
-        if (userName.isEmpty() || password.isEmpty()) {
-            showError("Please fill in all fields.");
-            return;
-        }
-
-        if (!userName.matches("^[a-zA-Z0-9]+$")) {
-            showError("Username must contain only English letters and numbers.");
-            return;
-        }
-
-        // Validate password: English letters, numbers, and allowed symbols
-        if (!password.matches("^[a-zA-Z0-9!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]+$")) {
-            showError("Password can only contain English letters, numbers, and symbols.");
-            return;
-        }
-
-        // If validation passes - proceed to send data to the server
         ArrayList<String> employeeData = new ArrayList<>();
         employeeData.add(userName);
         employeeData.add(password);
@@ -63,13 +46,11 @@ public class LoginEmployeeController {
         Message msg = new Message("CHECK_EMPLOYEE_INFO", employeeData);
         
         try {
-            ClientUI.client.sendToServer(msg);
-            showError(""); // Clear any previous error messages on success
-        } catch (Exception e) {
-            System.out.println("Error sending message to server");
-            e.printStackTrace();
-            showError("Server connection error.");
-        }
+			ClientUI.client.sendToServer(msg);
+		} catch (Exception e) {
+			System.out.println("Error sending message to server");
+			e.printStackTrace();
+		}
     }
     
     public void showError(String message) {
