@@ -43,7 +43,7 @@ public class EmployeeInfoStrategy implements MessageStrategy {
                     ClientUI.changeScreen("/GUI/ParkWorker.fxml", "Park Worker");
                     break;
                 case "ServiceRep":
-                    ClientUI.changeScreen("/GUI/ServiceRep.fxml", "Service Rep");
+                    ClientUI.changeScreen("/GUI/ServiceRepresentativeDashboard.fxml", "Service Rep");
                     break;
                 case "ParkManager":
                     ClientUI.changeScreen("/GUI/ParkManager.fxml", "Park Manager");
