@@ -46,7 +46,7 @@ public class LoginEmployeeController {
         Message msg = new Message("CHECK_EMPLOYEE_INFO", employeeData);
         
         try {
-			ClientUI.client.sendToServer(msg);
+        	ClientUI.send(msg);
 		} catch (Exception e) {
 			System.out.println("Error sending message to server");
 			e.printStackTrace();

@@ -1,11 +1,9 @@
 package Client;
 
-import java.util.ArrayList;
+
 import Common.Message;
 import javafx.application.Platform;
 import OCSFUtils.AbstractClient;
-import GUI.*;
-import Entity.*;
 import Strategy.*;
 
 public class GoNatureClient extends AbstractClient {

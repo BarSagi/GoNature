@@ -11,14 +11,16 @@ import Strategy.StrategyFactory;
 import javafx.application.Platform;
 import Reports.ReportService;
 
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class EchoServer extends AbstractServer {
 
 	private DBController database;
 	private ReportService reportService;
+	private final Map<ConnectionToClient, Long> lastActivityMap = new ConcurrentHashMap<>();
 
 	private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -36,6 +38,7 @@ public class EchoServer extends AbstractServer {
 
 		try {
 			Message message = (Message) msg;
+			lastActivityMap.put(client, System.currentTimeMillis()); // map the last activity
 
 			if (message.getCommand().equals("DISCONNECT")) {
 
@@ -44,6 +47,7 @@ public class EchoServer extends AbstractServer {
 					compName = "Unknown";
 
 				log("[CLIENT DISCONNECTED] Host: " + compName + " | IP: " + client.getInetAddress().getHostAddress());
+				lastActivityMap.remove(client); // clean this user's activity map
 				return;
 			}
 
@@ -79,6 +83,7 @@ public class EchoServer extends AbstractServer {
 
 	protected void serverStarted() {
 		log("[SYSTEM] Server listening for connections on port " + getPort());
+		startIdleChecker();
 		database = new DBController(this);
 		reportService = new ReportService(database);
 	}
@@ -133,5 +138,39 @@ public class EchoServer extends AbstractServer {
 
 	public DBController getDatabase() {
 		return database;
+	}
+	
+	private void startIdleChecker() {
+
+	    Thread t = new Thread(() -> {
+
+	        while (true) {
+	            try {
+	                Thread.sleep(5000); // check every 5 seconds
+
+	                long now = System.currentTimeMillis();
+
+	                for (ConnectionToClient client : lastActivityMap.keySet()) {
+
+	                    long last = lastActivityMap.get(client);
+
+	                    if (now - last > 20_000) { // if the client is idle for more than 20 seconds
+
+	                        log("[IDLE TIMEOUT] Disconnecting client: " +
+	                            client.getInetAddress().getHostAddress());
+
+	                        client.close(); // close the connection
+	                        lastActivityMap.remove(client);
+	                    }
+	                }
+
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	            }
+	        }
+	    });
+
+	    t.setDaemon(true);
+	    t.start();
 	}
 }
