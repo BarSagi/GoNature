@@ -224,9 +224,9 @@ public class DBController {
 	// =========================================================
 	// EMPLOYEE ROLE
 	// =========================================================
-	public String getEmployeeRole(ArrayList<String> empData) {
+	public ArrayList<String> getEmployeeInfo(ArrayList<String> empData) {
 
-		String query = "SELECT role FROM Employees WHERE username = ? AND password = ?";
+		String query = "SELECT * FROM Employees WHERE username = ? AND password = ?";
 
 		Connection conn = null;
 
@@ -240,12 +240,21 @@ public class DBController {
 			ResultSet rs = ps.executeQuery();
 
 			if (rs.next()) {
-				String role = rs.getString("role");
+				ArrayList<String> employeeInfo = new ArrayList<>();
+
+				employeeInfo.add(String.valueOf(rs.getInt("employeeId")));
+				employeeInfo.add(rs.getString("firstName"));
+				employeeInfo.add(rs.getString("lastName"));
+				employeeInfo.add(rs.getString("email"));
+				employeeInfo.add(rs.getString("username"));
+				employeeInfo.add(rs.getString("password"));
+				employeeInfo.add(rs.getString("role"));
+				employeeInfo.add(rs.getString("affiliation"));
 
 				rs.close();
 				ps.close();
 
-				return role;
+				return employeeInfo;
 			}
 
 			rs.close();
@@ -340,5 +349,71 @@ public class DBController {
 		}
 
 		return result;
+	}
+	
+	// =========================================================
+	// ENTER VISITOR
+	// =========================================================
+	public boolean enterVisitor(String visitorId) {
+
+		String query = "INSERT INTO Visits (parkId, orderId, visitorId, actualVisitorCount, entryTime) "
+				+ "SELECT parkId, orderId, visitorId, visitorCount, NOW() "
+				+ "FROM Orders "
+				+ "WHERE visitorId = ? AND status = 'Approved' "
+				+ "ORDER BY orderId DESC LIMIT 1";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setString(1, visitorId);
+
+			int rows = ps.executeUpdate();
+
+			ps.close();
+
+			return rows > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+	}
+
+	// =========================================================
+	// EXIT VISITOR
+	// =========================================================
+	public boolean exitVisitor(String visitorId) {
+
+		String query = "UPDATE Visits SET exitTime = NOW() "
+				+ "WHERE visitorId = ? AND exitTime IS NULL "
+				+ "ORDER BY visitId DESC LIMIT 1";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setString(1, visitorId);
+
+			int rows = ps.executeUpdate();
+
+			ps.close();
+
+			return rows > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
 	}
 }

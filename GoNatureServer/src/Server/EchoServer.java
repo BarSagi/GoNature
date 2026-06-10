@@ -156,8 +156,13 @@ public class EchoServer extends AbstractServer {
 
 	                    if (now - last > 20_000) { // if the client is idle for more than 20 seconds
 
-	                        log("[IDLE TIMEOUT] Disconnecting client: " +
-	                            client.getInetAddress().getHostAddress());
+	                        String clientIp = "Unknown";
+
+	                        if (client != null && client.getInetAddress() != null) {
+	                            clientIp = client.getInetAddress().getHostAddress();
+	                        }
+
+	                        log("[IDLE TIMEOUT] Disconnecting client: " + clientIp);
 
 	                        client.close(); // close the connection
 	                        lastActivityMap.remove(client);

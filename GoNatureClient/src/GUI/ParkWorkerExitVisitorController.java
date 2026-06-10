@@ -1,33 +1,58 @@
 package GUI;
 
 import Client.ClientUI;
+import Common.Message;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
+import java.util.ArrayList;
+
 public class ParkWorkerExitVisitorController {
 
-    @FXML
-    private TextField visitorIdField;
+	public static ParkWorkerExitVisitorController instance;
 
-    @FXML
-    private Label statusLabel;
+	@FXML
+	private TextField visitorIdField;
 
-    @FXML
-    void goBack(ActionEvent event) {
-        ClientUI.changeScreen("/GUI/ParkWorker.fxml", "Park Worker");
-    }
+	@FXML
+	private Label statusLabel;
 
-    @FXML
-    void confirmExit(ActionEvent event) {
-        String visitorId = visitorIdField.getText().trim();
-        if (visitorId.isEmpty()) {
-            statusLabel.setText("Please enter visitor ID.");
-            return;
-        }
+	@FXML
+	public void initialize() {
+		instance = this;
+	}
 
-        System.out.println("Exit Visitor ID: " + visitorId);
-        statusLabel.setText("Exit request sent for visitor ID: " + visitorId);
-    }
+	@FXML
+	void goBack(ActionEvent event) {
+		ClientUI.changeScreen("/GUI/ParkWorker.fxml", "Park Worker");
+	}
+
+	@FXML
+	void confirmExit(ActionEvent event) {
+		String visitorId = visitorIdField.getText().trim();
+
+		if (visitorId.isEmpty()) {
+			statusLabel.setText("Please enter visitor ID.");
+			return;
+		}
+
+		try {
+			ArrayList<String> data = new ArrayList<>();
+			data.add(visitorId);
+
+			Message msg = new Message("EXIT_VISITOR", data);
+			ClientUI.client.sendToServer(msg);
+
+			statusLabel.setText("Exit request sent.");
+		} catch (Exception e) {
+			statusLabel.setText("Failed to send exit request.");
+			e.printStackTrace();
+		}
+	}
+
+	public void showStatus(String text) {
+		statusLabel.setText(text);
+	}
 }

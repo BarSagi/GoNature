@@ -1,14 +1,19 @@
 package Client;
 
 
+import java.util.ArrayList;
+
 import Common.Message;
-import javafx.application.Platform;
+import Entity.Employee;
 import OCSFUtils.AbstractClient;
-import Strategy.*;
+import Strategy.MessageStrategy;
+import Strategy.StrategyFactory;
+import javafx.application.Platform;
 
 public class GoNatureClient extends AbstractClient {
 
 	public static boolean awaitResponse = false;
+	public static Employee currentEmployee;
 
 	public GoNatureClient(String host, int port) {
 		super(host, port);
@@ -68,6 +73,29 @@ public class GoNatureClient extends AbstractClient {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public void getOrders() {
+	    try {
+	        Message msg = new Message("GET_ORDERS", null);
+	        sendToServer(msg);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	public void updateOrder(int orderId, String visitDate, int visitorCount) {
+	    try {
+	        ArrayList<Object> data = new ArrayList<>();
+	        data.add(orderId);
+	        data.add(visitDate);
+	        data.add(visitorCount);
+
+	        Message msg = new Message("UPDATE_ORDER", data);
+	        sendToServer(msg);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
 	}
 
 }

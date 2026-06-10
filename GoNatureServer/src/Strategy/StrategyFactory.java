@@ -27,6 +27,12 @@ public class StrategyFactory {
 		case "GET_VISIT_REPORT":
 		    return new GetVisitReportStrategy();
 		    
+		case "ENTER_VISITOR":
+		    return new EnterVisitorStrategy();
+
+		case "EXIT_VISITOR":
+		    return new ExitVisitorStrategy();
+		    
 		default:
 			return null;
 		}

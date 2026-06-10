@@ -16,7 +16,13 @@ public class StrategyFactory {
 			return new ReturnVisitorOrdersStrategy();
 
 		case "EMPLOYEE_ROLE_RESULT":
-			return new EmployeeRoleStrategy();
+			return new EmployeeInfoStrategy();
+
+		case "ENTER_VISITOR_RESULT":
+			return new EnterVisitorResultStrategy();
+
+		case "EXIT_VISITOR_RESULT":
+			return new ExitVisitorResultStrategy();
 
 		default:
 			return null;
