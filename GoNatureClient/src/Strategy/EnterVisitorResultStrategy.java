@@ -1,0 +1,23 @@
+package Strategy;
+
+import Common.Message;
+import GUI.ParkWorkerEnterVisitorController;
+import javafx.application.Platform;
+
+public class EnterVisitorResultStrategy implements MessageStrategy {
+
+	@Override
+	public void execute(Message message) {
+		boolean success = (boolean) message.getData();
+
+		Platform.runLater(() -> {
+			if (ParkWorkerEnterVisitorController.instance != null) {
+				if (success) {
+					ParkWorkerEnterVisitorController.instance.showStatus("Visitor entered successfully.");
+				} else {
+					ParkWorkerEnterVisitorController.instance.showStatus("Failed to enter visitor.");
+				}
+			}
+		});
+	}
+}

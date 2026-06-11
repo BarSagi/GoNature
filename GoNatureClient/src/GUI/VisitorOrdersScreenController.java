@@ -4,6 +4,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -13,6 +14,7 @@ import java.sql.Time;
 import java.util.ArrayList;
 
 import Client.ClientUI;
+import Client.GoNatureClient;
 import Common.Order;
 
 public class VisitorOrdersScreenController {
@@ -22,6 +24,9 @@ public class VisitorOrdersScreenController {
 	// Tell the TableView to use your Entity.Order class
 	@FXML
 	private TableView<Order> ordersTable;
+
+	@FXML
+	private Label welcomeLabel;
 
 	@FXML
 	private TableColumn<Order, Integer> colId;
@@ -54,6 +59,12 @@ public class VisitorOrdersScreenController {
 
 		// Bind the data list to the table
 		ordersTable.setItems(tableData);
+
+		if (GoNatureClient.currentVisitor != null) {
+			welcomeLabel.setText("Welcome, " + GoNatureClient.currentVisitor.getFirstName() + "!");
+		} else {
+			welcomeLabel.setText("Welcome!");
+		}
 	}
 
 	// Method to parse the raw Strings from the Server into your Order entities
