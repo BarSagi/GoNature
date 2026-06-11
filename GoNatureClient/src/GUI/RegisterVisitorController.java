@@ -60,7 +60,7 @@ public class RegisterVisitorController {
 		// 3. Send to Server
 		Message msg = new Message("REGISTER_NEW_VISITOR", registrationData);
 		try {
-			ClientUI.send(msg);
+			ClientUI.client.sendToServer(msg);
 			System.out.println("Client: Sent registration request to server.");
 			// Note: Once you get a successful response back from the server,
 			// you can save the ID to ClientUI.loggedInVisitorId and change to the

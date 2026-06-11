@@ -33,9 +33,8 @@ public class LoginVisitorController {
 		Message msg = new Message("CHECK_VISITOR_ORDERS", id);
 
 		try {
-			ClientUI.send(msg);
-		}
-		catch (Exception e) {
+			ClientUI.client.sendToServer(msg);
+		} catch (Exception e) {
 			System.out.println("Error sending message to server");
 			e.printStackTrace();
 		}

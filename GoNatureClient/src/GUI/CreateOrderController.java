@@ -109,14 +109,12 @@ public class CreateOrderController implements Initializable {
 		Message msg = new Message("SUBMIT_NEW_ORDER", newOrder);
 
 		try {
-		    ClientUI.send(msg);
-
-		    System.out.println("Valid data! Sent SUBMIT_NEW_ORDER to server for "
-		            + visitorsAmount + " visitors at " + selectedPark);
-
+			ClientUI.client.sendToServer(msg);
+			System.out.println("Valid data! Sent SUBMIT_NEW_ORDER to server for " + visitorsAmount + " visitors at "
+					+ selectedPark);
 		} catch (Exception e) {
-		    showError("Connection error: Could not send order to server.");
-		    e.printStackTrace();
+			showError("Connection error: Could not send order to server.");
+			e.printStackTrace();
 		}
 	}
 

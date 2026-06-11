@@ -1,9 +1,7 @@
 package Client;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 import Common.Message;
+import Entity.*;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.fxml.FXMLLoader;
@@ -25,13 +23,6 @@ public class ClientUI extends Application {
 	public static volatile boolean uiReady = false;
 
 	public static String visitorID;
-	
-	public static String serverIP; // current client
-	public static int serverPort; // current server port
-	
-	private static Timer idleTimer = new Timer(true);
-	private static long lastActivityTime = System.currentTimeMillis();
-	private static final long TIMEOUT = 200000_000; // 20 seconds
 
 	public static void main(String[] args) {
 		launch(); // call start method
@@ -58,9 +49,6 @@ public class ClientUI extends Application {
 	}
 
 	public static void startClient(String ip, int port) throws Exception {
-		serverIP = ip;
-	    serverPort = port;
-		
 		uiReady = false;
 
 		if (client != null) {
@@ -74,16 +62,11 @@ public class ClientUI extends Application {
 		// try to connect
 		client = new GoNatureClient(ip, port);
 		client.openConnection();
-		
-		
 
 		// if connection failed
 		if (!client.isConnected()) {
 			throw new Exception("Connection failed");
 		}
-		
-		updateActivity();
-		startIdleMonitor();
 
 		// load the UI
 		try {
@@ -155,61 +138,6 @@ public class ClientUI extends Application {
 		}
 
 		System.out.println("Client application stopped");
-	}
-	
-	public static void updateActivity() {
-	    lastActivityTime = System.currentTimeMillis();
-	}
-	
-	public static void startIdleMonitor() {
-	    idleTimer.scheduleAtFixedRate(new TimerTask() {
-	        @Override
-	        public void run() {
-
-	            if (client == null) return;
-
-	            if (client.isConnected()) {
-	                long now = System.currentTimeMillis();
-
-	                if (now - lastActivityTime > TIMEOUT) {
-	                    try {
-	                        System.out.println("Idle timeout - closing connection");
-	                        client.closeConnection();
-	                    } catch (Exception e) {
-	                        e.printStackTrace();
-	                    }
-	                }
-	            }
-	        }
-	    }, 1000, 1000);
-	}
-	
-	public static synchronized void send(Message msg) throws Exception {
-
-	    updateActivity();
-
-	    if (client == null || !client.isConnected()) {
-	        reconnect();
-	    }
-
-	    client.sendToServer(msg);
-	}
-	
-	public static void reconnect() throws Exception {
-	    if (serverIP == null || serverPort == 0) {
-	        throw new Exception("No saved server connection info");
-	    }
-
-	    if (client != null) {
-	        try {
-	            client.closeConnection();
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	        }
-	    }
-
-	    client = new GoNatureClient(serverIP, serverPort);
-	    client.openConnection();
 	}
 
 }

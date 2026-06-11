@@ -42,22 +42,15 @@ public class LoginEmployeeController {
         ArrayList<String> employeeData = new ArrayList<>();
         employeeData.add(userName);
         employeeData.add(password);
-
+        
         Message msg = new Message("CHECK_EMPLOYEE_INFO", employeeData);
-
+        
         try {
-            if (ClientUI.client == null) {
-                errorLabel.setText("Client is not connected");
-                return;
-            }
-
-            ClientUI.client.sendToServer(msg);
-            System.out.println("CHECK_EMPLOYEE_INFO sent");
-        } catch (Exception e) {
-            System.out.println("Error sending message to server");
-            e.printStackTrace();
-            errorLabel.setText("Failed to send request");
-        }
+			ClientUI.client.sendToServer(msg);
+		} catch (Exception e) {
+			System.out.println("Error sending message to server");
+			e.printStackTrace();
+		}
     }
     
     public void showError(String message) {
