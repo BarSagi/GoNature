@@ -525,100 +525,123 @@ public class DBController {
 			pool.releaseConnection(conn);
 		}
 	}
-
 	// =========================================================
-	// REGISTER FAMILY SUBSCRIBER
-	// =========================================================
-	public boolean registerFamilySubscriber(ArrayList<String> data) {
+		// REGISTER FAMILY SUBSCRIBER
+		// =========================================================
+		public boolean registerFamilySubscriber(ArrayList<String> data) {
 
-		String getNextSubQuery = "SELECT IFNULL(MAX(subscriptionNumber), 10000) + 1 AS nextSub FROM Visitors";
-		String insertQuery = "INSERT INTO Visitors "
-				+ "(visitorId, firstName, lastName, phone, email, visitorType, subscriptionNumber, familyMembers, creditCard) "
-				+ "VALUES (?, ?, ?, ?, ?, 'Subscriber', ?, ?, ?)";
+			String getNextSubQuery = "SELECT IFNULL(MAX(subscriptionNumber), 10000) + 1 AS nextSub FROM Visitors";
+			
+			// Use ON DUPLICATE KEY UPDATE to insert or update if visitorId already exists
+			String insertQuery = "INSERT INTO Visitors "
+					+ "(visitorId, firstName, lastName, phone, email, visitorType, subscriptionNumber, familyMembers, creditCard) "
+					+ "VALUES (?, ?, ?, ?, ?, 'Subscriber', ?, ?, ?) "
+					+ "ON DUPLICATE KEY UPDATE "
+					+ "firstName = VALUES(firstName), "
+					+ "lastName = VALUES(lastName), "
+					+ "phone = VALUES(phone), "
+					+ "email = VALUES(email), "
+					+ "visitorType = 'Subscriber', "
+					+ "subscriptionNumber = IFNULL(subscriptionNumber, VALUES(subscriptionNumber)), " // Keep existing sub number if they already have one
+					+ "familyMembers = VALUES(familyMembers), "
+					+ "creditCard = VALUES(creditCard)";
 
-		Connection conn = null;
+			Connection conn = null;
 
-		try {
-			conn = pool.getConnection();
+			try {
+				conn = pool.getConnection();
 
-			int nextSubscriptionNumber = 10001;
+				int nextSubscriptionNumber = 10001;
 
-			PreparedStatement ps1 = conn.prepareStatement(getNextSubQuery);
-			ResultSet rs = ps1.executeQuery();
+				PreparedStatement ps1 = conn.prepareStatement(getNextSubQuery);
+				ResultSet rs = ps1.executeQuery();
 
-			if (rs.next()) {
-				nextSubscriptionNumber = rs.getInt("nextSub");
+				if (rs.next()) {
+					nextSubscriptionNumber = rs.getInt("nextSub");
+				}
+
+				rs.close();
+				ps1.close();
+
+				PreparedStatement ps2 = conn.prepareStatement(insertQuery);
+
+				ps2.setString(1, data.get(0)); // visitorId
+				ps2.setString(2, data.get(1)); // firstName
+				ps2.setString(3, data.get(2)); // lastName
+				ps2.setString(4, data.get(3)); // phone
+				ps2.setString(5, data.get(4)); // email
+				ps2.setInt(6, nextSubscriptionNumber); // subscriptionNumber
+				ps2.setInt(7, Integer.parseInt(data.get(5))); // familyMembers
+
+				if (data.get(6) == null || data.get(6).isEmpty()) {
+					ps2.setNull(8, java.sql.Types.VARCHAR);
+				} else {
+					ps2.setString(8, data.get(6)); // creditCard
+				}
+
+				int rows = ps2.executeUpdate();
+				ps2.close();
+
+				// row count can be 1 for insert, 2 for update in MySQL
+				return rows > 0;
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return false;
+
+			} finally {
+				pool.releaseConnection(conn);
 			}
+		}
 
-			rs.close();
-			ps1.close();
+		// =========================================================
+		// REGISTER GROUP GUIDE
+		// =========================================================
+		public boolean registerGroupGuide(ArrayList<String> data) {
 
-			PreparedStatement ps2 = conn.prepareStatement(insertQuery);
+			// Use ON DUPLICATE KEY UPDATE to insert or update if visitorId already exists
+			String insertQuery = "INSERT INTO Visitors "
+					+ "(visitorId, firstName, lastName, phone, email, visitorType, subscriptionNumber, familyMembers, creditCard) "
+					+ "VALUES (?, ?, ?, ?, ?, 'Guide', NULL, 1, NULL) "
+					+ "ON DUPLICATE KEY UPDATE "
+					+ "firstName = VALUES(firstName), "
+					+ "lastName = VALUES(lastName), "
+					+ "phone = VALUES(phone), "
+					+ "email = VALUES(email), "
+					+ "visitorType = 'Guide', "
+					+ "subscriptionNumber = NULL, "
+					+ "familyMembers = 1, "
+					+ "creditCard = NULL";
 
-			ps2.setString(1, data.get(0)); // visitorId
-			ps2.setString(2, data.get(1)); // firstName
-			ps2.setString(3, data.get(2)); // lastName
-			ps2.setString(4, data.get(3)); // phone
-			ps2.setString(5, data.get(4)); // email
-			ps2.setInt(6, nextSubscriptionNumber); // subscriptionNumber
-			ps2.setInt(7, Integer.parseInt(data.get(5))); // familyMembers
+			Connection conn = null;
 
-			if (data.get(6) == null || data.get(6).isEmpty()) {
-				ps2.setNull(8, Types.VARCHAR);
-			} else {
-				ps2.setString(8, data.get(6)); // creditCard
+			try {
+				conn = pool.getConnection();
+
+				PreparedStatement ps = conn.prepareStatement(insertQuery);
+
+				ps.setString(1, data.get(0)); // visitorId
+				ps.setString(2, data.get(1)); // firstName
+				ps.setString(3, data.get(2)); // lastName
+				ps.setString(4, data.get(3)); // phone
+				ps.setString(5, data.get(4)); // email
+
+				int rows = ps.executeUpdate();
+				ps.close();
+
+				// row count can be 1 for insert, 2 for update in MySQL
+				return rows > 0;
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return false;
+
+			} finally {
+				pool.releaseConnection(conn);
 			}
-
-			int rows = ps2.executeUpdate();
-			ps2.close();
-
-			return rows > 0;
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return false;
-
-		} finally {
-			pool.releaseConnection(conn);
 		}
-	}
-
-	// =========================================================
-	// REGISTER GROUP GUIDE
-	// =========================================================
-	public boolean registerGroupGuide(ArrayList<String> data) {
-
-		String insertQuery = "INSERT INTO Visitors "
-				+ "(visitorId, firstName, lastName, phone, email, visitorType, subscriptionNumber, familyMembers, creditCard) "
-				+ "VALUES (?, ?, ?, ?, ?, 'Guide', NULL, 1, NULL)";
-
-		Connection conn = null;
-
-		try {
-			conn = pool.getConnection();
-
-			PreparedStatement ps = conn.prepareStatement(insertQuery);
-
-			ps.setString(1, data.get(0)); // visitorId
-			ps.setString(2, data.get(1)); // firstName
-			ps.setString(3, data.get(2)); // lastName
-			ps.setString(4, data.get(3)); // phone
-			ps.setString(5, data.get(4)); // email
-
-			int rows = ps.executeUpdate();
-			ps.close();
-
-			return rows > 0;
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return false;
-
-		} finally {
-			pool.releaseConnection(conn);
-		}
-	}
-
+		
+		
 	// =========================================================
 	// SUBMIT PARK REQUEST
 	// =========================================================

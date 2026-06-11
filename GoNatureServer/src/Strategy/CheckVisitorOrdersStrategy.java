@@ -15,6 +15,22 @@ public class CheckVisitorOrdersStrategy implements MessageStrategy {
 		String visitorId = (String) message.getData();
 		server.log("[STRATEGY] Checking database for orders belonging to ID: " + visitorId);
 
+		// =========================================================
+		// NEW: Check if the visitor is already logged in elsewhere
+		// =========================================================
+		boolean loginSuccess = server.loginUser(visitorId, client);
+		
+		if (!loginSuccess) {
+			server.log("[STRATEGY] Login denied for visitor " + visitorId + " - Already logged in.");
+			try {
+				client.sendToClient(new Message("ALREADY_LOGGED_IN", null));
+			} catch (Exception e) {
+				server.log("[ERROR] Failed to send ALREADY_LOGGED_IN to client: " + e.getMessage());
+				e.printStackTrace();
+			}
+			return; // Stop execution, do not query the DB
+		}
+
 		// 2. Query the Database
 		ArrayList<Order> visitorOrders = server.getDatabase().getVisitorOrders(visitorId);
 		ArrayList<String> visitor = null; // Declare outside so we can use it later

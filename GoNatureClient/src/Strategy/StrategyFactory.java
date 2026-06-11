@@ -44,7 +44,8 @@ public class StrategyFactory {
 
 		case "REGISTER_AND_ORDER_SUCCESS":
 			return new RegisterOrderSuccessStrategy();
-
+		case "ALREADY_LOGGED_IN":
+			return new AlreadyLoggedInStrategy();
 		default:
 			return null;
 		}

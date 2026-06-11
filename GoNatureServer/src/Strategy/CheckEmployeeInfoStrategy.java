@@ -13,8 +13,27 @@ public class CheckEmployeeInfoStrategy implements MessageStrategy {
 		try {
 			@SuppressWarnings("unchecked")
 			ArrayList<String> employeeData = (ArrayList<String>) msg.getData();
+			
+			// Extract user ID 
+			String userId = employeeData.get(0); 
 
 			ArrayList<String> fullEmployeeData = server.getDatabase().getEmployeeInfo(employeeData);
+
+			// Check if the user exists in the database
+			if (fullEmployeeData != null && !fullEmployeeData.isEmpty()) {
+				
+				// Attempt to register the user as logged in on the server
+				boolean loginSuccess = server.loginUser(userId, client);
+				
+				if (!loginSuccess) {
+					// User is already logged in elsewhere
+					System.out.println("Server: Login denied for " + userId + " - Already logged in.");
+					
+					// Send a special message to the client side to trigger an alert
+					client.sendToClient(new Message("ALREADY_LOGGED_IN", null));
+					return; // Stop execution
+				}
+			}
 
 			Message responseMsg = new Message("EMPLOYEE_ROLE_RESULT", fullEmployeeData);
 			client.sendToClient(responseMsg);

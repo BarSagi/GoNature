@@ -2,7 +2,6 @@ package Server;
 
 import Common.Message;
 import Database.DBController;
-// FIXED: Imported the new Console Controller instead of the Port Controller
 import GUI.ServerConsoleController;
 import OCSFUtils.AbstractServer;
 import OCSFUtils.ConnectionToClient;
@@ -20,12 +19,37 @@ public class EchoServer extends AbstractServer {
 
 	private DBController database;
 	private ReportService reportService;
+	
 	private final Map<ConnectionToClient, Long> lastActivityMap = new ConcurrentHashMap<>();
+	
+	// ADDED: Map to keep track of logged in users to prevent double logins
+	private final Map<String, ConnectionToClient> loggedInUsers = new ConcurrentHashMap<>();
 
 	private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
 	public EchoServer(int port) {
 		super(port);
+	}
+
+	// ADDED: Helper method to handle user login
+	public boolean loginUser(String userId, ConnectionToClient client) {
+		if (loggedInUsers.containsKey(userId)) {
+			return false; // User is already logged in!
+		}
+		loggedInUsers.put(userId, client);
+		log("[USER LOGIN] User ID: " + userId + " logged in.");
+		return true;
+	}
+
+	// ADDED: Helper method to handle user logout/disconnect
+	public void logoutUser(ConnectionToClient client) {
+		loggedInUsers.entrySet().removeIf(entry -> {
+			if (entry.getValue().equals(client)) {
+				log("[USER LOGOUT] User ID: " + entry.getKey() + " has disconnected.");
+				return true;
+			}
+			return false;
+		});
 	}
 
 	@Override
@@ -47,6 +71,8 @@ public class EchoServer extends AbstractServer {
 					compName = "Unknown";
 
 				log("[CLIENT DISCONNECTED] Host: " + compName + " | IP: " + client.getInetAddress().getHostAddress());
+				
+				logoutUser(client); // ADDED: Remove user from logged-in map
 				lastActivityMap.remove(client); // clean this user's activity map
 				return;
 			}
@@ -92,14 +118,28 @@ public class EchoServer extends AbstractServer {
 		log("[SYSTEM] Server has stopped listening for connections.");
 	}
 
-	// this method will handle prints inside the GUI and Console with Timestamps
+	// ADDED: OCSF Hook for graceful disconnection (e.g. app closed)
+	@Override
+	synchronized protected void clientDisconnected(ConnectionToClient client) {
+		logoutUser(client);
+		lastActivityMap.remove(client);
+		log("[SYSTEM] Client disconnected gracefully.");
+	}
+
+	// ADDED: OCSF Hook for abrupt disconnection (e.g. internet drop)
+	@Override
+	synchronized protected void clientException(ConnectionToClient client, Throwable exception) {
+		logoutUser(client);
+		lastActivityMap.remove(client);
+		log("[SYSTEM] Client disconnected abruptly: " + exception.getMessage());
+	}
+
 	public void log(String msg) {
 
 		String timeStampedMsg = "[" + dtf.format(LocalDateTime.now()) + "] " + msg;
 
 		System.out.println(timeStampedMsg);
 
-		// FIXED: Pointed the GUI logging to the new ServerConsoleController
 		if (ServerConsoleController.instance != null) {
 			Platform.runLater(new Runnable() {
 				@Override
@@ -141,29 +181,24 @@ public class EchoServer extends AbstractServer {
 	}
 	
 	private void startIdleChecker() {
-
 	    Thread t = new Thread(() -> {
-
 	        while (true) {
 	            try {
 	                Thread.sleep(5000); // check every 5 seconds
-
 	                long now = System.currentTimeMillis();
 
 	                for (ConnectionToClient client : lastActivityMap.keySet()) {
-
 	                    long last = lastActivityMap.get(client);
 
 	                    if (now - last > 200000_000) { // if the client is idle for more than 20 seconds
-
 	                        String clientIp = "Unknown";
-
 	                        if (client != null && client.getInetAddress() != null) {
 	                            clientIp = client.getInetAddress().getHostAddress();
 	                        }
 
 	                        log("[IDLE TIMEOUT] Disconnecting client: " + clientIp);
 
+	                        logoutUser(client); // ADDED: Remove user from logged-in map
 	                        client.close(); // close the connection
 	                        lastActivityMap.remove(client);
 	                    }
