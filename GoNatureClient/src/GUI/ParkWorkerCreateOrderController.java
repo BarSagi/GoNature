@@ -41,11 +41,6 @@ public class ParkWorkerCreateOrderController {
     }
 
     @FXML
-    void goBack(ActionEvent event) {
-        ClientUI.changeScreen("/GUI/ParkWorker.fxml", "Park Worker");
-    }
-
-    @FXML
     void submitOrder(ActionEvent event) {
         try {
             ArrayList<String> orderData = new ArrayList<>();

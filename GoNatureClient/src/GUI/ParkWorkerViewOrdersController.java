@@ -25,11 +25,6 @@ public class ParkWorkerViewOrdersController {
     }
 
     @FXML
-    void goBack(ActionEvent event) {
-        ClientUI.changeScreen("/GUI/ParkWorker.fxml", "Park Worker");
-    }
-
-    @FXML
     void loadOrders(ActionEvent event) {
         try {
             Message msg = new Message("GET_ORDERS", null);

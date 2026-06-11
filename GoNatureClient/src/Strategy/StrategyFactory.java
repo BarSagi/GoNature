@@ -24,6 +24,18 @@ public class StrategyFactory {
 		case "EXIT_VISITOR_RESULT":
 			return new ExitVisitorResultStrategy();
 
+		case "REGISTER_FAMILY_SUBSCRIBER_RESULT":
+		    return new RegisterFamilySubscriberResultStrategy();
+
+		case "REGISTER_GROUP_GUIDE_RESULT":
+		    return new RegisterGroupGuideResultStrategy();
+		
+		case "SUBMIT_PARK_REQUEST_RESULT":
+		    return new SubmitParkRequestResultStrategy();
+		   
+		case "GET_PARK_CURRENT_VALUE_RESULT":
+		    return new GetParkCurrentValueResultStrategy();
+		    
 		default:
 			return null;
 		}

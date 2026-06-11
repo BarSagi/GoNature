@@ -24,10 +24,6 @@
             prefHeight="40.0" prefWidth="220.0"
             onAction="#loadOrders" />
 
-    <Button text="Back"
-            prefHeight="35.0" prefWidth="120.0"
-            onAction="#goBack" />
-
     <Label fx:id="statusLabel" text="" style="-fx-text-fill: red;" />
 
 </VBox>

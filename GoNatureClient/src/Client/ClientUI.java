@@ -31,7 +31,7 @@ public class ClientUI extends Application {
 	
 	private static Timer idleTimer = new Timer(true);
 	private static long lastActivityTime = System.currentTimeMillis();
-	private static final long TIMEOUT = 20_000; // 20 seconds
+	private static final long TIMEOUT = 200000_000; // 20 seconds
 
 	public static void main(String[] args) {
 		launch(); // call start method

@@ -9,7 +9,7 @@
 
 <BorderPane prefHeight="600.0" prefWidth="850.0" style="-fx-background-color: #f4f7f6;"
             xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="GUI.ParkWorkerController">
+            fx:controller="GUI.DeptManagerController">
 
     <left>
         <VBox alignment="TOP_CENTER" prefWidth="260.0" spacing="12.0"
@@ -20,8 +20,7 @@
 
             <Label text="GoNature"
                    style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: white;" />
-
-            <Label text="Park Worker System"
+            <Label text="Department Manager System"
                    style="-fx-font-size: 12px; -fx-text-fill: #aed6f1; -fx-font-style: italic;">
                 <VBox.margin>
                     <Insets bottom="25.0" />
@@ -32,31 +31,27 @@
                   style="-fx-background-color: #113f5c; -fx-background-radius: 8; -fx-padding: 10;">
                 <Label fx:id="welcomeLabel" text="Welcome!"
                        style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;" />
-                <Label fx:id="parkNameLabel" text="Park: Loading..."
+                <Label fx:id="departmentLabel" text="Department: Loading..."
                        style="-fx-font-size: 12px; -fx-text-fill: #bdc3c7;" />
                 <VBox.margin>
                     <Insets bottom="20.0" />
                 </VBox.margin>
             </VBox>
 
-            <Button text="Create Order" onAction="#createOrder"
+            <Button text="View Pending Requests" onAction="#showPendingRequests"
                     prefHeight="45.0" prefWidth="230.0"
                     style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
 
-            <Button text="View Orders" onAction="#viewOrders"
+            <Button text="Approve / Reject Requests" onAction="#showApproveReject"
                     prefHeight="45.0" prefWidth="230.0"
                     style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
 
-            <Button text="Enter Visitor to Park" onAction="#enterVisitor"
-                    prefHeight="45.0" prefWidth="230.0"
-                    style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
-
-            <Button text="Exit Visitor from Park" onAction="#exitVisitor"
+            <Button text="View Reports" onAction="#showReports"
                     prefHeight="45.0" prefWidth="230.0"
                     style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
 
             <VBox alignment="BOTTOM_CENTER" VBox.vgrow="ALWAYS">
-                <Button text="Logout" onAction="#goBack"
+                <Button text="Logout" onAction="#handleLogout"
                         prefHeight="38.0" prefWidth="130.0"
                         style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" />
             </VBox>
@@ -64,13 +59,13 @@
     </left>
 
     <center>
-    <StackPane fx:id="contentArea" prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-        <padding>
-            <Insets top="40.0" right="40.0" bottom="40.0" left="40.0"/>
-        </padding>
-        <Label text="Please select an action from the sidebar menu to begin."
-               style="-fx-font-size: 16px; -fx-text-fill: #7f8c8d;" />
-    </StackPane>
-</center>
+        <StackPane fx:id="contentArea" prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+            <padding>
+                <Insets top="40.0" right="40.0" bottom="40.0" left="40.0"/>
+            </padding>
+            <Label text="Please select an action from the sidebar menu to begin."
+                   style="-fx-font-size: 16px; -fx-text-fill: #7f8c8d;" />
+        </StackPane>
+    </center>
 
 </BorderPane>

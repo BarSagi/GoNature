@@ -11,13 +11,13 @@ import javafx.scene.layout.StackPane;
 
 import java.io.IOException;
 
-public class ParkWorkerController {
+public class DeptManagerController {
 
     @FXML
     private Label welcomeLabel;
 
     @FXML
-    private Label parkNameLabel;
+    private Label departmentLabel;
 
     @FXML
     private StackPane contentArea;
@@ -29,35 +29,30 @@ public class ParkWorkerController {
                     + GoNatureClient.currentEmployee.getLastName();
 
             welcomeLabel.setText("Welcome " + fullName + "!");
-            parkNameLabel.setText("Park: " + GoNatureClient.currentEmployee.getAffiliation());
+            departmentLabel.setText("Department: " + GoNatureClient.currentEmployee.getAffiliation());
         } else {
             welcomeLabel.setText("Welcome!");
-            parkNameLabel.setText("Park: Unknown");
+            departmentLabel.setText("Department: Unknown");
         }
     }
 
     @FXML
-    void createOrder(ActionEvent event) {
-        loadPanel("/GUI/ParkWorkerCreateOrder.fxml");
+    void showPendingRequests(ActionEvent event) {
+        loadPanel("/GUI/DeptManagerPendingRequestsPanel.fxml");
     }
 
     @FXML
-    void viewOrders(ActionEvent event) {
-        loadPanel("/GUI/ParkWorkerViewOrders.fxml");
+    void showApproveReject(ActionEvent event) {
+        loadPanel("/GUI/DeptManagerApproveRejectPanel.fxml");
     }
 
     @FXML
-    void enterVisitor(ActionEvent event) {
-        loadPanel("/GUI/ParkWorkerEnterVisitor.fxml");
+    void showReports(ActionEvent event) {
+        loadPanel("/GUI/DeptManagerReportsPanel.fxml");
     }
 
     @FXML
-    void exitVisitor(ActionEvent event) {
-        loadPanel("/GUI/ParkWorkerExitVisitor.fxml");
-    }
-
-    @FXML
-    void goBack(ActionEvent event) {
+    void handleLogout(ActionEvent event) {
         ClientUI.changeScreen("/GUI/LoginRoute.fxml", "GoNature - Choose Role");
     }
 

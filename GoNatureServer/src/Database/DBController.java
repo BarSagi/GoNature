@@ -416,4 +416,209 @@ public class DBController {
 			pool.releaseConnection(conn);
 		}
 	}
+	
+	// =========================================================
+	// REGISTER FAMILY SUBSCRIBER
+	// =========================================================
+	public boolean registerFamilySubscriber(ArrayList<String> data) {
+
+	    String getNextSubQuery = "SELECT IFNULL(MAX(subscriptionNumber), 10000) + 1 AS nextSub FROM Visitors";
+	    String insertQuery = "INSERT INTO Visitors "
+	            + "(visitorId, firstName, lastName, phone, email, visitorType, subscriptionNumber, familyMembers, creditCard) "
+	            + "VALUES (?, ?, ?, ?, ?, 'Subscriber', ?, ?, ?)";
+
+	    Connection conn = null;
+
+	    try {
+	        conn = pool.getConnection();
+
+	        int nextSubscriptionNumber = 10001;
+
+	        PreparedStatement ps1 = conn.prepareStatement(getNextSubQuery);
+	        ResultSet rs = ps1.executeQuery();
+
+	        if (rs.next()) {
+	            nextSubscriptionNumber = rs.getInt("nextSub");
+	        }
+
+	        rs.close();
+	        ps1.close();
+
+	        PreparedStatement ps2 = conn.prepareStatement(insertQuery);
+
+	        ps2.setString(1, data.get(0)); // visitorId
+	        ps2.setString(2, data.get(1)); // firstName
+	        ps2.setString(3, data.get(2)); // lastName
+	        ps2.setString(4, data.get(3)); // phone
+	        ps2.setString(5, data.get(4)); // email
+	        ps2.setInt(6, nextSubscriptionNumber); // subscriptionNumber
+	        ps2.setInt(7, Integer.parseInt(data.get(5))); // familyMembers
+
+	        if (data.get(6) == null || data.get(6).isEmpty()) {
+	            ps2.setNull(8, Types.VARCHAR);
+	        } else {
+	            ps2.setString(8, data.get(6)); // creditCard
+	        }
+
+	        int rows = ps2.executeUpdate();
+	        ps2.close();
+
+	        return rows > 0;
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false;
+
+	    } finally {
+	        pool.releaseConnection(conn);
+	    }
+	}
+
+	// =========================================================
+	// REGISTER GROUP GUIDE
+	// =========================================================
+	public boolean registerGroupGuide(ArrayList<String> data) {
+
+	    String insertQuery = "INSERT INTO Visitors "
+	            + "(visitorId, firstName, lastName, phone, email, visitorType, subscriptionNumber, familyMembers, creditCard) "
+	            + "VALUES (?, ?, ?, ?, ?, 'Guide', NULL, 1, NULL)";
+
+	    Connection conn = null;
+
+	    try {
+	        conn = pool.getConnection();
+
+	        PreparedStatement ps = conn.prepareStatement(insertQuery);
+
+	        ps.setString(1, data.get(0)); // visitorId
+	        ps.setString(2, data.get(1)); // firstName
+	        ps.setString(3, data.get(2)); // lastName
+	        ps.setString(4, data.get(3)); // phone
+	        ps.setString(5, data.get(4)); // email
+
+	        int rows = ps.executeUpdate();
+	        ps.close();
+
+	        return rows > 0;
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false;
+
+	    } finally {
+	        pool.releaseConnection(conn);
+	    }
+	}
+	
+	// =========================================================
+	// SUBMIT PARK REQUEST
+	// =========================================================
+	public boolean submitParkRequest(ArrayList<String> data) {
+
+	    String parkName = data.get(0);
+	    String requestType = data.get(1);
+	    String oldValue = data.get(2);
+	    String newValue = data.get(3);
+
+	    Connection conn = null;
+
+	    try {
+	        conn = pool.getConnection();
+
+	        int parkId = -1;
+
+	        PreparedStatement findPark = conn.prepareStatement(
+	                "SELECT parkId FROM Parks WHERE parkName = ?");
+	        findPark.setString(1, parkName);
+
+	        ResultSet rs = findPark.executeQuery();
+
+	        if (rs.next()) {
+	            parkId = rs.getInt("parkId");
+	        } else {
+	            rs.close();
+	            findPark.close();
+	            return false;
+	        }
+
+	        rs.close();
+	        findPark.close();
+
+	        String insertQuery = "INSERT INTO Requests (parkId, requestType, oldValue, newValue, status) "
+	                + "VALUES (?, ?, ?, ?, 'Pending')";
+
+	        PreparedStatement ps = conn.prepareStatement(insertQuery);
+	        ps.setInt(1, parkId);
+	        ps.setString(2, requestType);
+	        ps.setString(3, oldValue);
+	        ps.setString(4, newValue);
+
+	        int rows = ps.executeUpdate();
+	        ps.close();
+
+	        return rows > 0;
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false;
+
+	    } finally {
+	        pool.releaseConnection(conn);
+	    }
+	}
+	
+	// =========================================================
+	// GET PARK CURRENT VALUE
+	// =========================================================
+	public String getParkCurrentValue(String parkName, String requestType) {
+
+	    Connection conn = null;
+
+	    try {
+	        conn = pool.getConnection();
+
+	        String columnName;
+
+	        switch (requestType) {
+	            case "MaxCapacity":
+	                columnName = "maxCapacity";
+	                break;
+	            case "CasualGap":
+	                columnName = "casualGap";
+	                break;
+	            case "AvgStayDuration":
+	                columnName = "avgStayDuration";
+	                break;
+	            case "Promotion":
+	                return "Promotion request";
+	            default:
+	                return null;
+	        }
+
+	        String query = "SELECT " + columnName + " FROM Parks WHERE parkName = ?";
+
+	        PreparedStatement ps = conn.prepareStatement(query);
+	        ps.setString(1, parkName);
+
+	        ResultSet rs = ps.executeQuery();
+
+	        if (rs.next()) {
+	            String value = rs.getString(1);
+	            rs.close();
+	            ps.close();
+	            return value;
+	        }
+
+	        rs.close();
+	        ps.close();
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+
+	    } finally {
+	        pool.releaseConnection(conn);
+	    }
+
+	    return null;
+	}
 }

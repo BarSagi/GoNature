@@ -154,7 +154,7 @@ public class EchoServer extends AbstractServer {
 
 	                    long last = lastActivityMap.get(client);
 
-	                    if (now - last > 20_000) { // if the client is idle for more than 20 seconds
+	                    if (now - last > 200000_000) { // if the client is idle for more than 20 seconds
 
 	                        String clientIp = "Unknown";
 

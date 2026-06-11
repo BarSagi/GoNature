@@ -25,11 +25,6 @@ public class ParkWorkerEnterVisitorController {
     }
 
     @FXML
-    void goBack(ActionEvent event) {
-        ClientUI.changeScreen("/GUI/ParkWorker.fxml", "Park Worker");
-    }
-
-    @FXML
     void confirmEntry(ActionEvent event) {
         String visitorId = visitorIdField.getText().trim();
 
