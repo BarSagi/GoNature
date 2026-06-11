@@ -15,16 +15,27 @@ public class CheckVisitorOrdersStrategy implements MessageStrategy {
 		String visitorId = (String) message.getData();
 		server.log("[STRATEGY] Checking database for orders belonging to ID: " + visitorId);
 
-		// 2. Query the Database (Now expecting a list of string lists)
+		// 2. Query the Database
 		ArrayList<Order> visitorOrders = server.getDatabase().getVisitorOrders(visitorId);
-		System.out.println(visitorOrders);
+		ArrayList<String> visitor = null; // Declare outside so we can use it later
 
-		// 3. Package the result into your Message and send it back
-		Message response = new Message("RETURN_VISITOR_ORDERS", visitorOrders);
+		if (visitorOrders.size() > 0) {
+			visitor = server.getDatabase().fetchVisitor(visitorId);
+		}
+
+		// =========================================================
+		// 3. THE FIX: Combine both into an ArrayList of Objects!
+		// =========================================================
+		ArrayList<Object> combinedData = new ArrayList<>();
+		combinedData.add(visitor); // Index 0: The Visitor Data (ArrayList<String> or null)
+		combinedData.add(visitorOrders); // Index 1: The Orders Data (ArrayList<Order>)
+
+		// 4. Package the combined result into your Message and send it back
+		Message response = new Message("RETURN_VISITOR_ORDERS", combinedData);
 
 		try {
 			client.sendToClient(response);
-			server.log("[STRATEGY] Sent " + visitorOrders.size() + " orders back to client.");
+			server.log("[STRATEGY] Sent visitor data and " + visitorOrders.size() + " orders back to client.");
 		} catch (Exception e) {
 			server.log("[ERROR] Failed to send RETURN_VISITOR_ORDERS to client: " + e.getMessage());
 			e.printStackTrace();

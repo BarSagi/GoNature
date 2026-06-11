@@ -8,7 +8,7 @@ import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
 public class GetOrdersStrategy implements MessageStrategy {
-
+	// UNUSED!!!!!!!!!!!!!!!!!!!!!!!!!!
 	@Override
 	public void execute(Message message, ConnectionToClient client, EchoServer server) {
 

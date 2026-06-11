@@ -1,128 +1,206 @@
 package Database;
 
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 
 import Common.Order;
 import Server.EchoServer;
 
-//Handle all database operations of the server
 public class DBController {
+
 	private EchoServer server;
-	private Connection conn;
+	private DBConnectionPool pool;
 
 	public DBController(EchoServer server) {
 		this.server = server;
-		connectToDB();
+		this.pool = DBConnectionPool.getInstance(server);
 	}
 
-	public void connectToDB() { // connection to database
-		try {
-			conn = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/GoNature?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
-					"root", "galdolev123");
-			/*
-			 * CHANGE THE PASSWORD HERE!!!! ALSO MAKE SURE MYSQL IS OPEN AND YOU CHANGED THE
-			 * mysql-connetor JAR PATH!!! (BUILD PATH-> CONFIGURE BUILD PATH-> CLASSPATH->
-			 * CLICK THE JAR-> EDIT ON THE RIGHT-> CHOOSE THE JAR'S LOCATION)
-			 */
-			if (server != null) {
-				server.log("Connected to MySQL");
-			}
-		} catch (SQLException e) {
-
-			e.printStackTrace();
-		}
-	}
-
-	public Connection getConnection() {
-		return conn;
-	}
-
-	public boolean isConnected() {
-		try {
-			return conn != null && !conn.isClosed();
-		} catch (SQLException e) {
-			return false;
-		}
-
-	}
-
-	// this method will create a 2 dimensional array that will contain all orders
+	// =========================================================
+	// ORDERS - GET ALL
+	// =========================================================
 	public ArrayList<Order> getAllOrders() throws SQLException {
-		String query = "SELECT * FROM `orders`";
-		PreparedStatement prepareStatement = conn.prepareStatement(query);
-		ResultSet resultSet = prepareStatement.executeQuery();
+
 		ArrayList<Order> result = new ArrayList<>();
-		while (resultSet.next()) {
-			Order order = new Order(resultSet.getInt("orderId"), resultSet.getInt("parkId"),
-					resultSet.getString("visitorId"), resultSet.getDate("visitDate"), resultSet.getTime("visitTime"),
-					resultSet.getInt("visitorCount"), resultSet.getString("email"), resultSet.getString("orderType"),
-					resultSet.getString("status"));
-			result.add(order);
+
+		String query = "SELECT * FROM Orders";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ResultSet rs = ps.executeQuery();
+
+			while (rs.next()) {
+				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
+						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
+						rs.getString("email"), rs.getString("orderType"), rs.getString("status")));
+			}
+
+			rs.close();
+			ps.close();
+
+		} finally {
+			pool.releaseConnection(conn);
 		}
+
 		return result;
 	}
 
-	/**
-	 * Registers a new Casual visitor in the database.
-	 * 
-	 * @param visitorData ArrayList containing: [0] ID, [1] First Name, [2] Last
-	 *                    Name, [3] Phone, [4] Email
-	 * @return true if insertion was successful, false otherwise
-	 */
-	public boolean registerNewVisitor(ArrayList<String> visitorData) {
-		// 1. Extract data from the ArrayList based on the indices we set in the GUI
-		// Controller
-		String id = visitorData.get(0);
-		String firstName = visitorData.get(1);
-		String lastName = visitorData.get(2);
-		String phone = visitorData.get(3);
-		String email = visitorData.get(4);
+	// =========================================================
+	// CHECK AVAILABILITY (CAPACITY BASED)
+	// =========================================================
+	public boolean isTimeSlotAvailable(String parkName, String visitDate, String visitTime, int requestedVisitors) {
+		Connection conn = null;
+		try {
+			conn = pool.getConnection();
 
-		// 2. Prepare the SQL INSERT query
-		// Note: We explicitly set visitorType to 'Casual'.
-		// subscriptionNumber remains NULL, and familyMembers will auto-set to your
-		// DEFAULT 1.
-		String insertQuery = "INSERT INTO Visitors (visitorId, firstName, lastName, phone, email, visitorType) "
-				+ "VALUES (?, ?, ?, ?, ?, 'Casual')";
+			// 1. Get the parkId AND the specific park's maximum capacity!
+			int parkId = -1;
+			int maxCapacity = 0;
 
-		try (PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
-			insertStmt.setString(1, id);
-			insertStmt.setString(2, firstName);
-			insertStmt.setString(3, lastName);
-			insertStmt.setString(4, phone);
-			insertStmt.setString(5, email);
+			PreparedStatement findPark = conn
+					.prepareStatement("SELECT parkId, maxCapacity FROM Parks WHERE parkName = ?");
+			findPark.setString(1, parkName);
+			ResultSet rsPark = findPark.executeQuery();
 
-			// 4. Execute the update
-			int rowsAffected = insertStmt.executeUpdate();
-
-			// If rowsAffected > 0, the new visitor was successfully saved to the DB!
-			if (rowsAffected > 0) {
-				System.out.println("DBController: Successfully registered new Casual visitor with ID: " + id);
-				return true;
+			if (rsPark.next()) {
+				parkId = rsPark.getInt("parkId");
+				maxCapacity = rsPark.getInt("maxCapacity"); // We pull the limit from the DB!
 			} else {
-				return false;
+				return false; // Park not found
+			}
+			rsPark.close();
+			findPark.close();
+
+			// 2. Sum up all the visitors who ALREADY have orders for this exact date and
+			// time.
+			// PRO TIP: We add "AND status != 'Cancelled'" because cancelled orders don't
+			// take up space!
+			String checkQuery = "SELECT SUM(visitorCount) AS totalVisitors FROM Orders "
+					+ "WHERE parkId = ? AND visitDate = ? AND visitTime = ? AND status != 'Cancelled'";
+			PreparedStatement psCheck = conn.prepareStatement(checkQuery);
+			psCheck.setInt(1, parkId);
+			psCheck.setString(2, visitDate);
+			psCheck.setString(3, visitTime);
+
+			ResultSet rsCheck = psCheck.executeQuery();
+			int currentBookedVisitors = 0;
+
+			if (rsCheck.next()) {
+				currentBookedVisitors = rsCheck.getInt("totalVisitors");
 			}
 
+			rsCheck.close();
+			psCheck.close();
+
+			// 3. The Ultimate Capacity Decision
+			System.out.println("[DB] Park: " + parkName + " | Max Capacity: " + maxCapacity + " | Currently Booked: "
+					+ currentBookedVisitors + " | Requesting: " + requestedVisitors);
+
+			if ((currentBookedVisitors + requestedVisitors) > maxCapacity) {
+				return false; // NOT AVAILABLE! Letting them in would exceed the park's limit.
+			}
+
+			return true; // AVAILABLE! There is enough room.
+
 		} catch (SQLException e) {
-			System.out.println("DB Error: Failed to register new visitor.");
 			e.printStackTrace();
-			// If a Duplicate Key error occurs (user already exists), it will be caught
-			// here!
 			return false;
+		} finally {
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
 		}
 	}
 
+	// =========================================================
+	// FETCH VISITOR
+	// =========================================================
+	public ArrayList<String> fetchVisitor(String visitorID) {
+		String query = "SELECT * FROM Visitors WHERE visitorId = ?";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+
+			ps.setString(1, visitorID);
+
+			ResultSet rs = ps.executeQuery();
+
+			if (rs.next()) {
+				ArrayList<String> visitor = new ArrayList<>();
+
+				visitor.add(String.valueOf(rs.getInt("visitorId")));
+				visitor.add(rs.getString("firstName"));
+				visitor.add(rs.getString("lastName"));
+				visitor.add(rs.getString("phone"));
+				visitor.add(rs.getString("email"));
+				visitor.add(rs.getString("visitorType"));
+				visitor.add(String.valueOf(rs.getInt("subscriptionNumber")));
+				visitor.add(String.valueOf(rs.getInt("familyMembers")));
+
+				rs.close();
+				ps.close();
+
+				return visitor;
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+
+		return null;
+	}
+
+	// =========================================================
+	// REGISTER VISITOR
+	// =========================================================
+	public boolean registerNewVisitor(ArrayList<String> visitorData) {
+
+		String query = "INSERT INTO Visitors (visitorId, firstName, lastName, phone, email, visitorType) "
+				+ "VALUES (?, ?, ?, ?, ?, 'Casual')";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+
+			ps.setString(1, visitorData.get(0));
+			ps.setString(2, visitorData.get(1));
+			ps.setString(3, visitorData.get(2));
+			ps.setString(4, visitorData.get(3));
+			ps.setString(5, visitorData.get(4));
+
+			int rows = ps.executeUpdate();
+
+			ps.close();
+
+			return rows > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+	}
+
+	// =========================================================
+	// CREATE ORDER
+	// =========================================================
 	public boolean createNewOrder(ArrayList<String> orderData) {
-		// orderData index mapping based on our Client setup:
-		// 0: visitorId, 1: parkName, 2: visitDate, 3: visitTime, 4: visitorsAmount, 5:
-		// email, 6: orderType
 
 		String visitorId = orderData.get(0);
 		String parkName = orderData.get(1);
@@ -132,123 +210,523 @@ public class DBController {
 		String email = orderData.get(5);
 		String orderType = orderData.get(6);
 
-		int parkId = -1;
+		Connection conn = null;
 
-		// --- STEP 1: Translate Park Name to Park ID ---
-		String findParkQuery = "SELECT parkId FROM Parks WHERE parkName = ?";
-		try (PreparedStatement parkStmt = conn.prepareStatement(findParkQuery)) {
-			parkStmt.setString(1, parkName);
-			ResultSet rs = parkStmt.executeQuery();
+		try {
+			conn = pool.getConnection();
+
+			// 1. find parkId
+			int parkId = -1;
+
+			PreparedStatement find = conn.prepareStatement("SELECT parkId FROM Parks WHERE parkName = ?");
+			find.setString(1, parkName);
+
+			ResultSet rs = find.executeQuery();
 
 			if (rs.next()) {
 				parkId = rs.getInt("parkId");
 			} else {
-				System.out.println("DB Error: Park name '" + parkName + "' not found in the Parks table.");
-				return false; // Cannot create an order without a valid parkId
-			}
-		} catch (SQLException e) {
-			System.out.println("DB Error: Failed to fetch park ID.");
-			e.printStackTrace();
-			return false;
-		}
-
-		// --- STEP 2: Insert the Order into the Orders Table ---
-		// Note: 'status' is an ENUM. We default it to 'Approved' here,
-		// but later you can add logic to set it to 'WaitingList' if the park is full.
-		String insertQuery = "INSERT INTO Orders (parkId, visitorId, visitDate, visitTime, visitorCount, email, orderType, status) "
-				+ "VALUES (?, ?, ?, ?, ?, ?, ?, 'Approved')";
-
-		try (PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
-			insertStmt.setInt(1, parkId);
-			insertStmt.setString(2, visitorId);
-			insertStmt.setString(3, visitDate);
-			insertStmt.setString(4, visitTime);
-			insertStmt.setInt(5, visitorCount);
-			insertStmt.setString(6, email);
-			insertStmt.setString(7, orderType);
-
-			// executeUpdate() returns the number of rows affected.
-			// If it's greater than 0, the insertion was successful!
-			int rowsAffected = insertStmt.executeUpdate();
-			return rowsAffected > 0;
-
-		} catch (SQLException e) {
-			System.out.println("DB Error: Failed to insert new order.");
-			e.printStackTrace();
-			return false;
-		}
-	}
-
-	// this method will update order date and number of visitors
-	public boolean updateOrder(int orderNumber, String orderDate, int numberOfVisitors) throws SQLException {
-		String query = "UPDATE `orders` SET order_date = ?, number_of_visitors = ? WHERE order_number = ?";
-		PreparedStatement prepareStatement = conn.prepareStatement(query);
-		prepareStatement.setDate(1, Date.valueOf(orderDate));
-		prepareStatement.setInt(2, numberOfVisitors);
-		prepareStatement.setInt(3, orderNumber);
-		return prepareStatement.executeUpdate() > 0; // returns true if 1 or more rows affected
-	}
-
-//=======================================================================================================================
-//================================ GET VISITOR ORDERS ===================================================================
-//=======================================================================================================================
-	public ArrayList<Order> getVisitorOrders(String visitorId) {
-		ArrayList<Order> ordersList = new ArrayList<>();
-
-		// Updated query to match the exact table name and column name from your schema
-		String query = "SELECT * FROM Orders WHERE visitorId = ?";
-
-		try {
-			PreparedStatement pstmt = conn.prepareStatement(query); // assuming 'conn' is your Connection
-			pstmt.setString(1, visitorId);
-
-			ResultSet rs = pstmt.executeQuery();
-
-			while (rs.next()) {
-				Order order = new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
-						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
-						rs.getString("email"), rs.getString("orderType"), rs.getString("status"));
-				ordersList.add(order);
+				return false;
 			}
 
 			rs.close();
-			pstmt.close();
+			find.close();
+
+			// 2. insert order
+			String insert = "INSERT INTO Orders "
+					+ "(parkId, visitorId, visitDate, visitTime, visitorCount, email, orderType, status) "
+					+ "VALUES (?, ?, ?, ?, ?, ?, ?, 'Approved')";
+
+			PreparedStatement ps = conn.prepareStatement(insert);
+
+			ps.setInt(1, parkId);
+			ps.setString(2, visitorId);
+			ps.setString(3, visitDate);
+			ps.setString(4, visitTime);
+			ps.setInt(5, visitorCount);
+			ps.setString(6, email);
+			ps.setString(7, orderType);
+
+			int rows = ps.executeUpdate();
+
+			ps.close();
+
+			return rows > 0;
 
 		} catch (SQLException e) {
-			System.out.println("Error fetching orders for visitor: " + visitorId);
 			e.printStackTrace();
-		}
+			return false;
 
-		return ordersList;
+		} finally {
+			pool.releaseConnection(conn);
+		}
 	}
 
-	public String getEmployeeRole(ArrayList<String> empData) {
-		String query = "SELECT role FROM Employees WHERE username = ? AND password = ?";
+	// =========================================================
+	// UPDATE ORDER
+	// =========================================================
+	public boolean updateOrder(int orderNumber, String orderDate, int numberOfVisitors) {
+
+		String query = "UPDATE Orders SET visitDate = ?, visitorCount = ? WHERE orderId = ?";
+
+		Connection conn = null;
 
 		try {
+			conn = pool.getConnection();
+
 			PreparedStatement ps = conn.prepareStatement(query);
-			ps.setString(1, empData.get(0)); // username
-			ps.setString(2, empData.get(1)); // password
+
+			ps.setDate(1, Date.valueOf(orderDate));
+			ps.setInt(2, numberOfVisitors);
+			ps.setInt(3, orderNumber);
+
+			int rows = ps.executeUpdate();
+
+			ps.close();
+
+			return rows > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+	}
+
+	// =========================================================
+	// VISITOR ORDERS
+	// =========================================================
+	public ArrayList<Order> getVisitorOrders(String visitorId) {
+
+		ArrayList<Order> list = new ArrayList<>();
+
+		String query = "SELECT * FROM Orders WHERE visitorId = ? ORDER BY visitDate DESC";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setString(1, visitorId);
 
 			ResultSet rs = ps.executeQuery();
 
-			if (rs.next()) {
-				String role = rs.getString("role");
-
-				rs.close();
-				ps.close();
-
-				return role;
+			while (rs.next()) {
+				list.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
+						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
+						rs.getString("email"), rs.getString("orderType"), rs.getString("status")));
 			}
 
 			rs.close();
 			ps.close();
 
 		} catch (SQLException e) {
-			System.out.println("Error fetching employee role: " + empData.get(0));
 			e.printStackTrace();
+
+		} finally {
+			pool.releaseConnection(conn);
 		}
 
-		return null; // employee not found
+		return list;
+	}
+
+	// =========================================================
+	// EMPLOYEE INFO
+	// =========================================================
+	public ArrayList<String> getEmployeeInfo(ArrayList<String> empData) {
+
+		String query = "SELECT * FROM Employees WHERE username = ? AND password = ?";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setString(1, empData.get(0));
+			ps.setString(2, empData.get(1));
+
+			ResultSet rs = ps.executeQuery();
+
+			if (rs.next()) {
+				ArrayList<String> employeeInfo = new ArrayList<>();
+
+				employeeInfo.add(String.valueOf(rs.getInt("employeeId")));
+				employeeInfo.add(rs.getString("firstName"));
+				employeeInfo.add(rs.getString("lastName"));
+				employeeInfo.add(rs.getString("email"));
+				employeeInfo.add(rs.getString("username"));
+				employeeInfo.add(rs.getString("password"));
+				employeeInfo.add(rs.getString("role"));
+				employeeInfo.add(rs.getString("affiliation"));
+
+				rs.close();
+				ps.close();
+
+				return employeeInfo;
+			}
+
+			rs.close();
+			ps.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+
+		return null;
+	}
+
+	// =========================================================
+	// REPORTS - VISIT REPORT
+	// =========================================================
+	public ArrayList<Order> getVisitReport(int parkId, int month, int year) {
+
+		ArrayList<Order> result = new ArrayList<>();
+
+		String query = "SELECT * FROM Orders " + "WHERE parkId = ? AND YEAR(visitDate) = ? AND MONTH(visitDate) = ?";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setInt(1, parkId);
+			ps.setInt(2, year);
+			ps.setInt(3, month);
+
+			ResultSet rs = ps.executeQuery();
+
+			while (rs.next()) {
+				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
+						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
+						rs.getString("email"), rs.getString("orderType"), rs.getString("status")));
+			}
+
+			rs.close();
+			ps.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+
+		return result;
+	}
+
+	// =========================================================
+	// REPORTS - CANCELLATION
+	// =========================================================
+	public ArrayList<Order> getCancellationReport(int parkId, int month, int year) {
+
+		ArrayList<Order> result = new ArrayList<>();
+
+		String query = "SELECT * FROM Orders " + "WHERE parkId = ? AND status = 'CANCELLED' "
+				+ "AND YEAR(visitDate) = ? AND MONTH(visitDate) = ?";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setInt(1, parkId);
+			ps.setInt(2, year);
+			ps.setInt(3, month);
+
+			ResultSet rs = ps.executeQuery();
+
+			while (rs.next()) {
+				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
+						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
+						rs.getString("email"), rs.getString("orderType"), rs.getString("status")));
+			}
+
+			rs.close();
+			ps.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+
+		return result;
+	}
+
+	// =========================================================
+	// ENTER VISITOR
+	// =========================================================
+	public boolean enterVisitor(String visitorId) {
+
+		String query = "INSERT INTO Visits (parkId, orderId, visitorId, actualVisitorCount, entryTime) "
+				+ "SELECT parkId, orderId, visitorId, visitorCount, NOW() " + "FROM Orders "
+				+ "WHERE visitorId = ? AND status = 'Approved' " + "ORDER BY orderId DESC LIMIT 1";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setString(1, visitorId);
+
+			int rows = ps.executeUpdate();
+
+			ps.close();
+
+			return rows > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+	}
+
+	// =========================================================
+	// EXIT VISITOR
+	// =========================================================
+	public boolean exitVisitor(String visitorId) {
+
+		String query = "UPDATE Visits SET exitTime = NOW() " + "WHERE visitorId = ? AND exitTime IS NULL "
+				+ "ORDER BY visitId DESC LIMIT 1";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setString(1, visitorId);
+
+			int rows = ps.executeUpdate();
+
+			ps.close();
+
+			return rows > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+	}
+
+	// =========================================================
+	// REGISTER FAMILY SUBSCRIBER
+	// =========================================================
+	public boolean registerFamilySubscriber(ArrayList<String> data) {
+
+		String getNextSubQuery = "SELECT IFNULL(MAX(subscriptionNumber), 10000) + 1 AS nextSub FROM Visitors";
+		String insertQuery = "INSERT INTO Visitors "
+				+ "(visitorId, firstName, lastName, phone, email, visitorType, subscriptionNumber, familyMembers, creditCard) "
+				+ "VALUES (?, ?, ?, ?, ?, 'Subscriber', ?, ?, ?)";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			int nextSubscriptionNumber = 10001;
+
+			PreparedStatement ps1 = conn.prepareStatement(getNextSubQuery);
+			ResultSet rs = ps1.executeQuery();
+
+			if (rs.next()) {
+				nextSubscriptionNumber = rs.getInt("nextSub");
+			}
+
+			rs.close();
+			ps1.close();
+
+			PreparedStatement ps2 = conn.prepareStatement(insertQuery);
+
+			ps2.setString(1, data.get(0)); // visitorId
+			ps2.setString(2, data.get(1)); // firstName
+			ps2.setString(3, data.get(2)); // lastName
+			ps2.setString(4, data.get(3)); // phone
+			ps2.setString(5, data.get(4)); // email
+			ps2.setInt(6, nextSubscriptionNumber); // subscriptionNumber
+			ps2.setInt(7, Integer.parseInt(data.get(5))); // familyMembers
+
+			if (data.get(6) == null || data.get(6).isEmpty()) {
+				ps2.setNull(8, Types.VARCHAR);
+			} else {
+				ps2.setString(8, data.get(6)); // creditCard
+			}
+
+			int rows = ps2.executeUpdate();
+			ps2.close();
+
+			return rows > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+	}
+
+	// =========================================================
+	// REGISTER GROUP GUIDE
+	// =========================================================
+	public boolean registerGroupGuide(ArrayList<String> data) {
+
+		String insertQuery = "INSERT INTO Visitors "
+				+ "(visitorId, firstName, lastName, phone, email, visitorType, subscriptionNumber, familyMembers, creditCard) "
+				+ "VALUES (?, ?, ?, ?, ?, 'Guide', NULL, 1, NULL)";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(insertQuery);
+
+			ps.setString(1, data.get(0)); // visitorId
+			ps.setString(2, data.get(1)); // firstName
+			ps.setString(3, data.get(2)); // lastName
+			ps.setString(4, data.get(3)); // phone
+			ps.setString(5, data.get(4)); // email
+
+			int rows = ps.executeUpdate();
+			ps.close();
+
+			return rows > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+	}
+
+	// =========================================================
+	// SUBMIT PARK REQUEST
+	// =========================================================
+	public boolean submitParkRequest(ArrayList<String> data) {
+
+		String parkName = data.get(0);
+		String requestType = data.get(1);
+		String oldValue = data.get(2);
+		String newValue = data.get(3);
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			int parkId = -1;
+
+			PreparedStatement findPark = conn.prepareStatement("SELECT parkId FROM Parks WHERE parkName = ?");
+			findPark.setString(1, parkName);
+
+			ResultSet rs = findPark.executeQuery();
+
+			if (rs.next()) {
+				parkId = rs.getInt("parkId");
+			} else {
+				rs.close();
+				findPark.close();
+				return false;
+			}
+
+			rs.close();
+			findPark.close();
+
+			String insertQuery = "INSERT INTO Requests (parkId, requestType, oldValue, newValue, status) "
+					+ "VALUES (?, ?, ?, ?, 'Pending')";
+
+			PreparedStatement ps = conn.prepareStatement(insertQuery);
+			ps.setInt(1, parkId);
+			ps.setString(2, requestType);
+			ps.setString(3, oldValue);
+			ps.setString(4, newValue);
+
+			int rows = ps.executeUpdate();
+			ps.close();
+
+			return rows > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+	}
+
+	// =========================================================
+	// GET PARK CURRENT VALUE
+	// =========================================================
+	public String getParkCurrentValue(String parkName, String requestType) {
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			String columnName;
+
+			switch (requestType) {
+			case "MaxCapacity":
+				columnName = "maxCapacity";
+				break;
+			case "CasualGap":
+				columnName = "casualGap";
+				break;
+			case "AvgStayDuration":
+				columnName = "avgStayDuration";
+				break;
+			case "Promotion":
+				return "Promotion request";
+			default:
+				return null;
+			}
+
+			String query = "SELECT " + columnName + " FROM Parks WHERE parkName = ?";
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setString(1, parkName);
+
+			ResultSet rs = ps.executeQuery();
+
+			if (rs.next()) {
+				String value = rs.getString(1);
+				rs.close();
+				ps.close();
+				return value;
+			}
+
+			rs.close();
+			ps.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+
+		return null;
 	}
 }

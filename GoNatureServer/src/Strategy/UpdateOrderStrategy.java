@@ -7,34 +7,32 @@ import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
 public class UpdateOrderStrategy implements MessageStrategy {
+	// UNUSED!!!!!!!!!!!!!!!!!!!!!!!!
+	@Override
+	public void execute(Message message, ConnectionToClient client, EchoServer server) {
 
-    @Override
-    public void execute(Message message, ConnectionToClient client, EchoServer server) {
+		try {
 
-        try {
+			@SuppressWarnings("unchecked")
+			ArrayList<Object> data = (ArrayList<Object>) message.getData();
 
-            @SuppressWarnings("unchecked")
-            ArrayList<Object> data = (ArrayList<Object>) message.getData();
+			int orderNumber = (int) data.get(0);
+			String date = (String) data.get(1);
+			int visitors = (int) data.get(2);
 
-            int orderNumber = (int) data.get(0);
-            String date = (String) data.get(1);
-            int visitors = (int) data.get(2);
+			boolean success = server.getDatabase().updateOrder(orderNumber, date, visitors);
 
-            boolean success =
-                    server.getDatabase()
-                          .updateOrder(orderNumber, date, visitors);
+			client.sendToClient(success);
 
-            client.sendToClient(success);
+		} catch (Exception e) {
 
-        } catch (Exception e) {
+			e.printStackTrace();
 
-            e.printStackTrace();
-
-            try {
-                client.sendToClient(false);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        }
-    }
+			try {
+				client.sendToClient(false);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+	}
 }
