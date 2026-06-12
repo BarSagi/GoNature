@@ -24,17 +24,24 @@ public class ParkManagerController {
 
     @FXML
     public void initialize() {
+
         if (GoNatureClient.currentEmployee != null) {
+
             String fullName = GoNatureClient.currentEmployee.getFirstName() + " "
                     + GoNatureClient.currentEmployee.getLastName();
 
             welcomeLabel.setText("Welcome " + fullName + "!");
             parkLabel.setText("Park: " + GoNatureClient.currentEmployee.getAffiliation());
+
         } else {
             welcomeLabel.setText("Welcome!");
             parkLabel.setText("Park: Unknown");
         }
     }
+
+    // =========================
+    // NAVIGATION ONLY
+    // =========================
 
     @FXML
     void showVisitReports(ActionEvent event) {
@@ -47,11 +54,6 @@ public class ParkManagerController {
     }
 
     @FXML
-    void showCancellationReports(ActionEvent event) {
-        loadPanel("/GUI/ParkManagerCancellationReportsPanel.fxml");
-    }
-
-    @FXML
     void showSubmitRequest(ActionEvent event) {
         loadPanel("/GUI/ParkManagerSubmitRequestPanel.fxml");
     }
@@ -61,7 +63,12 @@ public class ParkManagerController {
         ClientUI.changeScreen("/GUI/LoginRoute.fxml", "GoNature - Choose Role");
     }
 
+    // =========================
+    // PANEL LOADER
+    // =========================
+
     private void loadPanel(String fxmlPath) {
+
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent subPanel = loader.load();
@@ -71,8 +78,11 @@ public class ParkManagerController {
 
         } catch (IOException e) {
             e.printStackTrace();
+
             contentArea.getChildren().clear();
-            contentArea.getChildren().add(new Label("Error: Could not load the requested form."));
+            contentArea.getChildren().add(
+                    new Label("Error: Could not load the requested form.")
+            );
         }
     }
 }

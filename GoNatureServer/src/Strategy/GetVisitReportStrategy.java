@@ -1,7 +1,7 @@
 package Strategy;
 
 import Common.Message;
-import Common.Order;
+import Common.VisitReportData;
 import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
@@ -12,20 +12,31 @@ public class GetVisitReportStrategy implements MessageStrategy {
 	@Override
 	public void execute(Message message, ConnectionToClient client, EchoServer server) {
 
-		try {
-			@SuppressWarnings("unchecked")
-			ArrayList<String> data = (ArrayList<String>) message.getData();
+	    try {
 
-			String parkId = data.get(0);
-			String month = data.get(1);
-			String year = data.get(2);
+	        @SuppressWarnings("unchecked")
+	        ArrayList<Object> data = (ArrayList<Object>) message.getData();
 
-			ArrayList<Order> report = server.getReportService().getVisitReport(parkId, month, year);
+	        String parkName = (String) data.get(0);
+	        int month = (Integer) data.get(1);
+	        int year = (Integer) data.get(2);
 
-			client.sendToClient(new Message("VISIT_REPORT_RESULT", report));
+	        int parkId = server.getDatabase().getParkIdByName(parkName);
 
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	        if (parkId == -1) {
+	            System.out.println("ERROR: parkId not found!");
+	            client.sendToClient(new Message("VISIT_REPORT_RESULT", null));
+	            return;
+	        }
+
+	        VisitReportData report =
+	                server.getReportService().generateVisitReport(parkId, month, year);
+
+	        client.sendToClient(new Message("VISIT_REPORT_RESULT", report));
+
+	    } catch (Exception e) {
+	        System.out.println("EXCEPTION IN VISIT REPORT:");
+	        e.printStackTrace();
+	    }
 	}
 }

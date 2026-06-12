@@ -50,7 +50,17 @@ public class DeptManagerController {
     void showReports(ActionEvent event) {
         loadPanel("/GUI/DeptManagerReportsPanel.fxml");
     }
+    
+    @FXML
+    void showTimesOfStayingReport(ActionEvent event) {
+    	loadPanel("/GUI/DeptManagerTimesOfStayingReportPanel.fxml");
+    }
 
+    @FXML
+    void showCancellationReport(ActionEvent event) {
+    	loadPanel("/GUI/DeptManagerCancellationReportPanel.fxml");
+    }
+    
     @FXML
     void handleLogout(ActionEvent event) {
         ClientUI.changeScreen("/GUI/LoginRoute.fxml", "GoNature - Choose Role");

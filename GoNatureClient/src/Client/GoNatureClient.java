@@ -3,6 +3,7 @@ package Client;
 import java.util.ArrayList;
 
 import Common.Message;
+import Common.VisitReportData;
 import Entity.*;
 import OCSFUtils.AbstractClient;
 import Strategy.MessageStrategy;
@@ -11,6 +12,7 @@ import javafx.application.Platform;
 
 public class GoNatureClient extends AbstractClient {
 
+	public static VisitReportData currentVisitReport;
 	public static boolean awaitResponse = false;
 	public static Employee currentEmployee;
 	public static Visitor currentVisitor;

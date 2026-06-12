@@ -213,4 +213,8 @@ public class EchoServer extends AbstractServer {
 	    t.setDaemon(true);
 	    t.start();
 	}
+	
+	public ReportService getReportService() {
+	    return reportService;
+	}
 }

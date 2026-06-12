@@ -1,12 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.XYChart?>
 
-<VBox alignment="CENTER" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30;"
-      xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1">
-    <Label text="Visit Reports"
-           style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
-    <Label text="This panel will display visit reports."
-           style="-fx-font-size: 14px; -fx-text-fill: #7f8c8d;" />
+<VBox alignment="CENTER" spacing="15.0"
+	style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30;"
+	xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="GUI.ParkManagerVisitReportsPanelController">
+
+	<Label text="Visit Reports"
+		style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
+
+	<HBox spacing="10" alignment="CENTER">
+
+		<ComboBox fx:id="monthCombo" promptText="Month" />
+
+		<ComboBox fx:id="yearCombo" promptText="Year" />
+
+		<Button text="Generate" onAction="#generateReport" />
+	</HBox>
+
+	<Label fx:id="totalLabel" text="Total visitors: -"
+		style="-fx-font-size: 14px; -fx-font-weight: bold;" />
+
+	<BarChart fx:id="barChart" prefHeight="300" prefWidth="400"
+		categoryGap="30" barGap="10">
+		<xAxis>
+			<CategoryAxis fx:id="xAxis" />
+		</xAxis>
+		<yAxis>
+			<NumberAxis fx:id="yAxis" />
+		</yAxis>
+	</BarChart>
+
 </VBox>
