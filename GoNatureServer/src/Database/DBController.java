@@ -2,8 +2,12 @@ package Database;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import Common.Order;
+import Common.UsageReportData;
 import Server.EchoServer;
 
 public class DBController {
@@ -775,5 +779,69 @@ public class DBController {
 		}
 
 		return -1; // if a park was not found
+	}
+
+	public ArrayList<UsageReportData> getUsageReport(String parkName, int year) {
+
+		ArrayList<UsageReportData> result = new ArrayList<>();
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			int parkId = getParkIdByName(parkName);
+
+			if (parkId == -1) {
+				return result;
+			}
+
+			String sql = "SELECT " + "MONTH(o.visitDate) AS month, " + "DAY(o.visitDate) AS day, "
+					+ "SUM(o.visitorCount) AS dailyVisitors, " + "p.maxCapacity " + "FROM Orders o "
+					+ "JOIN Parks p ON o.parkId = p.parkId " + "WHERE o.parkId = ? " + "AND YEAR(o.visitDate) = ? "
+					+ "AND o.status IN ('Approved','Fulfilled') "
+					+ "GROUP BY MONTH(o.visitDate), DAY(o.visitDate), p.maxCapacity " + "ORDER BY month, day";
+
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setInt(1, parkId);
+			ps.setInt(2, year);
+
+			ResultSet rs = ps.executeQuery();
+
+			// month -> list of daily percentages
+			Map<Integer, List<Double>> monthlyUsage = new HashMap<>();
+
+			while (rs.next()) {
+
+				int month = rs.getInt("month");
+				int dailyVisitors = rs.getInt("dailyVisitors");
+				int maxCapacity = rs.getInt("maxCapacity");
+
+				double dailyPercent = maxCapacity == 0 ? 0 : ((double) dailyVisitors / maxCapacity) * 100;
+
+				monthlyUsage.computeIfAbsent(month, k -> new ArrayList<>()).add(dailyPercent);
+			}
+
+			rs.close();
+			ps.close();
+
+			for (Map.Entry<Integer, List<Double>> entry : monthlyUsage.entrySet()) {
+
+				int month = entry.getKey();
+				List<Double> values = entry.getValue();
+
+				double avgMonthlyPercent = values.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+
+				result.add(new UsageReportData(month, avgMonthlyPercent));
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
+
+		return result;
 	}
 }

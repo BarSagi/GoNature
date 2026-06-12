@@ -1,12 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.layout.*?>
 
-<VBox alignment="CENTER" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30;"
-      xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1">
-    <Label text="Usage Reports"
+<VBox alignment="CENTER" spacing="15.0"
+      style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30;"
+      xmlns="http://javafx.com/javafx/19"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="GUI.ParkManagerUsageReportsPanelController">
+
+    <Label text="Usage Report - Under Capacity Rate"
            style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
-    <Label text="This panel will display usage reports."
-           style="-fx-font-size: 14px; -fx-text-fill: #7f8c8d;" />
+
+    <HBox spacing="10" alignment="CENTER">
+
+        <Label text="Year:"
+               style="-fx-font-size: 14px;" />
+
+        <ComboBox fx:id="yearCombo" promptText="Select Year" />
+
+        <Button text="Generate Report" onAction="#generateReport" />
+    </HBox>
+
+    <BarChart fx:id="barChart" prefHeight="350" prefWidth="600"
+              categoryGap="10" barGap="2">
+
+        <xAxis>
+            <CategoryAxis fx:id="xAxis" label="Month" />
+        </xAxis>
+
+        <yAxis>
+            <NumberAxis fx:id="yAxis" label="Under Capacity %" />
+        </yAxis>
+
+    </BarChart>
+
 </VBox>

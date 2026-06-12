@@ -48,6 +48,8 @@ public class StrategyFactory {
 			return new AlreadyLoggedInStrategy();
 		case "VISIT_REPORT_RESULT":
 		    return new VisitReportStrategy();
+		case "USAGE_REPORT_RESULT":
+		    return new UsageReportStrategy();
 		default:
 			return null;
 		}
