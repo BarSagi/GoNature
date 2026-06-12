@@ -16,7 +16,7 @@
 <AnchorPane prefHeight="650.0" prefWidth="600.0"
 	style="-fx-background-color: #f4f6f7;"
 	xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
-	fx:controller="GUI.NewVisitorOrderController">
+	fx:controller="GUI_Visitor.NewVisitorOrderController">
 	<children>
 		<VBox alignment="TOP_CENTER" layoutX="50.0" layoutY="30.0"
 			prefWidth="500.0" spacing="20.0"

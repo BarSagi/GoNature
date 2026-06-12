@@ -1,4 +1,4 @@
-package GUI;
+package GUI_Visitor;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -15,6 +15,7 @@ import java.util.ArrayList;
 
 import Client.ClientUI;
 import Client.GoNatureClient;
+import Common.Message;
 import Common.Order;
 
 public class VisitorOrdersScreenController {
@@ -96,8 +97,16 @@ public class VisitorOrdersScreenController {
 	@FXML
 	void logout(ActionEvent event) {
 		try {
-			System.out.println("Logging out visitor...");
-			ClientUI.visitorID = null;
+			String userID = GoNatureClient.currentVisitor.getVisitorId();
+			GoNatureClient.currentVisitor = null;
+			Message msg = new Message("CLIENT_LOGOUT", userID);
+
+			try {
+				ClientUI.send(msg);
+			} catch (Exception e) {
+				System.out.println("Error sending message to server");
+				e.printStackTrace();
+			}
 			ClientUI.changeScreen("/GUI/LoginRoute.fxml", "GoNature Login");
 		} catch (Exception e) {
 			e.printStackTrace();

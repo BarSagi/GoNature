@@ -2,6 +2,7 @@ package GUI;
 
 import Client.ClientUI;
 import Client.GoNatureClient;
+import Common.Message;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -13,77 +14,88 @@ import java.io.IOException;
 
 public class ParkManagerController {
 
-	
-    @FXML
-    private Label welcomeLabel;
+	@FXML
+	private Label welcomeLabel;
 
-    @FXML
-    private Label parkLabel;
+	@FXML
+	private Label parkLabel;
 
-    @FXML
-    private StackPane contentArea;
+	@FXML
+	private StackPane contentArea;
 
-    @FXML
-    public void initialize() {
+	@FXML
+	public void initialize() {
 
-        if (GoNatureClient.currentEmployee != null) {
+		if (GoNatureClient.currentEmployee != null) {
 
-            String fullName = GoNatureClient.currentEmployee.getFirstName() + " "
-                    + GoNatureClient.currentEmployee.getLastName();
+			String fullName = GoNatureClient.currentEmployee.getFirstName() + " "
+					+ GoNatureClient.currentEmployee.getLastName();
 
-            welcomeLabel.setText("Welcome " + fullName + "!");
-            parkLabel.setText("Park: " + GoNatureClient.currentEmployee.getAffiliation());
+			welcomeLabel.setText("Welcome " + fullName + "!");
+			parkLabel.setText("Park: " + GoNatureClient.currentEmployee.getAffiliation());
 
-        } else {
-            welcomeLabel.setText("Welcome!");
-            parkLabel.setText("Park: Unknown");
-        }
-    }
+		} else {
+			welcomeLabel.setText("Welcome!");
+			parkLabel.setText("Park: Unknown");
+		}
+	}
 
-    // =========================
-    // NAVIGATION ONLY
-    // =========================
+	// =========================
+	// NAVIGATION ONLY
+	// =========================
 
-    @FXML
-    void showVisitReports(ActionEvent event) {
-        loadPanel("/GUI/ParkManagerVisitReportsPanel.fxml");
-    }
+	@FXML
+	void showVisitReports(ActionEvent event) {
+		loadPanel("/GUI/ParkManagerVisitReportsPanel.fxml");
+	}
 
-    @FXML
-    void showUsageReports(ActionEvent event) {
-        loadPanel("/GUI/ParkManagerUsageReportsPanel.fxml");
-    }
+	@FXML
+	void showUsageReports(ActionEvent event) {
+		loadPanel("/GUI/ParkManagerUsageReportsPanel.fxml");
+	}
 
-    @FXML
-    void showSubmitRequest(ActionEvent event) {
-        loadPanel("/GUI/ParkManagerSubmitRequestPanel.fxml");
-    }
+	@FXML
+	void showSubmitRequest(ActionEvent event) {
+		loadPanel("/GUI/ParkManagerSubmitRequestPanel.fxml");
+	}
 
-    @FXML
-    void handleLogout(ActionEvent event) {
-        ClientUI.changeScreen("/GUI/LoginRoute.fxml", "GoNature - Choose Role");
-    }
+	@FXML
+	void handleLogout(ActionEvent event) {
+		try {
+			String userID = GoNatureClient.currentEmployee.getEmployeeId();
+			GoNatureClient.currentEmployee = null;
+			Message msg = new Message("CLIENT_LOGOUT", userID);
 
-    // =========================
-    // PANEL LOADER
-    // =========================
+			try {
+				ClientUI.send(msg);
+			} catch (Exception e) {
+				System.out.println("Error sending message to server");
+				e.printStackTrace();
+			}
+			ClientUI.changeScreen("/GUI/LoginRoute.fxml", "GoNature Login");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
-    private void loadPanel(String fxmlPath) {
+	// =========================
+	// PANEL LOADER
+	// =========================
 
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
-            Parent subPanel = loader.load();
+	private void loadPanel(String fxmlPath) {
 
-            contentArea.getChildren().clear();
-            contentArea.getChildren().add(subPanel);
+		try {
+			FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+			Parent subPanel = loader.load();
 
-        } catch (IOException e) {
-            e.printStackTrace();
+			contentArea.getChildren().clear();
+			contentArea.getChildren().add(subPanel);
 
-            contentArea.getChildren().clear();
-            contentArea.getChildren().add(
-                    new Label("Error: Could not load the requested form.")
-            );
-        }
-    }
+		} catch (IOException e) {
+			e.printStackTrace();
+
+			contentArea.getChildren().clear();
+			contentArea.getChildren().add(new Label("Error: Could not load the requested form."));
+		}
+	}
 }

@@ -26,7 +26,8 @@ public class LoginVisitorController {
 		// 2. Save the ID globally so the OrderCreation/History screens can use it later
 		// (Assuming you have a variable like loggedInVisitorId in your ClientUI or a
 		// Session class)
-		ClientUI.visitorID = id;
+		// ClientUI.visitorID = id;
+		// CURRENTLY UNUSED MAYBE LATER -------------------------------
 
 		// 3. Send a message to the server asking for this visitor's orders
 		// We package the command and the ID into your Message object
@@ -34,8 +35,7 @@ public class LoginVisitorController {
 
 		try {
 			ClientUI.send(msg);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			System.out.println("Error sending message to server");
 			e.printStackTrace();
 		}

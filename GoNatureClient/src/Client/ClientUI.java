@@ -23,8 +23,6 @@ public class ClientUI extends Application {
 	private static Stage mainStage;
 
 	public static volatile boolean uiReady = false;
-
-	public static String visitorID;
 	
 	public static String serverIP; // current client
 	public static int serverPort; // current server port

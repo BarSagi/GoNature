@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 import Client.ClientUI;
+import Client.GoNatureClient;
 import Common.Message;
 
 public class CreateOrderController implements Initializable {
@@ -75,7 +76,7 @@ public class CreateOrderController implements Initializable {
 		// 3. Gather background session data
 		// We use the ID of the person who logged in.
 		// The Server will use this ID to find their email in the Database!
-		String visitorId = ClientUI.visitorID;
+		String visitorId = GoNatureClient.currentVisitor.getVisitorId();
 
 		// 4. Package data into an ArrayList
 		ArrayList<String> newOrder = new ArrayList<>();
@@ -100,7 +101,18 @@ public class CreateOrderController implements Initializable {
 
 	@FXML
 	void goBack(ActionEvent event) {
-		ClientUI.changeScreen("/GUI/LoginVisitor.fxml", "GoNature - Visitor Login");
+		// if current visitor isnt null it means we were at the visitor orders screen.
+		if (GoNatureClient.currentVisitor != null) {
+			Message msg = new Message("FETCH_VISITOR_ORDERS", GoNatureClient.currentVisitor.getVisitorId());
+
+			try {
+				ClientUI.send(msg);
+			} catch (Exception e) {
+				System.out.println("Error sending message to server");
+				e.printStackTrace();
+			}
+		} else
+			ClientUI.changeScreen("/GUI/LoginVisitor.fxml", "GoNature - Visitor Login");
 	}
 
 	private void showError(String message) {

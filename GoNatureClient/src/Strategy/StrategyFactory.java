@@ -14,6 +14,9 @@ public class StrategyFactory {
 
 		case "RETURN_VISITOR_ORDERS":
 			return new ReturnVisitorOrdersStrategy();
+			
+		case "RETURN_VISITOR_ORDERS_AND_DATA":
+			return new ReturnVisitorOrdersAndDataStrategy();
 
 		case "EMPLOYEE_ROLE_RESULT":
 			return new EmployeeInfoStrategy();
@@ -44,12 +47,16 @@ public class StrategyFactory {
 
 		case "REGISTER_AND_ORDER_SUCCESS":
 			return new RegisterOrderSuccessStrategy();
+
 		case "ALREADY_LOGGED_IN":
 			return new AlreadyLoggedInStrategy();
+
 		case "VISIT_REPORT_RESULT":
-		    return new VisitReportStrategy();
+			return new VisitReportStrategy();
+
 		case "USAGE_REPORT_RESULT":
-		    return new UsageReportStrategy();
+			return new UsageReportStrategy();
+
 		default:
 			return null;
 		}

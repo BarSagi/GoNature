@@ -2,6 +2,7 @@ package GUI;
 
 import Client.ClientUI;
 import Client.GoNatureClient;
+import Common.Message;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -58,8 +59,21 @@ public class ParkWorkerController {
 
 	@FXML
 	void goBack(ActionEvent event) {
-		GoNatureClient.currentEmployee = null;
-		ClientUI.changeScreen("/GUI/LoginRoute.fxml", "GoNature - Choose Role");
+		try {
+			String userID = GoNatureClient.currentEmployee.getEmployeeId();
+			GoNatureClient.currentEmployee = null;
+			Message msg = new Message("CLIENT_LOGOUT", userID);
+
+			try {
+				ClientUI.send(msg);
+			} catch (Exception e) {
+				System.out.println("Error sending message to server");
+				e.printStackTrace();
+			}
+			ClientUI.changeScreen("/GUI/LoginRoute.fxml", "GoNature Login");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void loadPanel(String fxmlPath) {

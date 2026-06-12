@@ -47,10 +47,16 @@ public class StrategyFactory {
 
 		case "REGISTER_AND_ORDER":
 			return new RegisterAndOrderStrategy();
-			
+
 		case "GET_USAGE_REPORT":
-		    return new GetUsageReportStrategy();
-		    
+			return new GetUsageReportStrategy();
+
+		case "FETCH_VISITOR_ORDERS":
+			return new FetchVisitorOrdersStrategy();
+
+		case "CLIENT_LOGOUT":
+			return new ClientLogoutStrategy();
+
 		default:
 			return null;
 		}

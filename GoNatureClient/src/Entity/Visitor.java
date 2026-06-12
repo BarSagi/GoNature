@@ -1,7 +1,7 @@
 package Entity;
 
 public class Visitor {
-	private int visitorId;
+	private String visitorId;
 	private String firstName;
 	private String lastName;
 	private String phone;
@@ -10,7 +10,7 @@ public class Visitor {
 	private int subNumber;
 	private int familyMembersNum;
 
-	public Visitor(int id, String firstName, String lastName, String phone, String email, String visitorType,
+	public Visitor(String visitorId, String firstName, String lastName, String phone, String email, String visitorType,
 			int subNumber, int familyMembers) {
 		this.setVisitorId(visitorId);
 		this.setFirstName(firstName);
@@ -22,11 +22,11 @@ public class Visitor {
 		this.setFamilyMembersNum(familyMembers);
 	}
 
-	public int getVisitorId() {
+	public String getVisitorId() {
 		return visitorId;
 	}
 
-	public void setVisitorId(int visitorId) {
+	public void setVisitorId(String visitorId) {
 		this.visitorId = visitorId;
 	}
 

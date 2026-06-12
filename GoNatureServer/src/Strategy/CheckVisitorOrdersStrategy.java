@@ -19,7 +19,7 @@ public class CheckVisitorOrdersStrategy implements MessageStrategy {
 		// NEW: Check if the visitor is already logged in elsewhere
 		// =========================================================
 		boolean loginSuccess = server.loginUser(visitorId, client);
-		
+
 		if (!loginSuccess) {
 			server.log("[STRATEGY] Login denied for visitor " + visitorId + " - Already logged in.");
 			try {
@@ -47,13 +47,13 @@ public class CheckVisitorOrdersStrategy implements MessageStrategy {
 		combinedData.add(visitorOrders); // Index 1: The Orders Data (ArrayList<Order>)
 
 		// 4. Package the combined result into your Message and send it back
-		Message response = new Message("RETURN_VISITOR_ORDERS", combinedData);
+		Message response = new Message("RETURN_VISITOR_ORDERS_AND_DATA", combinedData);
 
 		try {
 			client.sendToClient(response);
 			server.log("[STRATEGY] Sent visitor data and " + visitorOrders.size() + " orders back to client.");
 		} catch (Exception e) {
-			server.log("[ERROR] Failed to send RETURN_VISITOR_ORDERS to client: " + e.getMessage());
+			server.log("[ERROR] Failed to send RETURN_VISITOR_ORDERS_AND_DATA to client: " + e.getMessage());
 			e.printStackTrace();
 		}
 	}

@@ -1,7 +1,7 @@
 package Entity;
 
 public class Employee {
-	private int employeeId;
+	private String employeeId;
 	private String firstName;
 	private String lastName;
 	private String email;
@@ -9,7 +9,7 @@ public class Employee {
 	private String role;
 	private String affiliation;
 
-	public Employee(int employeeId, String firstName, String lastName, String email, String username, String role,
+	public Employee(String employeeId, String firstName, String lastName, String email, String username, String role,
 			String affiliation) {
 		this.employeeId = employeeId;
 		this.firstName = firstName;
@@ -20,7 +20,7 @@ public class Employee {
 		this.affiliation = affiliation;
 	}
 
-	public int getEmployeeId() {
+	public String getEmployeeId() {
 		return employeeId;
 	}
 
