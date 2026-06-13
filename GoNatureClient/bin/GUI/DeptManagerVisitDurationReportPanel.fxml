@@ -9,20 +9,22 @@
       style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30;"
       xmlns="http://javafx.com/javafx/19"
       xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="GUI.VisitDurationReportController">
+      fx:controller="GUI.DeptManagerVisitDurationReportController">
 
     <Label text="Visit Duration Report"
            style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
 
-    <HBox spacing="10" alignment="CENTER">
-
-        <ComboBox fx:id="monthCombo" promptText="Month" />
-        <ComboBox fx:id="yearCombo" promptText="Year" />
-
-        <Button text="Generate"
-                onAction="#generateReport" />
-
-    </HBox>
+	<HBox spacing="10" alignment="CENTER">
+	
+	    <ComboBox fx:id="parkCombo" promptText="Park" />
+	
+	    <ComboBox fx:id="monthCombo" promptText="Month" />
+	    <ComboBox fx:id="yearCombo" promptText="Year" />
+	
+	    <Button text="Generate"
+	            onAction="#generateReport" />
+	
+	</HBox>
 
     <BarChart fx:id="barChart"
               prefHeight="380"
@@ -31,7 +33,7 @@
               barGap="5">
 
         <xAxis>
-            <CategoryAxis fx:id="xAxis" label="Time Slots (2-hour intervals)" />
+            <CategoryAxis fx:id="xAxis" label="Time Slots" />
         </xAxis>
 
         <yAxis>

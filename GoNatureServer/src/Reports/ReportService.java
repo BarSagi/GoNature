@@ -2,6 +2,7 @@ package Reports;
 
 import Database.DBController;
 import Common.Order;
+import Common.Visit;
 import Common.VisitReportData;
 
 import java.util.ArrayList;
@@ -14,20 +15,20 @@ public class ReportService {
         this.db = db;
     }
 
-    public ArrayList<Order> getVisitReport(int parkId, int month, int year) {
+    public ArrayList<Visit> getVisitReport(int parkId, int month, int year) {
         return db.getVisitReport(parkId, month, year);
     }
 
     public ArrayList<Order> getCancellationReport(int parkId, int month, int year) {
         return db.getCancellationReport(parkId, month, year);
     }
-    
+
     public VisitReportData generateVisitReport(int parkId, int month, int year) {
 
-        ArrayList<Order> orders;
+        ArrayList<Visit> visits;
 
         try {
-            orders = db.getVisitReport(parkId, month, year);
+            visits = db.getVisitReport(parkId, month, year);
         } catch (Exception e) {
             e.printStackTrace();
             return new VisitReportData(0, 0);
@@ -36,20 +37,18 @@ public class ReportService {
         int individualVisitors = 0;
         int groupVisitors = 0;
 
-        for (Order o : orders) {
+        for (Visit v : visits) {
 
-            if (o.getOrderStatus().equals("Canceled")) {
-                continue; // do not count cancelled visits
+            String type = v.getOrderType();
+
+            if (type == null) continue;
+
+            if (type.equals("Individual") || type.equals("SmallGroup")) {
+                individualVisitors += v.getActualVisitorCount();
             }
 
-            String type = o.getOrderType();
-
-            if (type.equals("Individual")) {
-                individualVisitors += o.getVisitorCount();
-            }
-
-            else if (type.equals("SmallGroup") || type.equals("OrganizedGroup")) {
-                groupVisitors += o.getVisitorCount();
+            else if (type.equals("OrganizedGroup")) {
+                groupVisitors += v.getActualVisitorCount();
             }
         }
 

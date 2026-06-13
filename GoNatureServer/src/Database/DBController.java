@@ -8,6 +8,7 @@ import java.util.Map;
 
 import Common.Order;
 import Common.UsageReportData;
+import Common.Visit;
 import Server.EchoServer;
 
 public class DBController {
@@ -389,11 +390,12 @@ public class DBController {
 	// =========================================================
 	// REPORTS - VISIT REPORT
 	// =========================================================
-	public ArrayList<Order> getVisitReport(int parkId, int month, int year) {
+	public ArrayList<Visit> getVisitReport(int parkId, int month, int year) {
 
-		ArrayList<Order> result = new ArrayList<>();
+		ArrayList<Visit> result = new ArrayList<>();
 
-		String query = "SELECT * FROM Orders " + "WHERE parkId = ? AND YEAR(visitDate) = ? AND MONTH(visitDate) = ?";
+		String query = "SELECT v.* " + "FROM Visits v " + "WHERE v.parkId = ? " + "AND YEAR(v.entryTime) = ? "
+				+ "AND MONTH(v.entryTime) = ?";
 
 		Connection conn = null;
 
@@ -408,9 +410,10 @@ public class DBController {
 			ResultSet rs = ps.executeQuery();
 
 			while (rs.next()) {
-				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
-						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
-						rs.getString("email"), rs.getString("orderType"), rs.getString("status")));
+
+				result.add(new Visit(rs.getInt("visitId"), rs.getInt("parkId"), rs.getInt("orderId"),
+						rs.getString("visitorId"), rs.getInt("actualVisitorCount"), rs.getTimestamp("entryTime"),
+						rs.getTimestamp("exitTime"), rs.getString("orderType")));
 			}
 
 			rs.close();
@@ -418,7 +421,6 @@ public class DBController {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
-
 		} finally {
 			pool.releaseConnection(conn);
 		}
@@ -749,36 +751,35 @@ public class DBController {
 	}
 
 	public int getParkIdByName(String parkName) {
+	    if (parkName == null) return -1;
 
-		String query = "SELECT parkId FROM Parks WHERE parkName = ?";
+	    String query = "SELECT parkId FROM Parks WHERE LOWER(TRIM(parkName)) = LOWER(TRIM(?))";
 
-		Connection conn = null;
+	    Connection conn = null;
+	    try {
+	        conn = pool.getConnection();
 
-		try {
-			conn = pool.getConnection();
+	        PreparedStatement ps = conn.prepareStatement(query);
+	        ps.setString(1, parkName);
 
-			PreparedStatement ps = conn.prepareStatement(query);
-			ps.setString(1, parkName);
+	        ResultSet rs = ps.executeQuery();
 
-			ResultSet rs = ps.executeQuery();
+	        if (rs.next()) {
+	            return rs.getInt("parkId");
+	        }
 
-			if (rs.next()) {
-				return rs.getInt("parkId");
-			}
+	        rs.close();
+	        ps.close();
 
-			rs.close();
-			ps.close();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        if (conn != null) {
+	            pool.releaseConnection(conn);
+	        }
+	    }
 
-		} catch (SQLException e) {
-			e.printStackTrace();
-
-		} finally {
-			if (conn != null) {
-				pool.releaseConnection(conn);
-			}
-		}
-
-		return -1; // if a park was not found
+	    return -1; 
 	}
 
 	public ArrayList<UsageReportData> getUsageReport(String parkName, int year) {
@@ -795,11 +796,10 @@ public class DBController {
 				return result;
 			}
 
-			String sql = "SELECT " + "MONTH(o.visitDate) AS month, " + "DAY(o.visitDate) AS day, "
-					+ "SUM(o.visitorCount) AS dailyVisitors, " + "p.maxCapacity " + "FROM Orders o "
-					+ "JOIN Parks p ON o.parkId = p.parkId " + "WHERE o.parkId = ? " + "AND YEAR(o.visitDate) = ? "
-					+ "AND o.status IN ('Approved','Fulfilled') "
-					+ "GROUP BY MONTH(o.visitDate), DAY(o.visitDate), p.maxCapacity " + "ORDER BY month, day";
+			String sql = "SELECT " + "MONTH(v.entryTime) AS month, " + "DAY(v.entryTime) AS day, "
+					+ "SUM(v.actualVisitorCount) AS dailyVisitors, " + "p.maxCapacity " + "FROM Visits v "
+					+ "JOIN Parks p ON v.parkId = p.parkId " + "WHERE v.parkId = ? " + "AND YEAR(v.entryTime) = ? "
+					+ "GROUP BY MONTH(v.entryTime), DAY(v.entryTime), p.maxCapacity " + "ORDER BY month, day";
 
 			PreparedStatement ps = conn.prepareStatement(sql);
 			ps.setInt(1, parkId);
@@ -843,5 +843,79 @@ public class DBController {
 		}
 
 		return result;
+	}
+
+	public ArrayList<Visit> getVisitDurationReport(int parkId, int month, int year) {
+
+		ArrayList<Visit> result = new ArrayList<>();
+		Connection conn = null;
+
+		String query = "SELECT * " + "FROM Visits v " + "WHERE v.parkId = ? " + "AND YEAR(v.entryTime) = ? "
+				+ "AND MONTH(v.entryTime) = ? " + "AND v.exitTime IS NOT NULL";
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setInt(1, parkId);
+			ps.setInt(2, year);
+			ps.setInt(3, month);
+
+			ResultSet rs = ps.executeQuery();
+
+			while (rs.next()) {
+
+				Visit visit = new Visit(rs.getInt("visitId"), rs.getInt("parkId"), rs.getInt("orderId"),
+						rs.getString("visitorId"), rs.getInt("actualVisitorCount"), rs.getTimestamp("entryTime"),
+						rs.getTimestamp("exitTime"), rs.getString("orderType"));
+
+				result.add(visit);
+			}
+
+			rs.close();
+			ps.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
+
+		return result;
+	}
+	
+	public ArrayList<String> getAllParkNames() {
+
+	    ArrayList<String> parks = new ArrayList<>();
+
+	    String query = "SELECT parkName FROM Parks ORDER BY parkName";
+
+	    Connection conn = null;
+
+	    try {
+	        conn = pool.getConnection();
+
+	        PreparedStatement ps = conn.prepareStatement(query);
+	        ResultSet rs = ps.executeQuery();
+
+	        while (rs.next()) {
+	            parks.add(rs.getString("parkName"));
+	        }
+
+	        rs.close();
+	        ps.close();
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+
+	    } finally {
+	        if (conn != null) {
+	            pool.releaseConnection(conn);
+	        }
+	    }
+
+	    return parks;
 	}
 }

@@ -2,7 +2,7 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.PieChart?>
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.chart.XYChart?>
@@ -27,14 +27,6 @@
 	<Label fx:id="totalLabel" text="Total visitors: -"
 		style="-fx-font-size: 14px; -fx-font-weight: bold;" />
 
-	<BarChart fx:id="barChart" prefHeight="300" prefWidth="400"
-		categoryGap="30" barGap="10">
-		<xAxis>
-			<CategoryAxis fx:id="xAxis" />
-		</xAxis>
-		<yAxis>
-			<NumberAxis fx:id="yAxis" />
-		</yAxis>
-	</BarChart>
+	<PieChart fx:id="pieChart" prefHeight="300" prefWidth="400" />
 
 </VBox>

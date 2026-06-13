@@ -50,7 +50,7 @@
                     prefHeight="45.0" prefWidth="230.0"
                     style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
 
-            <Button text="View Times of Staying Report" onAction="#showTimesOfStayingReport"
+            <Button text="View Visit Duration Report" onAction="#showVisitDurationReport"
                     prefHeight="45.0" prefWidth="230.0"
                     style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
                     

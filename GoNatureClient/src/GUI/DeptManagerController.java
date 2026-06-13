@@ -52,8 +52,8 @@ public class DeptManagerController {
     }
     
     @FXML
-    void showTimesOfStayingReport(ActionEvent event) {
-    	loadPanel("/GUI/DeptManagerTimesOfStayingReportPanel.fxml");
+    void showVisitDurationReport(ActionEvent event) {
+    	loadPanel("/GUI/DeptManagerVisitDurationReportPanel.fxml");
     }
 
     @FXML

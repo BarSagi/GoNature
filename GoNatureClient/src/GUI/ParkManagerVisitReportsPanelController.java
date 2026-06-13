@@ -11,10 +11,9 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.chart.BarChart;
-import javafx.scene.chart.XYChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.PieChart;
 
 public class ParkManagerVisitReportsPanelController {
 
@@ -30,7 +29,7 @@ public class ParkManagerVisitReportsPanelController {
 	private ComboBox<Integer> yearCombo;
 
 	@FXML
-	private BarChart<String, Number> barChart;
+	private PieChart pieChart;
 
 	@FXML
 	private CategoryAxis xAxis;
@@ -50,45 +49,38 @@ public class ParkManagerVisitReportsPanelController {
 
 	public void showReport(VisitReportData report) {
 
-		if (report == null)
-			return;
+	    if (report == null) return;
 
-		Platform.runLater(() -> {
+	    Platform.runLater(() -> {
 
-			barChart.setAnimated(false);
-			barChart.getData().clear();
+	        pieChart.getData().clear();
 
-			xAxis.setCategories(javafx.collections.FXCollections.observableArrayList("Individual", "Group"));
+	        PieChart.Data individual =
+	                new PieChart.Data("Individual", report.getIndividualVisitors());
 
-			XYChart.Series<String, Number> series = new XYChart.Series<>();
-			series.setName("Visitors");
+	        PieChart.Data group =
+	                new PieChart.Data("Group", report.getGroupVisitors());
 
-			XYChart.Data<String, Number> individual = new XYChart.Data<>("Individual", report.getIndividualVisitors());
-			XYChart.Data<String, Number> group = new XYChart.Data<>("Group", report.getGroupVisitors());
+	        pieChart.getData().addAll(individual, group);
+	        
+	        pieChart.setLabelsVisible(true);
+	        pieChart.setLegendVisible(true);
 
-			series.getData().add(individual);
-			series.getData().add(group);
+	        int total = report.getIndividualVisitors() + report.getGroupVisitors();
+	        totalLabel.setText("Total visitors: " + total);
 
-			barChart.getData().add(series);
+	        individual.nodeProperty().addListener((obs, oldNode, newNode) -> {
+	            if (newNode != null) {
+	                newNode.setStyle("-fx-pie-color: #3498db;");
+	            }
+	        });
 
-			barChart.applyCss();
-			barChart.layout();
-
-			int max = Math.max(report.getIndividualVisitors(), report.getGroupVisitors());
-
-			int upper = roundUp(max);
-
-			yAxis.setAutoRanging(false);
-			yAxis.setLowerBound(0);
-			yAxis.setUpperBound(upper);
-			yAxis.setTickUnit(Math.max(1, upper / 10.0));
-
-			Platform.runLater(() -> {
-				addLabel(individual);
-				addLabel(group);
-				totalLabel.setText("Total visitors: " + (report.getIndividualVisitors() + report.getGroupVisitors()));
-			});
-		});
+	        group.nodeProperty().addListener((obs, oldNode, newNode) -> {
+	            if (newNode != null) {
+	                newNode.setStyle("-fx-pie-color: #e67e22;");
+	            }
+	        });
+	    });
 	}
 
 	@FXML
@@ -111,27 +103,6 @@ public class ParkManagerVisitReportsPanelController {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	private void addLabel(XYChart.Data<String, Number> data) {
-
-		javafx.scene.Node node = data.getNode();
-		if (node == null)
-			return;
-
-		javafx.scene.control.Label label = new javafx.scene.control.Label(String.valueOf(data.getYValue()));
-
-		label.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
-
-		javafx.scene.layout.StackPane stackPane = (javafx.scene.layout.StackPane) node;
-
-		stackPane.getChildren().add(label);
-
-		javafx.scene.layout.StackPane.setAlignment(label, javafx.geometry.Pos.TOP_CENTER);
-	}
-
-	private int roundUp(int value) {
-		return ((value / 10) + 1) * 10;
 	}
 
 }

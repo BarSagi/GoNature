@@ -56,6 +56,13 @@ public class StrategyFactory {
 
 		case "USAGE_REPORT_RESULT":
 			return new UsageReportStrategy();
+		case "GET_VISIT_DURATION_REPORT":
+		    return new VisitDurationReportStrategy();
+		case "VISIT_DURATION_REPORT_RESULT":
+			return new VisitDurationReportResultStrategy();
+		  
+		case "ALL_PARKS_RESULT":
+		    return new AllParksStrategy();
 
 		default:
 			return null;

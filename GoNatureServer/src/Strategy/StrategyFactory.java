@@ -57,6 +57,11 @@ public class StrategyFactory {
 		case "CLIENT_LOGOUT":
 			return new ClientLogoutStrategy();
 
+		case "GET_VISIT_DURATION_REPORT":
+		    return new GetVisitDurationReportStrategy();
+		    
+		case "GET_ALL_PARKS":
+		    return new GetAllParksStrategy();
 		default:
 			return null;
 		}
