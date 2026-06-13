@@ -50,6 +50,14 @@ public class ServiceRepresentativeDashboardController {
 	void showRegisterGuidePanel(ActionEvent event) {
 		loadPanel("/GUI/ServiceRepRegisterGuidePanel.fxml");
 	}
+	
+	/**
+	 * Sidebar Button Action: Loads the Group Guide registration panel
+	 */
+	@FXML
+	void showCreateCasualVisitPanel(ActionEvent event) {
+		loadPanel("/GUI/ServiceRepCreateCasualVisit.fxml");
+	}
 
 	/**
 	 * Sidebar Button Action: Logs out and returns to the main login route

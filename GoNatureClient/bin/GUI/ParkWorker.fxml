@@ -42,7 +42,10 @@
             <Button text="Create Order" onAction="#createOrder"
                     prefHeight="45.0" prefWidth="230.0"
                     style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
-
+			 <Button text="Create Casual Visit" onAction="#createCasualVisit"
+                    prefHeight="45.0" prefWidth="230.0"
+                    style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
+			
             <Button text="View Orders" onAction="#viewOrders"
                     prefHeight="45.0" prefWidth="230.0"
                     style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />

@@ -62,6 +62,8 @@ public class StrategyFactory {
 		    
 		case "GET_ALL_PARKS":
 		    return new GetAllParksStrategy();
+		case "CREATE_CASUAL_VISIT":
+			return new CreateCasualVisitStrategy();
 		default:
 			return null;
 		}

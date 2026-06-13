@@ -46,6 +46,11 @@ public class ParkWorkerController {
 	void viewOrders(ActionEvent event) {
 		loadPanel("/GUI/ParkWorkerViewOrders.fxml");
 	}
+	
+	@FXML
+	void createCasualVisit(ActionEvent event) {
+		loadPanel("/GUI/ParkWorkerCreateCasualVisit.fxml");
+	}
 
 	@FXML
 	void enterVisitor(ActionEvent event) {

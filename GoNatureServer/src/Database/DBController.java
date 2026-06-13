@@ -39,9 +39,16 @@ public class DBController {
 			ResultSet rs = ps.executeQuery();
 
 			while (rs.next()) {
-				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
-						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
-						rs.getString("email"), rs.getString("orderType"), rs.getString("status")));
+				result.add(new Order(
+						rs.getInt("orderId"),
+						rs.getInt("parkId"),
+						rs.getString("visitorId"),
+						rs.getDate("visitDate"), 
+						rs.getTime("visitTime"), 
+						rs.getInt("visitorCount"),
+						rs.getString("email"),
+						rs.getString("orderType"),
+						rs.getString("status")));
 			}
 
 			rs.close();
@@ -53,7 +60,66 @@ public class DBController {
 
 		return result;
 	}
+	
+	// =========================================================
+	// ORDERS - GET ALL ORDERS OF SPECIFIC PARK
+	// =========================================================
+	public ArrayList<Order> getAllParkOrders(String parkName) throws SQLException {
+	    ArrayList<Order> result = new ArrayList<>();
+	    
+	    // 1. Resolve the parkId using your existing helper method
+	    int parkId = getParkIdByName(parkName);
+	    
+	    // If the park name doesn't exist, return an empty list early
+	    if (parkId == -1) {
+	        System.err.println("[DB WARNING] getAllParkOrders: Park name '" + parkName + "' not found.");
+	        return result; 
+	    }
+	    
+	    // 2. Simple and clean query selecting directly from Orders using the resolved parkId
+	    String query = "SELECT * FROM Orders WHERE parkId = ?";
 
+	    Connection conn = null;
+	    PreparedStatement ps = null;
+	    ResultSet rs = null;
+	   
+	    try {
+	        conn = pool.getConnection();
+	        ps = conn.prepareStatement(query);
+	        ps.setInt(1, parkId);
+
+	        rs = ps.executeQuery();
+
+	        while (rs.next()) {
+	            result.add(new Order(
+	                    rs.getInt("orderId"),
+	                    rs.getInt("parkId"),
+	                    rs.getString("visitorId"),
+	                    rs.getDate("visitDate"), 
+	                    rs.getTime("visitTime"), 
+	                    rs.getInt("visitorCount"),
+	                    rs.getString("email"),
+	                    rs.getString("orderType"),
+	                    rs.getString("status")
+	            ));
+	        }
+
+	    } finally {
+	        // Safe resource cleanup to prevent memory and connection leaks
+	        if (rs != null) {
+	            try { rs.close(); } catch (SQLException e) { e.printStackTrace(); }
+	        }
+	        if (ps != null) {
+	            try { ps.close(); } catch (SQLException e) { e.printStackTrace(); }
+	        }
+	        if (conn != null) {
+	            pool.releaseConnection(conn);
+	        }
+	    }
+
+	    return result;
+	}
+	
 	// =========================================================
 	// CHECK AVAILABILITY (CAPACITY BASED)
 	// =========================================================
@@ -473,44 +539,52 @@ public class DBController {
 	// ENTER VISITOR
 	// =========================================================
 	public boolean enterVisitor(String visitorId) {
+	    // The query checks that an approved order exists for this visitor ID,
+	    // and that the planned visitTime is within a +/- 30 minute window from NOW().
+	    String query = "INSERT INTO Visits (parkId, orderId, visitorId, actualVisitorCount, entryTime) "
+	            + "SELECT parkId, orderId, visitorId, visitorCount, NOW() " 
+	            + "FROM Orders "
+	            + "WHERE visitorId = ? "
+	            + "AND status = 'Approved' "
+	            + "AND visitTime BETWEEN DATE_SUB(NOW(), INTERVAL 30 MINUTE) AND DATE_ADD(NOW(), INTERVAL 30 MINUTE) "
+	            + "ORDER BY orderId DESC LIMIT 1";
 
-		String query = "INSERT INTO Visits (parkId, orderId, visitorId, actualVisitorCount, entryTime) "
-				+ "SELECT parkId, orderId, visitorId, visitorCount, NOW() " + "FROM Orders "
-				+ "WHERE visitorId = ? AND status = 'Approved' " + "ORDER BY orderId DESC LIMIT 1";
+	    Connection conn = null;
+	    PreparedStatement ps = null;
 
-		Connection conn = null;
+	    try {
+	        conn = pool.getConnection();
+	        ps = conn.prepareStatement(query);
+	        ps.setString(1, visitorId);
 
-		try {
-			conn = pool.getConnection();
+	        int rows = ps.executeUpdate();
+	        return rows > 0; // Returns true if a valid row within the time window was found and inserted
 
-			PreparedStatement ps = conn.prepareStatement(query);
-			ps.setString(1, visitorId);
-
-			int rows = ps.executeUpdate();
-
-			ps.close();
-
-			return rows > 0;
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return false;
-
-		} finally {
-			pool.releaseConnection(conn);
-		}
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false;
+	    } finally {
+	        // Safe resource closing structure
+	        if (ps != null) {
+	            try { ps.close(); } catch (SQLException e) { e.printStackTrace(); }
+	        }
+	        if (conn != null) {
+	            pool.releaseConnection(conn);
+	        }
+	    }
 	}
-
 	// =========================================================
 	// EXIT VISITOR
 	// =========================================================
 	public boolean exitVisitor(String visitorId) {
 
-		String query = "UPDATE Visits SET exitTime = NOW() " + "WHERE visitorId = ? AND exitTime IS NULL "
-				+ "ORDER BY visitId DESC LIMIT 1";
-
+		String query = "UPDATE Visits SET exitTime = NOW() " 
+	            + "WHERE visitorId = ? "
+	            + "AND entryTime IS NOT NULL " 
+	            + "AND exitTime IS NULL "
+	            + "ORDER BY visitId DESC LIMIT 1";
 		Connection conn = null;
-
+		
 		try {
 			conn = pool.getConnection();
 
@@ -749,7 +823,9 @@ public class DBController {
 
 		return null;
 	}
-
+	// =========================================================
+	// GET PARK ID BY NAME
+	// =========================================================
 	public int getParkIdByName(String parkName) {
 	    if (parkName == null) return -1;
 
@@ -781,7 +857,10 @@ public class DBController {
 
 	    return -1; 
 	}
-
+	
+	// =========================================================
+	// USAGE REPORT
+	// =========================================================
 	public ArrayList<UsageReportData> getUsageReport(String parkName, int year) {
 
 		ArrayList<UsageReportData> result = new ArrayList<>();
@@ -844,7 +923,9 @@ public class DBController {
 
 		return result;
 	}
-
+	// =========================================================
+	// VISIT DURATION
+	// =========================================================
 	public ArrayList<Visit> getVisitDurationReport(int parkId, int month, int year) {
 
 		ArrayList<Visit> result = new ArrayList<>();
@@ -886,6 +967,9 @@ public class DBController {
 		return result;
 	}
 	
+	// =========================================================
+	// GET PARK NAMES
+	// =========================================================
 	public ArrayList<String> getAllParkNames() {
 
 	    ArrayList<String> parks = new ArrayList<>();
@@ -917,5 +1001,48 @@ public class DBController {
 	    }
 
 	    return parks;
+	}
+
+	// =========================================================
+	// CREATE NEW CASUAL VISIT
+	// =========================================================
+	public boolean registerCasualVisit(String parkName, String visitorId, int visitorCount) {
+	    int parkId = getParkIdByName(parkName);
+	    
+	    if (parkId == -1) {
+	        System.err.println("[DB ERROR] Could not register casual visit: Park name '" + parkName + "' not found.");
+	        return false;
+	    }
+
+	    
+	    String query = "INSERT INTO Visits (parkId, orderId, visitorId, actualVisitorCount, entryTime, exitTime) "
+	                 + "VALUES (?, NULL, ?, ?, NOW(), NULL)";
+
+	    Connection conn = null;
+	    PreparedStatement ps = null;
+
+	    try {
+	        conn = pool.getConnection();
+	        ps = conn.prepareStatement(query);
+	        
+	        ps.setInt(1, parkId); // Inserting the ID we just fetched
+	        ps.setString(2, visitorId);
+	        ps.setInt(3, visitorCount);
+
+	        int rowsAffected = ps.executeUpdate();
+	        return rowsAffected > 0;
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false;
+	    } finally {
+	        
+	        if (ps != null) {
+	            try { ps.close(); } catch (SQLException e) { e.printStackTrace(); }
+	        }
+	        if (conn != null) {
+	            pool.releaseConnection(conn);
+	        }
+	    }
 	}
 }

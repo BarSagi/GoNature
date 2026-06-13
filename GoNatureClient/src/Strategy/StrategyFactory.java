@@ -14,7 +14,7 @@ public class StrategyFactory {
 
 		case "RETURN_VISITOR_ORDERS":
 			return new ReturnVisitorOrdersStrategy();
-			
+
 		case "RETURN_VISITOR_ORDERS_AND_DATA":
 			return new ReturnVisitorOrdersAndDataStrategy();
 
@@ -56,14 +56,22 @@ public class StrategyFactory {
 
 		case "USAGE_REPORT_RESULT":
 			return new UsageReportStrategy();
+			
 		case "GET_VISIT_DURATION_REPORT":
-		    return new VisitDurationReportStrategy();
+			return new VisitDurationReportStrategy();
+			
 		case "VISIT_DURATION_REPORT_RESULT":
 			return new VisitDurationReportResultStrategy();
-		  
-		case "ALL_PARKS_RESULT":
-		    return new AllParksStrategy();
 
+		case "ALL_PARKS_RESULT":
+			return new AllParksStrategy();
+
+		case "PARK_ORDERS_RESULT":
+			return new ParkOrdersResultStrategy();
+			
+		case "CREATE_CASUAL_VISIT_RESULT":
+			return new CasualVisitResultStrategy();
+			
 		default:
 			return null;
 		}

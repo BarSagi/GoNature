@@ -22,9 +22,10 @@
                prefHeight="40.0" prefWidth="250.0" />
 
     <Button text="Confirm Entry"
-            prefHeight="40.0" prefWidth="220.0"
+            prefHeight="55.0" prefWidth="280.0"
+            style="-fx-background-color: #27ae60; -fx-background-radius: 30; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-cursor: hand;"
             onAction="#confirmEntry" />
-
+	
     <Label fx:id="statusLabel" text="" style="-fx-text-fill: red;" />
 
 </VBox>

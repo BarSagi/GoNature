@@ -18,7 +18,7 @@ public class DBConnectionPool {
 
 	private final String url = "jdbc:mysql://localhost:3306/GoNature?serverTimezone=Asia/Jerusalem&useSSL=false";
 	private final String user = "root";
-	private final String password = "2066"; // CHANGE PASSWORD HERE
+	private final String password = "RDac2027"; // CHANGE PASSWORD HERE
 
 	private DBConnectionPool(EchoServer server) {
 		this.server = server;

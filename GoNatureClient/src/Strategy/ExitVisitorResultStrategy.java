@@ -15,7 +15,7 @@ public class ExitVisitorResultStrategy implements MessageStrategy {
 				if (success) {
 					ParkWorkerExitVisitorController.instance.showStatus("Visitor exited successfully.");
 				} else {
-					ParkWorkerExitVisitorController.instance.showStatus("Failed to exit visitor.");
+					ParkWorkerExitVisitorController.instance.showStatus("Failed to exit visitor. Make sure the ID was typed correctly.");
 				}
 			}
 		});

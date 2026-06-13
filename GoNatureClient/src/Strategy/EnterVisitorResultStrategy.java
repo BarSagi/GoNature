@@ -15,7 +15,13 @@ public class EnterVisitorResultStrategy implements MessageStrategy {
 				if (success) {
 					ParkWorkerEnterVisitorController.instance.showStatus("Visitor entered successfully.");
 				} else {
-					ParkWorkerEnterVisitorController.instance.showStatus("Failed to enter visitor.");
+					ParkWorkerEnterVisitorController.instance.showStatus(
+									"Entry Denied!\n\n"
+									+ "Please verify the following:\n"
+									+ "• The ID number was entered correctly.\n"
+									+ "• The order status is set to 'Approved'.\n"
+									+ "• The current time is within 30 minutes of the scheduled visit.");
+									
 				}
 			}
 		});

@@ -8,15 +8,15 @@ import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
 public class GetOrdersStrategy implements MessageStrategy {
-	// UNUSED!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// Reusing for park worker "view orders" screen 
 	@Override
 	public void execute(Message message, ConnectionToClient client, EchoServer server) {
-
+		
 		try {
+			String parkName = message.getData().toString();
+			ArrayList<Order> orders = server.getDatabase().getAllParkOrders(parkName);
 
-			ArrayList<Order> orders = server.getDatabase().getAllOrders();
-
-			client.sendToClient(orders);
+			client.sendToClient(new Message ("PARK_ORDERS_RESULT", orders));
 
 		} catch (Exception e) {
 
