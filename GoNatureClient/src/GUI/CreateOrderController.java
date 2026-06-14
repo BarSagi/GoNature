@@ -85,7 +85,8 @@ public class CreateOrderController implements Initializable {
 		newOrder.add(selectedDate.toString()); // Index 2
 		newOrder.add(selectedTime); // Index 3
 		newOrder.add(visitorsAmount); // Index 4
-		newOrder.add("Individual"); // Index 5 (Order Type)
+		newOrder.add(GoNatureClient.currentVisitor.getEmail());
+		newOrder.add("Individual"); // Index 6 (Order Type)
 
 		// 5. Send to Server
 		Message msg = new Message("SUBMIT_NEW_ORDER", newOrder);

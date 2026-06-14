@@ -2,6 +2,7 @@ package Strategy;
 
 import Common.Message;
 import Client.ClientUI;
+import Client.GoNatureClient;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 
@@ -19,7 +20,17 @@ public class OrderCreationStrategy implements MessageStrategy {
 				alert.showAndWait();
 
 				try {
-					ClientUI.changeScreen("/GUI/LoginRoute.fxml", "Login");
+					if (GoNatureClient.currentVisitor != null) {
+						Message msg = new Message("FETCH_VISITOR_ORDERS", GoNatureClient.currentVisitor.getVisitorId());
+
+						try {
+							ClientUI.send(msg);
+						} catch (Exception e) {
+							System.out.println("Error sending message to server");
+							e.printStackTrace();
+						}
+					} else
+						ClientUI.changeScreen("/GUI/LoginVisitor.fxml", "GoNature - Visitor Login");
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

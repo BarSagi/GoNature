@@ -8,6 +8,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.BorderPane;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -45,12 +46,17 @@ public class VisitorOrdersScreenController {
 	// This list holds the actual Order objects
 	private ObservableList<Order> tableData = FXCollections.observableArrayList();
 
+	// Add this new FXML variable for the error label
+	@FXML
+	private Label errorLabel;
+
+	@FXML
+	private BorderPane mainBorderPane;
+
 	@FXML
 	public void initialize() {
 		instance = this;
 
-		// CRITICAL: The strings here MUST match the variable names in Entity.Order
-		// exactly!
 		colId.setCellValueFactory(new PropertyValueFactory<>("orderId"));
 		colDate.setCellValueFactory(new PropertyValueFactory<>("visitDate"));
 		colTime.setCellValueFactory(new PropertyValueFactory<>("visitTime"));
@@ -58,13 +64,50 @@ public class VisitorOrdersScreenController {
 		colType.setCellValueFactory(new PropertyValueFactory<>("orderType"));
 		colStatus.setCellValueFactory(new PropertyValueFactory<>("orderStatus"));
 
-		// Bind the data list to the table
 		ordersTable.setItems(tableData);
 
 		if (GoNatureClient.currentVisitor != null) {
 			welcomeLabel.setText("Welcome, " + GoNatureClient.currentVisitor.getFirstName() + "!");
 		} else {
 			welcomeLabel.setText("Welcome!");
+		}
+
+		// --- NEW: DOUBLE CLICK LISTENER ---
+		ordersTable.setOnMouseClicked(event -> {
+			// Check if it was a double click AND a row is actually selected
+			if (event.getClickCount() == 2 && ordersTable.getSelectionModel().getSelectedItem() != null) {
+				editOrder(null); // Trigger the edit logic
+			}
+		});
+	}
+
+	@FXML
+	void editOrder(ActionEvent event) {
+		Order selectedOrder = ordersTable.getSelectionModel().getSelectedItem();
+
+		if (selectedOrder == null) {
+			errorLabel.setText("Please select an order to edit!"); // Clarify the error
+			errorLabel.setVisible(true);
+			return;
+		}
+
+		errorLabel.setVisible(false);
+
+		try {
+			javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+					getClass().getResource("/GUI_Visitor/EditOrder.fxml"));
+			javafx.scene.Parent editView = loader.load();
+
+			EditOrderController editController = loader.getController();
+
+			// --- UPDATED LINE: Pass mainBorderPane.getCenter() as the third argument! ---
+			editController.setOrderData(selectedOrder, mainBorderPane);
+
+			mainBorderPane.setCenter(editView);
+
+		} catch (Exception e) {
+			System.out.println("Error loading Edit Order pane.");
+			e.printStackTrace();
 		}
 	}
 
@@ -91,6 +134,46 @@ public class VisitorOrdersScreenController {
 			ClientUI.changeScreen("/GUI/CreateOrder.fxml", "Create Order");
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+
+	@FXML
+	void cancelOrder(ActionEvent event) {
+		// 1. Grab the selected order
+		Order selectedOrder = ordersTable.getSelectionModel().getSelectedItem();
+
+		// 2. Validate selection
+		if (selectedOrder == null) {
+			errorLabel.setText("Please select an order to cancel!");
+			errorLabel.setVisible(true);
+			return;
+		}
+		errorLabel.setVisible(false);
+
+		// 3. Optional but Excellent UX: Ask for confirmation!
+		javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+				javafx.scene.control.Alert.AlertType.CONFIRMATION);
+		alert.setTitle("Cancel Order");
+		alert.setHeaderText("Cancel Order #" + selectedOrder.getOrderId());
+		alert.setContentText("Are you sure you want to cancel this order? This action cannot be undone.");
+
+		// Wait for the user's response
+		java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
+
+		if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+			try {
+				// 4. Send the cancellation message to the server
+				// Assuming your Server will have a "CANCEL_ORDER" Strategy that updates the
+				// status in the DB
+				Message msg = new Message("CANCEL_ORDER", selectedOrder);
+				ClientUI.send(msg);
+
+				System.out.println("Cancellation request sent for Order ID: " + selectedOrder.getOrderId());
+
+			} catch (Exception e) {
+				System.out.println("Error sending cancellation request to server.");
+				e.printStackTrace();
+			}
 		}
 	}
 

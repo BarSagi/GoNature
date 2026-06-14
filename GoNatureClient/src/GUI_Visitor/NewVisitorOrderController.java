@@ -2,6 +2,7 @@ package GUI_Visitor;
 
 import Client.ClientUI;
 import Common.Message;
+import Common.Order;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -48,7 +49,7 @@ public class NewVisitorOrderController {
 	@FXML
 	public void initialize() {
 		// Initialize Park Options
-		ObservableList<String> parks = FXCollections.observableArrayList("Karmel", "Banias", "Niagara");
+		ObservableList<String> parks = FXCollections.observableArrayList("Karmel", "Banias", "Yarkon");
 		parkComboBox.setItems(parks);
 
 		// Initialize Time Options (e.g., 08:00 to 18:00)
@@ -63,21 +64,23 @@ public class NewVisitorOrderController {
 	/**
 	 * Triggered when the user clicks "Complete Registration & Order"
 	 */
+	/**
+	 * Triggered when the user clicks "Complete Registration & Order"
+	 */
 	@FXML
 	void submitRegistrationAndOrder(ActionEvent event) {
 		errorLabel.setVisible(false); // Reset error label on each attempt
 
-		// 1. Gather all inputs
-		String id = idField.getText();
-		String firstName = firstNameField.getText();
-		String lastName = lastNameField.getText();
-		String email = emailField.getText();
-		String phone = phoneField.getText();
-
+		// 1. Gather all inputs (Added .trim() to prevent accidental spacebar errors)
+		String id = idField.getText().trim();
+		String firstName = firstNameField.getText().trim();
+		String lastName = lastNameField.getText().trim();
+		String email = emailField.getText().trim();
+		String phone = phoneField.getText().trim();
 		String park = parkComboBox.getValue();
 		LocalDate date = datePicker.getValue();
 		String time = timeComboBox.getValue();
-		String visitorsCount = visitorsCountField.getText();
+		String visitorsCount = visitorsCountField.getText().trim();
 
 		// 2. Validate inputs (Make sure nothing is empty and types are correct)
 		if (id.isEmpty() || firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || phone.isEmpty()
@@ -91,8 +94,15 @@ public class NewVisitorOrderController {
 			return;
 		}
 
-		if (!visitorsCount.matches("\\d+") || Integer.parseInt(visitorsCount) <= 0) {
-			showError("Number of visitors must be a valid positive number.");
+		int visitorsNum;
+		try {
+			visitorsNum = Integer.parseInt(visitorsCount);
+			if (visitorsNum <= 0) {
+				showError("Number of visitors must be a valid positive number.");
+				return;
+			}
+		} catch (NumberFormatException e) {
+			showError("Number of visitors must be a valid number.");
 			return;
 		}
 
@@ -101,31 +111,48 @@ public class NewVisitorOrderController {
 			return;
 		}
 
-		// 3. Package data into an ArrayList
-		ArrayList<String> dataToServer = new ArrayList<>();
-		// Visitor Data
-		dataToServer.add(id);
-		dataToServer.add(firstName);
-		dataToServer.add(lastName);
-		dataToServer.add(email);
-		dataToServer.add(phone);
-		// Order Data
-		dataToServer.add(park);
-		dataToServer.add(date.toString());
-		dataToServer.add(time);
-		dataToServer.add(visitorsCount);
+		int parkId = 0;
+		switch (park) {
+		case "Karmel":
+			parkId = 1;
+			break;
+		case "Banias":
+			parkId = 2;
+			break;
+		case "Yarkon":
+			parkId = 3;
+			break;
+		}
 
-		// 4. Send Message to Server
-		// We use the new command "REGISTER_AND_ORDER" which your Server Strategy will
-		// catch
+		// --- 3. CREATE VISITOR INFO (ArrayList of Strings) ---
+		ArrayList<String> visitorInfo = new ArrayList<>();
+		visitorInfo.add(id);
+		visitorInfo.add(firstName);
+		visitorInfo.add(lastName);
+		visitorInfo.add(email);
+		visitorInfo.add(phone);
+
+		// --- 4. CREATE ORDER OBJECT ---
+		Order newOrder = new Order();
+		newOrder.setVisitorId(id);
+		newOrder.setParkId(parkId);
+		newOrder.setVisitDate(java.sql.Date.valueOf(date));
+		newOrder.setVisitTime(java.sql.Time.valueOf(time + ":00"));
+		newOrder.setVisitorCount(visitorsNum);
+		newOrder.setOrderType("Individual"); 
+		newOrder.setOrderStatus("Approved");
+
+		// --- 5. PACKAGE BOTH INTO ArrayList<Object> ---
+		ArrayList<Object> dataToServer = new ArrayList<>();
+		dataToServer.add(visitorInfo); // Index 0 is the ArrayList<String>
+		dataToServer.add(newOrder); // Index 1 is the Order Object
+
+		// --- 6. SEND MESSAGE TO SERVER ---
 		Message message = new Message("REGISTER_AND_ORDER", dataToServer);
 
 		try {
 			ClientUI.send(message);
-			// Note: In a full implementation, you'd wait for a server response here
-			// using Platform.runLater() inside your handleMessageFromServer method
-			// before showing a success popup or changing the screen.
-			System.out.println("Data sent to server successfully!");
+			System.out.println("Hybrid data sent to server successfully!");
 		} catch (Exception e) {
 			showError("Lost connection to the server.");
 			e.printStackTrace();

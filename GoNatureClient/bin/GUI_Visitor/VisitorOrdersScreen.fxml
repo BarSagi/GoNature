@@ -7,9 +7,11 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 
-<BorderPane prefHeight="600.0" prefWidth="850.0"
-	style="-fx-background-color: #f4f7f6;"
+<BorderPane fx:id="mainBorderPane" prefHeight="600.0"
+	prefWidth="850.0" style="-fx-background-color: #f4f7f6;"
 	xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
 	fx:controller="GUI_Visitor.VisitorOrdersScreenController">
 
@@ -61,7 +63,8 @@
 
 			<Label text="Your Recent Orders"
 				style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
-			<Label text="View and manage your upcoming visits below."
+			<Label
+				text="Select an order and click Edit, or double-click an order in the list."
 				style="-fx-font-size: 14px; -fx-text-fill: #7f8c8d;" />
 
 			<TableView fx:id="ordersTable"
@@ -85,6 +88,20 @@
 					<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
 				</columnResizePolicy>
 			</TableView>
+
+			<HBox alignment="CENTER_LEFT">
+				<Button text="Cancel Selected Order" onAction="#cancelOrder"
+					prefHeight="35.0" prefWidth="180.0"
+					style="-fx-background-color: #c0392b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" />
+
+				<Region HBox.hgrow="ALWAYS" />
+
+				<Label fx:id="errorLabel" text="Please select an order first!"
+					visible="false" style="-fx-text-fill: red; -fx-padding: 0 15 0 0;" />
+				<Button text="Edit Selected Order" onAction="#editOrder"
+					prefHeight="35.0" prefWidth="180.0"
+					style="-fx-background-color: #f39c12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" />
+			</HBox>
 		</VBox>
 	</center>
 

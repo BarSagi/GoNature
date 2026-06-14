@@ -56,10 +56,10 @@ public class StrategyFactory {
 
 		case "USAGE_REPORT_RESULT":
 			return new UsageReportStrategy();
-			
+
 		case "GET_VISIT_DURATION_REPORT":
 			return new VisitDurationReportStrategy();
-			
+
 		case "VISIT_DURATION_REPORT_RESULT":
 			return new VisitDurationReportResultStrategy();
 
@@ -68,10 +68,22 @@ public class StrategyFactory {
 
 		case "PARK_ORDERS_RESULT":
 			return new ParkOrdersResultStrategy();
-			
+
 		case "CREATE_CASUAL_VISIT_RESULT":
 			return new CasualVisitResultStrategy();
-			
+
+		case "UPDATE_SUCCESS":
+			return new UpdateSuccessStrategy();
+
+		case "UPDATE_FAILED":
+			return new UpdateFailedStrategy();
+
+		case "ORDER_CANCEL_SUCCESS":
+			return new OrderCancelSuccessStrategy();
+
+		case "ORDER_CANCEL_FAILED":
+			return new OrderCancelFailedStrategy();
+
 		default:
 			return null;
 		}
