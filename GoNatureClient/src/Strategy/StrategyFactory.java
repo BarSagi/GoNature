@@ -83,6 +83,9 @@ public class StrategyFactory {
 
 		case "ORDER_CANCEL_FAILED":
 			return new OrderCancelFailedStrategy();
+			
+		case "CANCELLATION_REPORT_RESULT":
+		    return new CancellationReportStrategy();
 
 		default:
 			return null;

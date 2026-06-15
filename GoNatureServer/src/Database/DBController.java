@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import Common.CancellationReportData;
 import Common.Order;
 import Common.UsageReportData;
 import Common.Visit;
@@ -481,47 +482,6 @@ public class DBController {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
-		} finally {
-			pool.releaseConnection(conn);
-		}
-
-		return result;
-	}
-
-	// =========================================================
-	// REPORTS - CANCELLATION
-	// =========================================================
-	public ArrayList<Order> getCancellationReport(int parkId, int month, int year) {
-
-		ArrayList<Order> result = new ArrayList<>();
-
-		String query = "SELECT * FROM Orders " + "WHERE parkId = ? AND status = 'CANCELLED' "
-				+ "AND YEAR(visitDate) = ? AND MONTH(visitDate) = ?";
-
-		Connection conn = null;
-
-		try {
-			conn = pool.getConnection();
-
-			PreparedStatement ps = conn.prepareStatement(query);
-			ps.setInt(1, parkId);
-			ps.setInt(2, year);
-			ps.setInt(3, month);
-
-			ResultSet rs = ps.executeQuery();
-
-			while (rs.next()) {
-				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
-						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
-						rs.getString("email"), rs.getString("orderType"), rs.getString("status")));
-			}
-
-			rs.close();
-			ps.close();
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-
 		} finally {
 			pool.releaseConnection(conn);
 		}
@@ -1100,6 +1060,56 @@ public class DBController {
 		}
 
 		return result;
+	}
+	
+	// =========================================================
+	// REPORTS - CANCELLATION
+	// =========================================================
+	public ArrayList<CancellationReportData> getCancellationReport(int parkId, int month, int year) {
+
+	    ArrayList<CancellationReportData> result = new ArrayList<>();
+	    Connection conn = null;
+
+	    String query =
+	            "SELECT DAY(visitDate) AS dayOfMonth, COUNT(*) AS cancellations " +
+	            "FROM Orders " +
+	            "WHERE parkId = ? " +
+	            "AND status = 'Canceled' " +
+	            "AND YEAR(visitDate) = ? " +
+	            "AND MONTH(visitDate) = ? " +
+	            "GROUP BY DAY(visitDate) " +
+	            "ORDER BY dayOfMonth";
+
+	    try {
+	        conn = pool.getConnection();
+
+	        PreparedStatement ps = conn.prepareStatement(query);
+	        ps.setInt(1, parkId);
+	        ps.setInt(2, year);
+	        ps.setInt(3, month);
+
+	        ResultSet rs = ps.executeQuery();
+
+	        while (rs.next()) {
+
+	            int day = rs.getInt("dayOfMonth");
+	            double cancellations = rs.getDouble("cancellations");
+
+	            result.add(new CancellationReportData(day, cancellations));
+	        }
+
+	        rs.close();
+	        ps.close();
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        if (conn != null) {
+	            pool.releaseConnection(conn);
+	        }
+	    }
+
+	    return result;
 	}
 
 	// =========================================================

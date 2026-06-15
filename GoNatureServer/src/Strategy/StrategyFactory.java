@@ -66,6 +66,9 @@ public class StrategyFactory {
 		case "CREATE_CASUAL_VISIT":
 			return new CreateCasualVisitStrategy();
 			
+		case "GET_CANCELLATION_REPORT":
+		    return new GetCancellationReportStrategy();
+			
 		default:
 			return null;
 		}

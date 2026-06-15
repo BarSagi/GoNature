@@ -6,40 +6,18 @@ import java.io.Serializable;
 public class CancellationReportData implements Serializable {
 
     private int dayOfMonth;
-    private int cancellations;
-    private int noShows;
+    private double value;
 
-    public CancellationReportData(int dayOfMonth, int cancellations, int noShows) {
+    public CancellationReportData(int dayOfMonth, double value) {
         this.dayOfMonth = dayOfMonth;
-        this.cancellations = cancellations;
-        this.noShows = noShows;
+        this.value = value;
     }
 
     public int getDayOfMonth() {
         return dayOfMonth;
     }
 
-    public void setDayOfMonth(int dayOfMonth) {
-        this.dayOfMonth = dayOfMonth;
-    }
-
-    public int getCancellations() {
-        return cancellations;
-    }
-
-    public void setCancellations(int cancellations) {
-        this.cancellations = cancellations;
-    }
-
-    public int getNoShows() {
-        return noShows;
-    }
-
-    public void setNoShows(int noShows) {
-        this.noShows = noShows;
-    }
-
     public double getValue() {
-        return cancellations + noShows;
+        return value;
     }
 }
