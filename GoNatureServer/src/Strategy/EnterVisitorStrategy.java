@@ -15,7 +15,7 @@ public class EnterVisitorStrategy implements MessageStrategy {
             ArrayList<String> data = (ArrayList<String>) message.getData();
 
             String visitorId = data.get(0);
-
+            
             boolean success = server.getDatabase().enterVisitor(visitorId);
 
             client.sendToClient(new Message("ENTER_VISITOR_RESULT", success));

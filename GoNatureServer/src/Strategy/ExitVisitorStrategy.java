@@ -15,7 +15,7 @@ public class ExitVisitorStrategy implements MessageStrategy {
 			ArrayList<String> data = (ArrayList<String>) message.getData();
 
 			String visitorId = data.get(0);
-
+			
 			boolean success = server.getDatabase().exitVisitor(visitorId);
 
 			client.sendToClient(new Message("EXIT_VISITOR_RESULT", success));
