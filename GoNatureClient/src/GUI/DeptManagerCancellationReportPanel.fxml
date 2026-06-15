@@ -9,35 +9,34 @@
       style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30;"
       xmlns="http://javafx.com/javafx/19"
       xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="GUI.VisitDurationReportController">
+      fx:controller="GUI.DeptManagerCancellationReportPanel">
 
-    <Label text="Visit Duration Report"
+    <Label text="Cancellation Report (Heat Map)"
            style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
 
+    <!-- FILTERS -->
     <HBox spacing="10" alignment="CENTER">
 
-        <ComboBox fx:id="monthCombo" promptText="Month" />
-        <ComboBox fx:id="yearCombo" promptText="Year" />
+        <ComboBox fx:id="parkCombo"
+                  promptText="Select Park" />
+
+        <ComboBox fx:id="monthCombo"
+                  promptText="Month" />
+
+        <ComboBox fx:id="yearCombo"
+                  promptText="Year" />
 
         <Button text="Generate"
                 onAction="#generateReport" />
 
     </HBox>
 
-    <BarChart fx:id="barChart"
-              prefHeight="380"
-              prefWidth="650"
-              categoryGap="25"
-              barGap="5">
-
-        <xAxis>
-            <CategoryAxis fx:id="xAxis" label="Time Slots (2-hour intervals)" />
-        </xAxis>
-
-        <yAxis>
-            <NumberAxis fx:id="yAxis" label="Avg Stay Duration (Hours)" />
-        </yAxis>
-
-    </BarChart>
+    <ScrollPane fitToWidth="true" prefHeight="420" prefWidth="700">
+        <GridPane fx:id="heatMapGrid"
+                  hgap="2"
+                  vgap="2"
+                  alignment="CENTER"
+                  style="-fx-padding: 10;" />
+    </ScrollPane>
 
 </VBox>

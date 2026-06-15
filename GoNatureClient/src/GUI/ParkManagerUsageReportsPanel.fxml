@@ -10,13 +10,16 @@
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="GUI.ParkManagerUsageReportsPanelController">
 
-    <Label text="Usage Report - Under Capacity Rate"
+    <Label text="Usage Report - Weekly Average Capacity"
            style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
 
     <HBox spacing="10" alignment="CENTER">
 
-        <Label text="Year:"
-               style="-fx-font-size: 14px;" />
+        <Label text="Month:" style="-fx-font-size: 14px;" />
+
+        <ComboBox fx:id="monthCombo" promptText="Select Month" />
+
+        <Label text="Year:" style="-fx-font-size: 14px;" />
 
         <ComboBox fx:id="yearCombo" promptText="Select Year" />
 
@@ -27,11 +30,11 @@
               categoryGap="10" barGap="2">
 
         <xAxis>
-            <CategoryAxis fx:id="xAxis" label="Month" />
+            <CategoryAxis fx:id="xAxis" label="Day of Week" />
         </xAxis>
 
         <yAxis>
-            <NumberAxis fx:id="yAxis" label="Under Capacity %" />
+            <NumberAxis fx:id="yAxis" label="Average Capacity %" />
         </yAxis>
 
     </BarChart>

@@ -861,67 +861,68 @@ public class DBController {
 	// =========================================================
 	// USAGE REPORT
 	// =========================================================
-	public ArrayList<UsageReportData> getUsageReport(String parkName, int year) {
+	public ArrayList<UsageReportData> getUsageReport(String parkName, int month, int year) {
 
-		ArrayList<UsageReportData> result = new ArrayList<>();
-		Connection conn = null;
+	    ArrayList<UsageReportData> result = new ArrayList<>();
+	    Connection conn = null;
 
-		try {
-			conn = pool.getConnection();
+	    try {
+	        conn = pool.getConnection();
 
-			int parkId = getParkIdByName(parkName);
+	        int parkId = getParkIdByName(parkName);
 
-			if (parkId == -1) {
-				return result;
-			}
+	        if (parkId == -1) {
+	            return result;
+	        }
 
-			String sql = "SELECT " + "MONTH(v.entryTime) AS month, " + "DAY(v.entryTime) AS day, "
-					+ "SUM(v.actualVisitorCount) AS dailyVisitors, " + "p.maxCapacity " + "FROM Visits v "
-					+ "JOIN Parks p ON v.parkId = p.parkId " + "WHERE v.parkId = ? " + "AND YEAR(v.entryTime) = ? "
-					+ "GROUP BY MONTH(v.entryTime), DAY(v.entryTime), p.maxCapacity " + "ORDER BY month, day";
+	        String sql =
+	                "SELECT " +
+	                "DAYOFWEEK(v.entryTime) AS dayOfWeek, " +
+	                "(SUM(v.actualVisitorCount) / COUNT(DISTINCT DATE(v.entryTime))) AS avgDailyVisitors, " +
+	                "p.maxCapacity " +
+	                "FROM Visits v " +
+	                "JOIN Parks p ON v.parkId = p.parkId " +
+	                "WHERE v.parkId = ? " +
+	                "AND YEAR(v.entryTime) = ? " +
+	                "AND MONTH(v.entryTime) = ? " +
+	                "GROUP BY DAYOFWEEK(v.entryTime), p.maxCapacity " +
+	                "ORDER BY dayOfWeek";
 
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setInt(1, parkId);
-			ps.setInt(2, year);
+	        PreparedStatement ps = conn.prepareStatement(sql);
+	        ps.setInt(1, parkId);
+	        ps.setInt(2, year);
+	        ps.setInt(3, month);
 
-			ResultSet rs = ps.executeQuery();
+	        ResultSet rs = ps.executeQuery();
 
-			// month -> list of daily percentages
-			Map<Integer, List<Double>> monthlyUsage = new HashMap<>();
+	        while (rs.next()) {
+	            int dayOfWeek = rs.getInt("dayOfWeek");
+	            double avgDailyVisitors = rs.getDouble("avgDailyVisitors"); 
+	            int maxCapacity = rs.getInt("maxCapacity");
 
-			while (rs.next()) {
+	            double avgCapacity;
 
-				int month = rs.getInt("month");
-				int dailyVisitors = rs.getInt("dailyVisitors");
-				int maxCapacity = rs.getInt("maxCapacity");
+	            if (maxCapacity == 0) {
+	                avgCapacity = 0;
+	            } else {
+	                avgCapacity = avgDailyVisitors / maxCapacity;
+	                avgCapacity = avgCapacity * 100;
+	            }
 
-				double dailyPercent = maxCapacity == 0 ? 0 : ((double) dailyVisitors / maxCapacity) * 100;
+	            result.add(new UsageReportData(dayOfWeek, avgCapacity));
+	        }
 
-				monthlyUsage.computeIfAbsent(month, k -> new ArrayList<>()).add(dailyPercent);
-			}
+	        rs.close();
+	        ps.close();
 
-			rs.close();
-			ps.close();
-
-			for (Map.Entry<Integer, List<Double>> entry : monthlyUsage.entrySet()) {
-
-				int month = entry.getKey();
-				List<Double> values = entry.getValue();
-
-				double avgMonthlyPercent = values.stream().mapToDouble(Double::doubleValue).average().orElse(0);
-
-				result.add(new UsageReportData(month, avgMonthlyPercent));
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			if (conn != null) {
-				pool.releaseConnection(conn);
-			}
-		}
-
-		return result;
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    } finally {
+	        if (conn != null) {
+	            pool.releaseConnection(conn);
+	        }
+	    }
+	    return result;
 	}
 	// =========================================================
 	// VISIT DURATION

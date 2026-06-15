@@ -16,9 +16,10 @@ public class GetUsageReportStrategy implements MessageStrategy {
 		ArrayList<Object> data = (ArrayList<Object>) message.getData();
 
 		String parkName = (String) data.get(0);
-		int year = (int) data.get(1);
+		int month = (int) data.get(1);
+		int year = (int) data.get(2);
 
-		ArrayList<UsageReportData> result = server.getDatabase().getUsageReport(parkName, year);
+		ArrayList<UsageReportData> result = server.getDatabase().getUsageReport(parkName, month, year);
 
 		try {
 			Message response = new Message("USAGE_REPORT_RESULT", result);
