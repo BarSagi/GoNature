@@ -165,7 +165,7 @@ public class VisitorOrdersScreenController {
 				// 4. Send the cancellation message to the server
 				// Assuming your Server will have a "CANCEL_ORDER" Strategy that updates the
 				// status in the DB
-				Message msg = new Message("CANCEL_ORDER", selectedOrder);
+				Message msg = new Message("CANCEL_ORDER", selectedOrder.getOrderId());
 				ClientUI.send(msg);
 
 				System.out.println("Cancellation request sent for Order ID: " + selectedOrder.getOrderId());

@@ -22,6 +22,8 @@ import Common.Message;
 
 public class CreateOrderController implements Initializable {
 
+	public static ArrayList<String> lastOrderData;
+	
 	@FXML
 	private ComboBox<String> parkComboBox;
 	@FXML
@@ -43,7 +45,7 @@ public class CreateOrderController implements Initializable {
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		// Populate the Parks ComboBox
-		ObservableList<String> parks = FXCollections.observableArrayList("Karmel", "Banias", "Hula");
+		ObservableList<String> parks = FXCollections.observableArrayList("Carmel", "Banias", "Hula");
 		parkComboBox.setItems(parks);
 
 		// Populate the Times ComboBox
@@ -87,6 +89,7 @@ public class CreateOrderController implements Initializable {
 		newOrder.add(visitorsAmount); // Index 4
 		newOrder.add(GoNatureClient.currentVisitor.getEmail());
 		newOrder.add("Individual"); // Index 6 (Order Type)
+		lastOrderData = newOrder;
 
 		// 5. Send to Server
 		Message msg = new Message("SUBMIT_NEW_ORDER", newOrder);

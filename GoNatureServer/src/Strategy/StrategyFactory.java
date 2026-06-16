@@ -62,8 +62,16 @@ public class StrategyFactory {
 		    
 		case "GET_ALL_PARKS":
 		    return new GetAllParksStrategy();
+		    
 		case "CREATE_CASUAL_VISIT":
 			return new CreateCasualVisitStrategy();
+			
+		case "CANCEL_ORDER":
+		    return new CancelOrderStrategy();
+		    
+		case "ADD_TO_WAITING_LIST":
+		    return new AddToWaitingListStrategy();
+			
 		default:
 			return null;
 		}

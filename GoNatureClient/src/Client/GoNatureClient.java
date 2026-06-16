@@ -100,5 +100,23 @@ public class GoNatureClient extends AbstractClient {
 			e.printStackTrace();
 		}
 	}
+	
+	public void cancelOrder(int orderId) {
+	    try {
+	        Message msg = new Message("CANCEL_ORDER", orderId);
+	        sendToServer(msg);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	public void addToWaitingList(ArrayList<String> orderData) {
+		try {
+			Message msg = new Message("ADD_TO_WAITING_LIST", orderData);
+			sendToServer(msg);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
 }

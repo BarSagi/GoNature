@@ -16,9 +16,9 @@ public class DBConnectionPool {
 	private final Queue<Connection> pool = new LinkedList<>();
 	private final int MAX_POOL_SIZE = 10;
 
-	private final String url = "jdbc:mysql://localhost:3306/GoNature?serverTimezone=Asia/Jerusalem&useSSL=false";
+	private final String url = "jdbc:mysql://localhost:3306/gonature?serverTimezone=Asia/Jerusalem&useSSL=false";
 	private final String user = "root";
-	private final String password = "RDac2027"; // CHANGE PASSWORD HERE
+	private final String password = "Shirpot111!"; // CHANGE PASSWORD HERE
 
 	private DBConnectionPool(EchoServer server) {
 		this.server = server;
@@ -45,6 +45,12 @@ public class DBConnectionPool {
 	}
 
 	private Connection createNewConnection() throws SQLException {
+		try {
+			Class.forName("com.mysql.cj.jdbc.Driver");
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+
 		return DriverManager.getConnection(url, user, password);
 	}
 
