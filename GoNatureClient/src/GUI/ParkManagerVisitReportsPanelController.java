@@ -49,38 +49,41 @@ public class ParkManagerVisitReportsPanelController {
 
 	public void showReport(VisitReportData report) {
 
-	    if (report == null) return;
+		if (report == null)
+			return;
 
-	    Platform.runLater(() -> {
+		Platform.runLater(() -> {
 
-	        pieChart.getData().clear();
+			pieChart.getData().clear();
 
-	        PieChart.Data individual =
-	                new PieChart.Data("Individual", report.getIndividualVisitors());
+			PieChart.Data individual = new PieChart.Data("Individual", report.getIndividualVisitors());
 
-	        PieChart.Data group =
-	                new PieChart.Data("Group", report.getGroupVisitors());
+			PieChart.Data group = new PieChart.Data("Group", report.getGroupVisitors());
 
-	        pieChart.getData().addAll(individual, group);
-	        
-	        pieChart.setLabelsVisible(true);
-	        pieChart.setLegendVisible(true);
+			pieChart.getData().addAll(individual, group);
 
-	        int total = report.getIndividualVisitors() + report.getGroupVisitors();
-	        totalLabel.setText("Total visitors: " + total);
+			pieChart.setLabelsVisible(true);
+			pieChart.setLegendVisible(true);
 
-	        individual.nodeProperty().addListener((obs, oldNode, newNode) -> {
-	            if (newNode != null) {
-	                newNode.setStyle("-fx-pie-color: #3498db;");
-	            }
-	        });
+			int individualCount = report.getIndividualVisitors();
+			int groupCount = report.getGroupVisitors();
+			int total = individualCount + groupCount;
 
-	        group.nodeProperty().addListener((obs, oldNode, newNode) -> {
-	            if (newNode != null) {
-	                newNode.setStyle("-fx-pie-color: #e67e22;");
-	            }
-	        });
-	    });
+			totalLabel.setText(
+					"Total visitors: " + total + " | Individual: " + individualCount + " | Group: " + groupCount);
+
+			individual.nodeProperty().addListener((obs, oldNode, newNode) -> {
+				if (newNode != null) {
+					newNode.setStyle("-fx-pie-color: #3498db;");
+				}
+			});
+
+			group.nodeProperty().addListener((obs, oldNode, newNode) -> {
+				if (newNode != null) {
+					newNode.setStyle("-fx-pie-color: #e67e22;");
+				}
+			});
+		});
 	}
 
 	@FXML

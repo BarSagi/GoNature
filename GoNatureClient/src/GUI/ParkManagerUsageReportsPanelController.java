@@ -16,119 +16,120 @@ import java.util.Map;
 
 public class ParkManagerUsageReportsPanelController {
 
-    public static ParkManagerUsageReportsPanelController instance;
+	public static ParkManagerUsageReportsPanelController instance;
 
-    @FXML
-    private ComboBox<Integer> yearCombo;
+	@FXML
+	private ComboBox<Integer> monthCombo;
 
-    @FXML
-    private BarChart<String, Number> barChart;
+	@FXML
+	private ComboBox<Integer> yearCombo;
 
-    @FXML
-    private CategoryAxis xAxis;
+	@FXML
+	private BarChart<String, Number> barChart;
 
-    @FXML
-    private NumberAxis yAxis;
+	@FXML
+	private CategoryAxis xAxis;
 
-    public void initialize() {
+	@FXML
+	private NumberAxis yAxis;
 
-        instance = this;
+	public void initialize() {
 
-        for (int y = 2020; y <= 2030; y++) {
-            yearCombo.getItems().add(y);
-        }
-        yearCombo.getSelectionModel().select(0);
-    }
+		instance = this;
 
-    @FXML
-    void generateReport(ActionEvent event) {
+		for (int m = 1; m <= 12; m++) {
+			monthCombo.getItems().add(m);
+		}
 
-        String park = GoNatureClient.currentEmployee.getAffiliation();
-        Integer year = yearCombo.getValue();
+		for (int y = 2020; y <= 2030; y++) {
+			yearCombo.getItems().add(y);
+		}
+	}
 
-        if (year == null) {
-            System.out.println("Please select a year!");
-            return;
-        }
+	@FXML
+	void generateReport(ActionEvent event) {
 
-        ArrayList<Object> data = new ArrayList<>();
-        data.add(park);
-        data.add(year);
+		String park = GoNatureClient.currentEmployee.getAffiliation();
 
-        Message msg = new Message("GET_USAGE_REPORT", data);
+		Integer month = monthCombo.getValue();
+		Integer year = yearCombo.getValue();
 
-        try {
-            ClientUI.client.sendToServer(msg);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+		ArrayList<Object> data = new ArrayList<>();
+		data.add(park);
+		data.add(month);
+		data.add(year);
 
-    public void showReport(ArrayList<UsageReportData> report) {
-        if (report == null) return;
+		Message msg = new Message("GET_USAGE_REPORT", data);
 
-        Platform.runLater(() -> {
-            barChart.setAnimated(false);
-            barChart.getData().clear();
+		try {
+			ClientUI.client.sendToServer(msg);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
-            xAxis.setAutoRanging(true);
+	public void showReport(ArrayList<UsageReportData> report) {
 
-            XYChart.Series<String, Number> series = new XYChart.Series<>();
-            series.setName("Under Capacity %");
+		if (report == null || report.isEmpty())
+			return;
 
-            Map<Integer, Double> map = new HashMap<>();
-            for (UsageReportData r : report) {
-                map.put(r.getMonth(), r.getPercentUnderCapacity());
-            }
+		Platform.runLater(() -> {
 
-            for (int i = 1; i <= 12; i++) {
-                String monthLabel = monthName(i);
-                double value = map.getOrDefault(i, 0.0);
+			barChart.setAnimated(false);
+			barChart.getData().clear();
 
-                XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(monthLabel, value);
-                series.getData().add(dataPoint);
+			XYChart.Series<String, Number> series = new XYChart.Series<>();
+			series.setName("Average Capacity");
 
-                dataPoint.nodeProperty().addListener((observable, oldNode, newNode) -> {
-                    if (newNode != null) {
-                        javafx.scene.control.Label label = 
-                                new javafx.scene.control.Label(String.format("%.1f%%", dataPoint.getYValue().doubleValue()));
-                        
-                        label.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: black;");
-                        label.setMinSize(javafx.scene.control.Label.USE_PREF_SIZE, javafx.scene.control.Label.USE_PREF_SIZE);
-                        label.setTranslateY(-15); 
-                        label.setMouseTransparent(true);
+			Map<Integer, Double> map = new HashMap<>();
 
-                        javafx.scene.layout.StackPane stack = (javafx.scene.layout.StackPane) newNode;
-                        stack.getChildren().add(label);
-                        
-                        javafx.scene.layout.StackPane.setAlignment(label, javafx.geometry.Pos.TOP_CENTER);
-                    }
-                });
-            }
+			for (UsageReportData r : report) {
+				map.put(r.getDayOfWeek(), r.getAverageCapacity());
+			}
 
-            barChart.getData().add(series);
+			for (int i = 1; i <= 7; i++) {
 
-            yAxis.setAutoRanging(false);
-            yAxis.setLowerBound(0);
-            yAxis.setUpperBound(120);
-            yAxis.setTickUnit(10);
-        });
-    }
-    private String monthName(int m) {
-        return switch (m) {
-            case 1 -> "Jan";
-            case 2 -> "Feb";
-            case 3 -> "Mar";
-            case 4 -> "Apr";
-            case 5 -> "May";
-            case 6 -> "Jun";
-            case 7 -> "Jul";
-            case 8 -> "Aug";
-            case 9 -> "Sep";
-            case 10 -> "Oct";
-            case 11 -> "Nov";
-            case 12 -> "Dec";
-            default -> "";
-        };
-    }
+				String dayLabel = dayName(i);
+				double value = map.getOrDefault(i, 0.0);
+
+				series.getData().add(new XYChart.Data<>(dayLabel, value));
+			}
+
+			barChart.getData().add(series);
+
+			Platform.runLater(() -> {
+				for (XYChart.Data<String, Number> data : series.getData()) {
+
+					javafx.scene.control.Label label = new javafx.scene.control.Label(
+							String.format("%.1f", data.getYValue()));
+
+					label.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
+					label.setMouseTransparent(true);
+
+					if (data.getNode() instanceof javafx.scene.layout.StackPane stack) {
+						stack.getChildren().add(label);
+						javafx.scene.layout.StackPane.setAlignment(label, javafx.geometry.Pos.TOP_CENTER);
+					}
+				}
+			});
+
+			yAxis.setAutoRanging(false);
+			yAxis.setLowerBound(0);
+			yAxis.setUpperBound(120);
+			yAxis.setTickUnit(10);
+		});
+	}
+
+	private String dayName(int d) {
+		return switch (d) {
+		case 1 -> "Sun";
+		case 2 -> "Mon";
+		case 3 -> "Tue";
+		case 4 -> "Wed";
+		case 5 -> "Thu";
+		case 6 -> "Fri";
+		case 7 -> "Sat";
+		default -> "";
+		};
+	}
 }

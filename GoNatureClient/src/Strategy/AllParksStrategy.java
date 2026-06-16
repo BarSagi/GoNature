@@ -3,22 +3,27 @@ package Strategy;
 import java.util.ArrayList;
 
 import Common.Message;
+import GUI.DeptManagerCancellationReportPanelController;
 import GUI.DeptManagerVisitDurationReportController;
 import javafx.application.Platform;
 
 public class AllParksStrategy implements MessageStrategy {
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public void execute(Message msg) {
+    @SuppressWarnings("unchecked")
+    @Override
+    public void execute(Message msg) {
 
-		ArrayList<String> parks = (ArrayList<String>) msg.getData();
+        ArrayList<String> parks = (ArrayList<String>) msg.getData();
 
-		if (DeptManagerVisitDurationReportController.instance != null) {
+        Platform.runLater(() -> {
 
-			Platform.runLater(() -> {
-				DeptManagerVisitDurationReportController.instance.loadParks(parks);
-			});
-		}
-	}
+            if (DeptManagerVisitDurationReportController.instance != null) {
+                DeptManagerVisitDurationReportController.instance.loadParks(parks);
+            }
+
+            if (DeptManagerCancellationReportPanelController.instance != null) {
+                DeptManagerCancellationReportPanelController.instance.loadParks(parks);
+            }
+        });
+    }
 }

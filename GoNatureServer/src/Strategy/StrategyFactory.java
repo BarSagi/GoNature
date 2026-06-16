@@ -65,13 +65,15 @@ public class StrategyFactory {
 		    
 		case "CREATE_CASUAL_VISIT":
 			return new CreateCasualVisitStrategy();
-			
 		case "CANCEL_ORDER":
 		    return new CancelOrderStrategy();
-		    
+
 		case "ADD_TO_WAITING_LIST":
 		    return new AddToWaitingListStrategy();
-			
+
+		case "GET_CANCELLATION_REPORT":
+		    return new GetCancellationReportStrategy();
+		    
 		default:
 			return null;
 		}

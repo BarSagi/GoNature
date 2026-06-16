@@ -19,9 +19,9 @@ public class ReportService {
         return db.getVisitReport(parkId, month, year);
     }
 
-    public ArrayList<Order> getCancellationReport(int parkId, int month, int year) {
+   /* public ArrayList<Order> getCancellationReport(int parkId, int month, int year) {
         return db.getCancellationReport(parkId, month, year);
-    }
+    } */
 
     public VisitReportData generateVisitReport(int parkId, int month, int year) {
 

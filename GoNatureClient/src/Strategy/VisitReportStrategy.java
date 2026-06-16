@@ -12,8 +12,6 @@ public class VisitReportStrategy implements MessageStrategy {
 
         VisitReportData report = (VisitReportData) msg.getData();
 
-        System.out.println("Visit report received successfully");
-
         Platform.runLater(() -> {
             if (ParkManagerVisitReportsPanelController.instance != null) {
                 ParkManagerVisitReportsPanelController.instance.showReport(report);

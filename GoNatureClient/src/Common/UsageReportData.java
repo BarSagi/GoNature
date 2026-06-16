@@ -5,27 +5,27 @@ import java.io.Serializable;
 @SuppressWarnings("serial")
 public class UsageReportData implements Serializable {
 
-    private int month;
-    private double percentUnderCapacity;
+    private int dayOfWeek;
+    private double averageCapacity;
 
-    public UsageReportData(int month, double percentUnderCapacity) {
-        this.month = month;
-        this.percentUnderCapacity = percentUnderCapacity;
+    public UsageReportData(int dayOfWeek, double averageCapacity) {
+        this.dayOfWeek = dayOfWeek;
+        this.averageCapacity = averageCapacity;
     }
 
-    public int getMonth() {
-        return month;
+    public int getDayOfWeek() {
+        return dayOfWeek;
     }
 
-    public double getPercentUnderCapacity() {
-        return percentUnderCapacity;
+    public double getAverageCapacity() {
+        return averageCapacity;
     }
 
-    public void setMonth(int month) {
-        this.month = month;
+    public void setDayOfWeek(int dayOfWeek) {
+        this.dayOfWeek = dayOfWeek;
     }
 
-    public void setPercentUnderCapacity(double percentUnderCapacity) {
-        this.percentUnderCapacity = percentUnderCapacity;
+    public void setAverageCapacity(double averageCapacity) {
+        this.averageCapacity = averageCapacity;
     }
 }
