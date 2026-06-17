@@ -58,22 +58,23 @@ public class StrategyFactory {
 			return new ClientLogoutStrategy();
 
 		case "GET_VISIT_DURATION_REPORT":
-		    return new GetVisitDurationReportStrategy();
-		    
+			return new GetVisitDurationReportStrategy();
+
 		case "GET_ALL_PARKS":
-		    return new GetAllParksStrategy();
-		    
+			return new GetAllParksStrategy();
+
 		case "CREATE_CASUAL_VISIT":
 			return new CreateCasualVisitStrategy();
+
 		case "CANCEL_ORDER":
-		    return new CancelOrderStrategy();
+			return new CancelOrderStrategy();
 
 		case "ADD_TO_WAITING_LIST":
-		    return new AddToWaitingListStrategy();
+			return new AddToWaitingListStrategy();
 
 		case "GET_CANCELLATION_REPORT":
-		    return new GetCancellationReportStrategy();
-		    
+			return new GetCancellationReportStrategy();
+
 		default:
 			return null;
 		}

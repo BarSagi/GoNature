@@ -31,6 +31,11 @@ public class VisitorOrdersScreenController {
 	private Label welcomeLabel;
 
 	@FXML
+	private Label roleLabel;
+
+	@FXML
+	private TableColumn<Order, Integer> colPark;
+	@FXML
 	private TableColumn<Order, Integer> colId;
 	@FXML
 	private TableColumn<Order, Date> colDate;
@@ -46,10 +51,6 @@ public class VisitorOrdersScreenController {
 	// This list holds the actual Order objects
 	private ObservableList<Order> tableData = FXCollections.observableArrayList();
 
-	// Add this new FXML variable for the error label
-	@FXML
-	private Label errorLabel;
-
 	@FXML
 	private BorderPane mainBorderPane;
 
@@ -64,15 +65,51 @@ public class VisitorOrdersScreenController {
 		colType.setCellValueFactory(new PropertyValueFactory<>("orderType"));
 		colStatus.setCellValueFactory(new PropertyValueFactory<>("orderStatus"));
 
+		// 1. Tell the column to grab the "parkId" integer from the Order object
+		colPark.setCellValueFactory(new PropertyValueFactory<>("parkId"));
+
+		// 2. The Switch Case: Tell the column how to display that integer!
+		colPark.setCellFactory(column -> {
+			return new javafx.scene.control.TableCell<Order, Integer>() {
+				@Override
+				protected void updateItem(Integer parkId, boolean empty) {
+					super.updateItem(parkId, empty);
+
+					if (empty || parkId == null) {
+						setText(null);
+					} else {
+						switch (parkId) {
+						case 1:
+							setText("Karmel");
+							break;
+						case 2:
+							setText("Banias");
+							break;
+						case 3:
+							setText("Yarkon");
+							break;
+						default:
+							setText("Unknown Park (" + parkId + ")");
+							break;
+						}
+					}
+				}
+			};
+		});
+
 		ordersTable.setItems(tableData);
 
 		if (GoNatureClient.currentVisitor != null) {
 			welcomeLabel.setText("Welcome, " + GoNatureClient.currentVisitor.getFirstName() + "!");
+
+			roleLabel.setText("Role: " + GoNatureClient.currentVisitor.getVisitorType());
+
 		} else {
 			welcomeLabel.setText("Welcome!");
+
+			roleLabel.setText("Role: Unknown");
 		}
 
-		// --- NEW: DOUBLE CLICK LISTENER ---
 		ordersTable.setOnMouseClicked(event -> {
 			// Check if it was a double click AND a row is actually selected
 			if (event.getClickCount() == 2 && ordersTable.getSelectionModel().getSelectedItem() != null) {
@@ -85,13 +122,17 @@ public class VisitorOrdersScreenController {
 	void editOrder(ActionEvent event) {
 		Order selectedOrder = ordersTable.getSelectionModel().getSelectedItem();
 
+		// 1. Validate selection
 		if (selectedOrder == null) {
-			errorLabel.setText("Please select an order to edit!"); // Clarify the error
-			errorLabel.setVisible(true);
+			showErrorAlert("Please select an order to edit!");
 			return;
 		}
 
-		errorLabel.setVisible(false);
+		// 2. Prevent editing of cancelled orders
+		if ("Canceled".equalsIgnoreCase(selectedOrder.getOrderStatus())) {
+			showErrorAlert("You cannot edit a cancelled order!");
+			return;
+		}
 
 		try {
 			javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
@@ -100,7 +141,8 @@ public class VisitorOrdersScreenController {
 
 			EditOrderController editController = loader.getController();
 
-			// --- UPDATED LINE: Pass mainBorderPane.getCenter() as the third argument! ---
+			// 3. Pass the 3 arguments: the order, the border pane, and the current center
+			// (for canceling)
 			editController.setOrderData(selectedOrder, mainBorderPane);
 
 			mainBorderPane.setCenter(editView);
@@ -117,9 +159,7 @@ public class VisitorOrdersScreenController {
 
 		for (Order order : rawOrders) {
 			try {
-
 				tableData.add(order);
-
 			} catch (Exception e) {
 				System.out.println("Error displaying order in table: " + e.getMessage());
 				e.printStackTrace();
@@ -144,13 +184,16 @@ public class VisitorOrdersScreenController {
 
 		// 2. Validate selection
 		if (selectedOrder == null) {
-			errorLabel.setText("Please select an order to cancel!");
-			errorLabel.setVisible(true);
+			showErrorAlert("Please select an order to cancel!");
 			return;
 		}
-		errorLabel.setVisible(false);
 
-		// 3. Optional but Excellent UX: Ask for confirmation!
+		if ("Canceled".equalsIgnoreCase(selectedOrder.getOrderStatus())) {
+			showErrorAlert("This order is already cancelled!");
+			return;
+		}
+
+		// 3. Ask for confirmation!
 		javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
 				javafx.scene.control.Alert.AlertType.CONFIRMATION);
 		alert.setTitle("Cancel Order");
@@ -162,19 +205,22 @@ public class VisitorOrdersScreenController {
 
 		if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
 			try {
-				// 4. Send the cancellation message to the server
-				// Assuming your Server will have a "CANCEL_ORDER" Strategy that updates the
-				// status in the DB
-				Message msg = new Message("CANCEL_ORDER", selectedOrder.getOrderId());
+				Message msg = new Message("CANCEL_ORDER", selectedOrder);
 				ClientUI.send(msg);
-
 				System.out.println("Cancellation request sent for Order ID: " + selectedOrder.getOrderId());
-
 			} catch (Exception e) {
 				System.out.println("Error sending cancellation request to server.");
 				e.printStackTrace();
 			}
 		}
+	}
+
+	private void showErrorAlert(String message) {
+		javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+		alert.setTitle("Error");
+		alert.setHeaderText("Invalid Action");
+		alert.setContentText(message);
+		alert.showAndWait();
 	}
 
 	@FXML

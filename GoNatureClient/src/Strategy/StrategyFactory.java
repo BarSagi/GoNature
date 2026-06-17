@@ -78,20 +78,15 @@ public class StrategyFactory {
 		case "UPDATE_FAILED":
 			return new UpdateFailedStrategy();
 
-		case "ORDER_CANCEL_SUCCESS":
-			return new OrderCancelSuccessStrategy();
-
-		case "ORDER_CANCEL_FAILED":
-			return new OrderCancelFailedStrategy();
 		case "ORDER_CANCEL_RESULT":
-		    return new OrderCancelResultStrategy();
+			return new OrderCancelResultStrategy();
 
 		case "ADD_TO_WAITING_LIST_RESULT":
-		    return new AddToWaitingListResultStrategy();
+			return new AddToWaitingListResultStrategy();
 
 		case "CANCELLATION_REPORT_RESULT":
-		    return new CancellationReportStrategy();
-		    
+			return new CancellationReportStrategy();
+
 		default:
 			return null;
 		}

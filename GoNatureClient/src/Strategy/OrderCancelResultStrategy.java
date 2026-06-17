@@ -13,31 +13,32 @@ public class OrderCancelResultStrategy implements MessageStrategy {
 		boolean success = (boolean) message.getData();
 
 		Platform.runLater(() -> {
-			Alert alert;
 
 			if (success) {
-				alert = new Alert(Alert.AlertType.INFORMATION);
-				alert.setTitle("Order Canceled");
-				alert.setHeaderText(null);
-				alert.setContentText("The order was canceled successfully.");
-
+				// 1. Show the success pop-up
+				Alert alert = new Alert(Alert.AlertType.INFORMATION);
+				alert.setTitle("Cancellation Successful");
+				alert.setHeaderText("Order Cancelled");
+				alert.setContentText("Your order has been successfully cancelled.");
 				alert.showAndWait();
 
-				try {
-					if (GoNatureClient.currentVisitor != null) {
-						Message refreshMsg = new Message("FETCH_VISITOR_ORDERS",
-								GoNatureClient.currentVisitor.getVisitorId());
-						ClientUI.send(refreshMsg);
+				if (GoNatureClient.currentVisitor != null) {
+					try {
+						String visitorId = GoNatureClient.currentVisitor.getVisitorId();
+						ClientUI.send(new Message("GET_VISITOR_ORDERS", visitorId));
+					} catch (Exception e) {
+						System.out.println("Error requesting updated orders list.");
+						e.printStackTrace();
 					}
-				} catch (Exception e) {
-					e.printStackTrace();
 				}
 
 			} else {
-				alert = new Alert(Alert.AlertType.ERROR);
-				alert.setTitle("Cancel Failed");
-				alert.setHeaderText(null);
-				alert.setContentText("Failed to cancel the order.");
+				Alert alert = new Alert(Alert.AlertType.ERROR);
+				alert.setTitle("Error");
+				alert.setHeaderText("Cancellation Failed");
+
+				alert.setContentText("We could not cancel your order at this time. Please try again.");
+
 				alert.showAndWait();
 			}
 		});

@@ -116,73 +116,6 @@ public class DBController {
 	}
 
 	// =========================================================
-	// CHECK AVAILABILITY (CAPACITY BASED)
-	// =========================================================
-	public boolean isTimeSlotAvailable(String parkName, String visitDate, String visitTime, int requestedVisitors) {
-		Connection conn = null;
-		try {
-			conn = pool.getConnection();
-
-			// 1. Get the parkId AND the specific park's maximum capacity!
-			int parkId = -1;
-			int maxCapacity = 0;
-
-			PreparedStatement findPark = conn
-					.prepareStatement("SELECT parkId, maxCapacity FROM Parks WHERE parkName = ?");
-			findPark.setString(1, parkName);
-			ResultSet rsPark = findPark.executeQuery();
-
-			if (rsPark.next()) {
-				parkId = rsPark.getInt("parkId");
-				maxCapacity = rsPark.getInt("maxCapacity"); // We pull the limit from the DB!
-			} else {
-				return false; // Park not found
-			}
-			rsPark.close();
-			findPark.close();
-
-			// 2. Sum up all the visitors who ALREADY have orders for this exact date and
-			// time.
-			// PRO TIP: We add "AND status != 'Cancelled'" because cancelled orders don't
-			// take up space!
-			String checkQuery = "SELECT SUM(visitorCount) AS totalVisitors FROM Orders "
-					+ "WHERE parkId = ? AND visitDate = ? AND visitTime = ? AND status != 'Cancelled'";
-			PreparedStatement psCheck = conn.prepareStatement(checkQuery);
-			psCheck.setInt(1, parkId);
-			psCheck.setString(2, visitDate);
-			psCheck.setString(3, visitTime);
-
-			ResultSet rsCheck = psCheck.executeQuery();
-			int currentBookedVisitors = 0;
-
-			if (rsCheck.next()) {
-				currentBookedVisitors = rsCheck.getInt("totalVisitors");
-			}
-
-			rsCheck.close();
-			psCheck.close();
-
-			// 3. The Ultimate Capacity Decision
-			System.out.println("[DB] Park: " + parkName + " | Max Capacity: " + maxCapacity + " | Currently Booked: "
-					+ currentBookedVisitors + " | Requesting: " + requestedVisitors);
-
-			if ((currentBookedVisitors + requestedVisitors) > maxCapacity) {
-				return false; // NOT AVAILABLE! Letting them in would exceed the park's limit.
-			}
-
-			return true; // AVAILABLE! There is enough room.
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return false;
-		} finally {
-			if (conn != null) {
-				pool.releaseConnection(conn);
-			}
-		}
-	}
-
-	// =========================================================
 	// FETCH VISITOR
 	// =========================================================
 	public ArrayList<String> fetchVisitor(String visitorID) {
@@ -264,6 +197,36 @@ public class DBController {
 	}
 
 	// =========================================================
+	// DELETE VISITOR (Used for Rollbacks)
+	// =========================================================
+	public boolean deleteVisitor(String visitorId) {
+		Connection conn = null;
+		try {
+			conn = pool.getConnection();
+
+			// Note: Check if your table is named 'Visitors' or 'Visitor'
+			String query = "DELETE FROM Visitors WHERE visitorId = ?";
+			PreparedStatement pstmt = conn.prepareStatement(query);
+
+			pstmt.setString(1, visitorId);
+
+			int rowsAffected = pstmt.executeUpdate();
+			pstmt.close();
+
+			return rowsAffected > 0;
+
+		} catch (SQLException e) {
+			System.out.println("Error deleting visitor during rollback.");
+			e.printStackTrace();
+			return false;
+		} finally {
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
+	}
+
+	// =========================================================
 	// CREATE ORDER
 	// =========================================================
 	public String createNewOrder(ArrayList<String> orderData) {
@@ -299,7 +262,7 @@ public class DBController {
 			rs.close();
 			find.close();
 
-			// אם יש מקום - לשמור כהזמנה מאושרת
+			// אם יש מקום - לשמור כהזמנה מאושרת=====================================
 			if (hasRoomInSlot(parkId, visitDate, visitTime, visitorCount)) {
 
 				String insert = "INSERT INTO Orders "
@@ -344,33 +307,33 @@ public class DBController {
 	// =========================================================
 	// UPDATE ORDER
 	// =========================================================
-	public boolean updateOrder(int orderNumber, String orderDate, int numberOfVisitors) {
-
-		String query = "UPDATE Orders SET visitDate = ?, visitorCount = ? WHERE orderId = ?";
+	public boolean updateOrder(Order order) {
+		// The SQL UPDATE statement
+		String query = "UPDATE Orders SET visitDate = ?, visitTime = ?, visitorCount = ? WHERE orderId = ?";
 
 		Connection conn = null;
 
 		try {
 			conn = pool.getConnection();
 
-			PreparedStatement ps = conn.prepareStatement(query);
+			PreparedStatement pstmt = conn.prepareStatement(query);
 
-			ps.setDate(1, Date.valueOf(orderDate));
-			ps.setInt(2, numberOfVisitors);
-			ps.setInt(3, orderNumber);
+			// Inject the values from the Order object into the ? placeholders
+			pstmt.setDate(1, order.getVisitDate());
+			pstmt.setTime(2, order.getVisitTime());
+			pstmt.setInt(3, order.getVisitorCount());
+			pstmt.setInt(4, order.getOrderId());
 
-			int rows = ps.executeUpdate();
+			// executeUpdate() returns the number of rows changed in the DB
+			int rowsAffected = pstmt.executeUpdate();
 
-			ps.close();
-
-			return rows > 0;
+			// If it changed 1 or more rows, the update was successful!
+			return rowsAffected > 0;
 
 		} catch (SQLException e) {
+			System.out.println("Error updating order in database.");
 			e.printStackTrace();
 			return false;
-
-		} finally {
-			pool.releaseConnection(conn);
 		}
 	}
 
@@ -507,8 +470,7 @@ public class DBController {
 	// =========================================================
 	public boolean enterVisitor(String visitorId) {
 		String selectQuery = "SELECT parkId, orderId, visitorCount FROM Orders "
-				+ "WHERE visitorId = ? AND status = 'Approved' "
-				+ "AND visitDate = CURDATE() "
+				+ "WHERE visitorId = ? AND status = 'Approved' " + "AND visitDate = CURDATE() "
 				+ "AND visitTime BETWEEN SUBTIME(CURTIME(), '00:30:00') AND ADDTIME(CURTIME(), '00:30:00') "
 				+ "ORDER BY orderId DESC LIMIT 1";
 
@@ -554,9 +516,12 @@ public class DBController {
 
 		} finally {
 			try {
-				if (rs != null) rs.close();
-				if (psSelect != null) psSelect.close();
-				if (psInsert != null) psInsert.close();
+				if (rs != null)
+					rs.close();
+				if (psSelect != null)
+					psSelect.close();
+				if (psInsert != null)
+					psInsert.close();
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -937,66 +902,59 @@ public class DBController {
 	// =========================================================
 	public ArrayList<UsageReportData> getUsageReport(String parkName, int month, int year) {
 
-	    ArrayList<UsageReportData> result = new ArrayList<>();
-	    Connection conn = null;
+		ArrayList<UsageReportData> result = new ArrayList<>();
+		Connection conn = null;
 
-	    try {
-	        conn = pool.getConnection();
+		try {
+			conn = pool.getConnection();
 
-	        int parkId = getParkIdByName(parkName);
+			int parkId = getParkIdByName(parkName);
 
-	        if (parkId == -1) {
-	            return result;
-	        }
+			if (parkId == -1) {
+				return result;
+			}
 
-	        String sql =
-	                "SELECT " +
-	                "DAYOFWEEK(v.entryTime) AS dayOfWeek, " +
-	                "(SUM(v.actualVisitorCount) / COUNT(DISTINCT DATE(v.entryTime))) AS avgDailyVisitors, " +
-	                "p.maxCapacity " +
-	                "FROM Visits v " +
-	                "JOIN Parks p ON v.parkId = p.parkId " +
-	                "WHERE v.parkId = ? " +
-	                "AND YEAR(v.entryTime) = ? " +
-	                "AND MONTH(v.entryTime) = ? " +
-	                "GROUP BY DAYOFWEEK(v.entryTime), p.maxCapacity " +
-	                "ORDER BY dayOfWeek";
+			String sql = "SELECT " + "DAYOFWEEK(v.entryTime) AS dayOfWeek, "
+					+ "(SUM(v.actualVisitorCount) / COUNT(DISTINCT DATE(v.entryTime))) AS avgDailyVisitors, "
+					+ "p.maxCapacity " + "FROM Visits v " + "JOIN Parks p ON v.parkId = p.parkId "
+					+ "WHERE v.parkId = ? " + "AND YEAR(v.entryTime) = ? " + "AND MONTH(v.entryTime) = ? "
+					+ "GROUP BY DAYOFWEEK(v.entryTime), p.maxCapacity " + "ORDER BY dayOfWeek";
 
-	        PreparedStatement ps = conn.prepareStatement(sql);
-	        ps.setInt(1, parkId);
-	        ps.setInt(2, year);
-	        ps.setInt(3, month);
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setInt(1, parkId);
+			ps.setInt(2, year);
+			ps.setInt(3, month);
 
-	        ResultSet rs = ps.executeQuery();
+			ResultSet rs = ps.executeQuery();
 
-	        while (rs.next()) {
-	            int dayOfWeek = rs.getInt("dayOfWeek");
-	            double avgDailyVisitors = rs.getDouble("avgDailyVisitors"); 
-	            int maxCapacity = rs.getInt("maxCapacity");
+			while (rs.next()) {
+				int dayOfWeek = rs.getInt("dayOfWeek");
+				double avgDailyVisitors = rs.getDouble("avgDailyVisitors");
+				int maxCapacity = rs.getInt("maxCapacity");
 
-	            double avgCapacity;
+				double avgCapacity;
 
-	            if (maxCapacity == 0) {
-	                avgCapacity = 0;
-	            } else {
-	                avgCapacity = avgDailyVisitors / maxCapacity;
-	                avgCapacity = avgCapacity * 100;
-	            }
+				if (maxCapacity == 0) {
+					avgCapacity = 0;
+				} else {
+					avgCapacity = avgDailyVisitors / maxCapacity;
+					avgCapacity = avgCapacity * 100;
+				}
 
-	            result.add(new UsageReportData(dayOfWeek, avgCapacity));
-	        }
+				result.add(new UsageReportData(dayOfWeek, avgCapacity));
+			}
 
-	        rs.close();
-	        ps.close();
+			rs.close();
+			ps.close();
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    } finally {
-	        if (conn != null) {
-	            pool.releaseConnection(conn);
-	        }
-	    }
-	    return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
+		return result;
 	}
 
 	// =========================================================
@@ -1042,55 +1000,49 @@ public class DBController {
 
 		return result;
 	}
-	
+
 	// =========================================================
 	// REPORTS - CANCELLATION
 	// =========================================================
 	public ArrayList<CancellationReportData> getCancellationReport(int parkId, int month, int year) {
 
-	    ArrayList<CancellationReportData> result = new ArrayList<>();
-	    Connection conn = null;
+		ArrayList<CancellationReportData> result = new ArrayList<>();
+		Connection conn = null;
 
-	    String query =
-	            "SELECT DAY(visitDate) AS dayOfMonth, COUNT(*) AS cancellations " +
-	            "FROM Orders " +
-	            "WHERE parkId = ? " +
-	            "AND status = 'Canceled' " +
-	            "AND YEAR(visitDate) = ? " +
-	            "AND MONTH(visitDate) = ? " +
-	            "GROUP BY DAY(visitDate) " +
-	            "ORDER BY dayOfMonth";
+		String query = "SELECT DAY(visitDate) AS dayOfMonth, COUNT(*) AS cancellations " + "FROM Orders "
+				+ "WHERE parkId = ? " + "AND status = 'Canceled' " + "AND YEAR(visitDate) = ? "
+				+ "AND MONTH(visitDate) = ? " + "GROUP BY DAY(visitDate) " + "ORDER BY dayOfMonth";
 
-	    try {
-	        conn = pool.getConnection();
+		try {
+			conn = pool.getConnection();
 
-	        PreparedStatement ps = conn.prepareStatement(query);
-	        ps.setInt(1, parkId);
-	        ps.setInt(2, year);
-	        ps.setInt(3, month);
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setInt(1, parkId);
+			ps.setInt(2, year);
+			ps.setInt(3, month);
 
-	        ResultSet rs = ps.executeQuery();
+			ResultSet rs = ps.executeQuery();
 
-	        while (rs.next()) {
+			while (rs.next()) {
 
-	            int day = rs.getInt("dayOfMonth");
-	            double cancellations = rs.getDouble("cancellations");
+				int day = rs.getInt("dayOfMonth");
+				double cancellations = rs.getDouble("cancellations");
 
-	            result.add(new CancellationReportData(day, cancellations));
-	        }
+				result.add(new CancellationReportData(day, cancellations));
+			}
 
-	        rs.close();
-	        ps.close();
+			rs.close();
+			ps.close();
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        if (conn != null) {
-	            pool.releaseConnection(conn);
-	        }
-	    }
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
 
-	    return result;
+		return result;
 	}
 
 	// =========================================================
@@ -1213,7 +1165,7 @@ public class DBController {
 			}
 		}
 	}
-	
+
 	// =========================================================
 	// GET PARK MAX CAPACITY
 	// =========================================================
@@ -1253,61 +1205,71 @@ public class DBController {
 	}
 
 	// =========================================================
-	// GET APPROVED VISITOR COUNT FOR SLOT
+	// GET APPROVED VISITOR COUNT FOR SLOT (Supports Exclusions)
 	// =========================================================
-	public int getApprovedVisitorCountForSlot(int parkId, String visitDate, String visitTime) {
-
-		String query = "SELECT IFNULL(SUM(visitorCount), 0) AS totalVisitors "
-				+ "FROM Orders "
+	public int getApprovedVisitorCountForSlot(int parkId, String visitDate, String visitTime, int excludeOrderId) {
+		String query = "SELECT IFNULL(SUM(visitorCount), 0) AS totalVisitors FROM Orders "
 				+ "WHERE parkId = ? AND visitDate = ? AND visitTime = ? AND status = 'Approved'";
 
-		Connection conn = null;
+		// THE FIX: If an excludeOrderId is provided, ignore it so we don't double-count
+		// during updates!
+		if (excludeOrderId > 0) {
+			query += " AND orderId != ?";
+		}
 
+		Connection conn = null;
 		try {
 			conn = pool.getConnection();
-
 			PreparedStatement ps = conn.prepareStatement(query);
 			ps.setInt(1, parkId);
 			ps.setString(2, visitDate);
 			ps.setString(3, visitTime);
 
-			ResultSet rs = ps.executeQuery();
+			if (excludeOrderId > 0) {
+				ps.setInt(4, excludeOrderId);
+			}
 
+			ResultSet rs = ps.executeQuery();
 			if (rs.next()) {
 				int total = rs.getInt("totalVisitors");
 				rs.close();
 				ps.close();
 				return total;
 			}
-
 			rs.close();
 			ps.close();
-
 		} catch (SQLException e) {
 			e.printStackTrace();
-
 		} finally {
-			if (conn != null) {
+			if (conn != null)
 				pool.releaseConnection(conn);
-			}
 		}
-
 		return 0;
 	}
 
-	// =========================================================
-	// CHECK IF THERE IS ROOM IN SLOT
-	// =========================================================
-	public boolean hasRoomInSlot(int parkId, String visitDate, String visitTime, int requestedVisitors) {
+	// OVERLOAD: For new orders (Doesn't exclude any IDs)
+	public int getApprovedVisitorCountForSlot(int parkId, String visitDate, String visitTime) {
+		return getApprovedVisitorCountForSlot(parkId, visitDate, visitTime, -1);
+	}
 
+	// =========================================================
+	// CHECK IF THERE IS ROOM IN SLOT (Supports Exclusions)
+	// =========================================================
+	public boolean hasRoomInSlot(int parkId, String visitDate, String visitTime, int requestedVisitors,
+			int excludeOrderId) {
 		int maxCapacity = getParkMaxCapacity(parkId);
-		int approvedVisitors = getApprovedVisitorCountForSlot(parkId, visitDate, visitTime);
+		int approvedVisitors = getApprovedVisitorCountForSlot(parkId, visitDate, visitTime, excludeOrderId);
 
 		if (maxCapacity == -1) {
 			return false;
 		}
 
 		return approvedVisitors + requestedVisitors <= maxCapacity;
+	}
+
+	// OVERLOAD: For new orders (Doesn't exclude any IDs)
+	public boolean hasRoomInSlot(int parkId, String visitDate, String visitTime, int requestedVisitors) {
+		return hasRoomInSlot(parkId, visitDate, visitTime, requestedVisitors, -1);
 	}
 
 	// =========================================================
@@ -1338,8 +1300,8 @@ public class DBController {
 				int visitorCount = rs.getInt("visitorCount");
 
 				if (hasRoomInSlot(parkId, visitDate, visitTime, visitorCount)) {
-					PreparedStatement updatePs = conn.prepareStatement(
-							"UPDATE Orders SET status = 'Approved' WHERE orderId = ?");
+					PreparedStatement updatePs = conn
+							.prepareStatement("UPDATE Orders SET status = 'Approved' WHERE orderId = ?");
 					updatePs.setInt(1, orderId);
 
 					int rows = updatePs.executeUpdate();
@@ -1354,8 +1316,10 @@ public class DBController {
 
 		} finally {
 			try {
-				if (rs != null) rs.close();
-				if (ps != null) ps.close();
+				if (rs != null)
+					rs.close();
+				if (ps != null)
+					ps.close();
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -1414,9 +1378,12 @@ public class DBController {
 
 		} finally {
 			try {
-				if (rs != null) rs.close();
-				if (selectPs != null) selectPs.close();
-				if (updatePs != null) updatePs.close();
+				if (rs != null)
+					rs.close();
+				if (selectPs != null)
+					selectPs.close();
+				if (updatePs != null)
+					updatePs.close();
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -1453,7 +1420,8 @@ public class DBController {
 
 		} finally {
 			try {
-				if (ps != null) ps.close();
+				if (ps != null)
+					ps.close();
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -1463,7 +1431,7 @@ public class DBController {
 			}
 		}
 	}
-	
+
 	// =========================================================
 	// GET ALTERNATIVE SLOTS
 	// =========================================================
@@ -1481,7 +1449,7 @@ public class DBController {
 
 		return alternativeSlots;
 	}
-	
+
 	// =========================================================
 	// ADD ORDER TO WAITING LIST
 	// =========================================================
@@ -1540,9 +1508,12 @@ public class DBController {
 
 		} finally {
 			try {
-				if (rs != null) rs.close();
-				if (find != null) find.close();
-				if (ps != null) ps.close();
+				if (rs != null)
+					rs.close();
+				if (find != null)
+					find.close();
+				if (ps != null)
+					ps.close();
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -1557,8 +1528,7 @@ public class DBController {
 	// UPDATE COUNT FOR RESERVED VISITORS ONLY
 	// =========================================================
 	public boolean updateReservedVisitorCount(int parkId, int countChange) {
-		String updateQuery = "UPDATE Parks SET CurrentVisitorCount = CurrentVisitorCount + ? "
-				+ "WHERE parkId = ?";
+		String updateQuery = "UPDATE Parks SET CurrentVisitorCount = CurrentVisitorCount + ? " + "WHERE parkId = ?";
 
 		Connection conn = null;
 		PreparedStatement ps = null;

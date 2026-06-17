@@ -36,7 +36,7 @@
 				<Label fx:id="welcomeLabel" text="Hello, Visitor!"
 					style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;"
 					wrapText="true" textAlignment="CENTER" />
-				<Label text="Role: Registered Visitor"
+				<Label fx:id="roleLabel" text="Role: Loading..."
 					style="-fx-font-size: 12px; -fx-text-fill: #bdc3c7;" />
 				<VBox.margin>
 					<Insets bottom="20.0" />
@@ -71,6 +71,8 @@
 				style="-fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-background-radius: 5; -fx-font-size: 14px;"
 				VBox.vgrow="ALWAYS">
 				<columns>
+					<TableColumn fx:id="colPark" prefWidth="100.0"
+						text="Park Name" />
 					<TableColumn fx:id="colDate" prefWidth="100.0"
 						text="Date" />
 					<TableColumn fx:id="colTime" prefWidth="90.0"
@@ -96,8 +98,6 @@
 
 				<Region HBox.hgrow="ALWAYS" />
 
-				<Label fx:id="errorLabel" text="Please select an order first!"
-					visible="false" style="-fx-text-fill: red; -fx-padding: 0 15 0 0;" />
 				<Button text="Edit Selected Order" onAction="#editOrder"
 					prefHeight="35.0" prefWidth="180.0"
 					style="-fx-background-color: #f39c12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" />
