@@ -948,12 +948,20 @@ public class DBController {
 	        rs.close();
 	        ps.close();
 
+	        
 	        Map<Integer, Integer> dayToPeak = new HashMap<>();
 	        Map<Integer, Boolean> dayToFull = new HashMap<>();
 
 	        YearMonth ym = YearMonth.of(year, month);
 	        int daysInMonth = ym.lengthOfMonth();
 
+	        if (visits.isEmpty()) {
+	            for (int day = 1; day <= daysInMonth; day++) {
+	                result.add(new UsageReportData(day, 0, false));
+	            }
+	            return result;
+	        }
+	        
 	        for (int day = 1; day <= daysInMonth; day++) {
 
 	            int peak = 0;
