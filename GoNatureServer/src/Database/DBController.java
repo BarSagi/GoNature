@@ -1617,92 +1617,149 @@ public class DBController {
 	// =========================================================
 	public boolean approveRequest(int requestId) {
 
-		Connection conn = null;
+	    Connection conn = null;
 
-		try {
-			conn = pool.getConnection();
-			conn.setAutoCommit(false);
+	    try {
+	        conn = pool.getConnection();
+	        conn.setAutoCommit(false);
 
-			String selectQuery = "SELECT parkId, requestType, newValue FROM Requests WHERE requestId = ?";
-			PreparedStatement selectPs = conn.prepareStatement(selectQuery);
-			selectPs.setInt(1, requestId);
+	        // 1. Fetch request details
+	        String selectQuery = "SELECT parkId, requestType, newValue FROM Requests WHERE requestId = ?";
+	        PreparedStatement selectPs = conn.prepareStatement(selectQuery);
+	        selectPs.setInt(1, requestId);
 
-			ResultSet rs = selectPs.executeQuery();
+	        ResultSet rs = selectPs.executeQuery();
 
-			if (!rs.next()) {
-				rs.close();
-				selectPs.close();
-				conn.rollback();
-				return false;
-			}
+	        if (!rs.next()) {
+	            rs.close();
+	            selectPs.close();
+	            conn.rollback();
+	            return false;
+	        }
 
-			int parkId = rs.getInt("parkId");
-			String requestType = rs.getString("requestType");
-			String newValue = rs.getString("newValue");
+	        int parkId = rs.getInt("parkId");
+	        String requestType = rs.getString("requestType");
+	        String newValue = rs.getString("newValue");
 
-			rs.close();
-			selectPs.close();
+	        rs.close();
+	        selectPs.close();
 
-			if ("MaxCapacity".equals(requestType)) {
-				PreparedStatement gapPs = conn.prepareStatement("SELECT casualGap FROM Parks WHERE parkId = ?");
-				gapPs.setInt(1, parkId);
+	        // =========================================================
+	        // CASE 1: Request is for updating MaxCapacity
+	        // =========================================================
+	        if ("MaxCapacity".equals(requestType)) {
+	            PreparedStatement gapPs = conn.prepareStatement("SELECT casualGap FROM Parks WHERE parkId = ?");
+	            gapPs.setInt(1, parkId);
 
-				ResultSet gapRs = gapPs.executeQuery();
+	            ResultSet gapRs = gapPs.executeQuery();
 
-				if (!gapRs.next()) {
-					gapRs.close();
-					gapPs.close();
-					conn.rollback();
-					return false;
-				}
+	            if (!gapRs.next()) {
+	                gapRs.close();
+	                gapPs.close();
+	                conn.rollback();
+	                return false;
+	            }
 
-				int casualGap = gapRs.getInt("casualGap");
-				int requestedCapacity = Integer.parseInt(newValue);
+	            int casualGap = gapRs.getInt("casualGap");
+	            int requestedCapacity = Integer.parseInt(newValue);
 
-				gapRs.close();
-				gapPs.close();
+	            gapRs.close();
+	            gapPs.close();
 
-				if (requestedCapacity <= casualGap) {
-					conn.rollback();
-					return false;
-				}
+	            // Business Rule: maxCapacity cannot be less than or equal to the casual gap
+	            if (requestedCapacity <= casualGap) {
+	                conn.rollback();
+	                return false;
+	            }
 
-				PreparedStatement updateParkPs = conn
-						.prepareStatement("UPDATE Parks SET maxCapacity = ? WHERE parkId = ?");
-				updateParkPs.setInt(1, requestedCapacity);
-				updateParkPs.setInt(2, parkId);
-				updateParkPs.executeUpdate();
-				updateParkPs.close();
-			}
+	            PreparedStatement updateParkPs = conn
+	                    .prepareStatement("UPDATE Parks SET maxCapacity = ? WHERE parkId = ?");
+	            updateParkPs.setInt(1, requestedCapacity);
+	            updateParkPs.setInt(2, parkId);
+	            updateParkPs.executeUpdate();
+	            updateParkPs.close();
+	        }
 
-			PreparedStatement updateRequestPs = conn
-					.prepareStatement("UPDATE Requests SET status = 'Approved' WHERE requestId = ?");
-			updateRequestPs.setInt(1, requestId);
-			int rows = updateRequestPs.executeUpdate();
-			updateRequestPs.close();
+	        // =========================================================
+	        // CASE 2: Request is for updating CasualGap (New Logic Added)
+	        // =========================================================
+	        else if ("CasualGap".equals(requestType)) {
+	            // Fetch current casualGap and maxCapacity to validate and calculate the difference
+	            PreparedStatement parkPs = conn.prepareStatement("SELECT maxCapacity, casualGap FROM Parks WHERE parkId = ?");
+	            parkPs.setInt(1, parkId);
+	            ResultSet parkRs = parkPs.executeQuery();
 
-			conn.commit();
-			return rows > 0;
+	            if (!parkRs.next()) {
+	                parkRs.close();
+	                parkPs.close();
+	                conn.rollback();
+	                return false;
+	            }
 
-		} catch (SQLException e) {
-			e.printStackTrace();
-			try {
-				if (conn != null)
-					conn.rollback();
-			} catch (SQLException ex) {
-				ex.printStackTrace();
-			}
-			return false;
+	            int maxCapacity = parkRs.getInt("maxCapacity");
+	            int currentCasualGap = parkRs.getInt("casualGap");
+	            int requestedCasualGap = Integer.parseInt(newValue);
 
-		} finally {
-			try {
-				if (conn != null)
-					conn.setAutoCommit(true);
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-			pool.releaseConnection(conn);
-		}
+	            parkRs.close();
+	            parkPs.close();
+
+	            // Business Rule Validation: New gap cannot exceed or equal total max capacity
+	            if (requestedCasualGap >= maxCapacity) {
+	                conn.rollback();
+	                return false;
+	            }
+
+	            // Calculate the difference between the new gap and the old gap
+	            int gapDifference = requestedCasualGap - currentCasualGap;
+
+	            // Update the casualGap inside the Parks table
+	            PreparedStatement updateGapPs = conn
+	                    .prepareStatement("UPDATE Parks SET casualGap = ? WHERE parkId = ?");
+	            updateGapPs.setInt(1, requestedCasualGap);
+	            updateGapPs.setInt(2, parkId);
+	            updateGapPs.executeUpdate();
+	            updateGapPs.close();
+
+	            // Dynamic adjustment: Add the gap difference directly to the current open casual spots
+	            String updateSpotsQuery = "UPDATE Parks SET OpenCasualSpots = OpenCasualSpots + ? WHERE parkId = ?";
+	            PreparedStatement updateSpotsPs = conn.prepareStatement(updateSpotsQuery);
+	            updateSpotsPs.setInt(1, gapDifference);
+	            updateSpotsPs.setInt(2, parkId);
+	            updateSpotsPs.executeUpdate();
+	            updateSpotsPs.close();
+	        }
+
+	        // =========================================================
+	        // Final Step: Update the request status to 'Approved'
+	        // =========================================================
+	        PreparedStatement updateRequestPs = conn
+	                .prepareStatement("UPDATE Requests SET status = 'Approved' WHERE requestId = ?");
+	        updateRequestPs.setInt(1, requestId);
+	        int rows = updateRequestPs.executeUpdate();
+	        updateRequestPs.close();
+
+	        conn.commit();
+	        return rows > 0;
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        try {
+	            if (conn != null)
+	                conn.rollback();
+	        } catch (SQLException ex) {
+	            ex.printStackTrace();
+	        }
+	        return false;
+
+	    } finally {
+	        try {
+	            if (conn != null)
+	                conn.setAutoCommit(true);
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	        pool.releaseConnection(conn);
+	    }
 	}
 
 	// =========================================================

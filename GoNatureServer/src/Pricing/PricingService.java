@@ -10,15 +10,15 @@ public class PricingService {
 
 		switch (visitType) {
 
-		case "INDIVIDUAL_PREORDER":
+		case "REGULAR_PREORDER":
 			discount = 15;
 			break;
 
-		case "INDIVIDUAL_NOT_PREORDER":
+		case "REGULAR_NOT_PREORDER":
 			discount = 0;
 			break;
 
-		case "GROUP_PREORDER":
+		case "GUIDE_PREORDER":
 			discount = 25;
 
 			if (prepaid) {
@@ -26,7 +26,7 @@ public class PricingService {
 			}
 			break;
 
-		case "GROUP_NOT_PREORDER":
+		case "GUIDE_NOT_PREORDER":
 			discount = 10;
 			break;
 		}

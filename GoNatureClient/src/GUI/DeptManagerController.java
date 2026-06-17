@@ -38,7 +38,7 @@ public class DeptManagerController {
 
     @FXML
     void showPendingRequests(ActionEvent event) {
-        loadPanel("/GUI/DeptManagerPendingRequestsPanel.fxml");
+        loadPanel("/DeptManagerPendingRequestsPanel.fxml");
     }
 
     @FXML

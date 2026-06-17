@@ -51,7 +51,9 @@ public class DeptManagerApproveRejectPanelController {
 
         requestsTable.setItems(tableData);
 
-        refreshRequests(null);
+        javafx.application.Platform.runLater(() -> {
+            refreshRequests(null);
+        });
     }
 
     @FXML
