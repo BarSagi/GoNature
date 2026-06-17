@@ -1,6 +1,8 @@
 package Database;
 
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +12,7 @@ import Common.CancellationReportData;
 import Common.Order;
 import Common.UsageReportData;
 import Common.Visit;
+import Common.VisitRecord;
 import Server.EchoServer;
 
 public class DBController {
@@ -902,59 +905,107 @@ public class DBController {
 	// =========================================================
 	public ArrayList<UsageReportData> getUsageReport(String parkName, int month, int year) {
 
-		ArrayList<UsageReportData> result = new ArrayList<>();
-		Connection conn = null;
+	    ArrayList<UsageReportData> result = new ArrayList<>();
+	    Connection conn = null;
 
-		try {
-			conn = pool.getConnection();
+	    try {
+	        conn = pool.getConnection();
 
-			int parkId = getParkIdByName(parkName);
+	        int parkId = getParkIdByName(parkName);
+	        if (parkId == -1) {
+	            return result;
+	        }
 
-			if (parkId == -1) {
-				return result;
-			}
+	        String sql = "SELECT v.entryTime, v.exitTime, v.actualVisitorCount, p.maxCapacity " +
+	                     "FROM Visits v " +
+	                     "JOIN Parks p ON v.parkId = p.parkId " +
+	                     "WHERE v.parkId = ? " +
+	                     "AND YEAR(v.entryTime) = ? " +
+	                     "AND MONTH(v.entryTime) = ? " +
+	                     "ORDER BY v.entryTime";
 
-			String sql = "SELECT " + "DAYOFWEEK(v.entryTime) AS dayOfWeek, "
-					+ "(SUM(v.actualVisitorCount) / COUNT(DISTINCT DATE(v.entryTime))) AS avgDailyVisitors, "
-					+ "p.maxCapacity " + "FROM Visits v " + "JOIN Parks p ON v.parkId = p.parkId "
-					+ "WHERE v.parkId = ? " + "AND YEAR(v.entryTime) = ? " + "AND MONTH(v.entryTime) = ? "
-					+ "GROUP BY DAYOFWEEK(v.entryTime), p.maxCapacity " + "ORDER BY dayOfWeek";
+	        PreparedStatement ps = conn.prepareStatement(sql);
+	        ps.setInt(1, parkId);
+	        ps.setInt(2, year);
+	        ps.setInt(3, month);
 
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setInt(1, parkId);
-			ps.setInt(2, year);
-			ps.setInt(3, month);
+	        ResultSet rs = ps.executeQuery();
 
-			ResultSet rs = ps.executeQuery();
+	        List<VisitRecord> visits = new ArrayList<>();
+	        int maxCapacity = 0;
 
-			while (rs.next()) {
-				int dayOfWeek = rs.getInt("dayOfWeek");
-				double avgDailyVisitors = rs.getDouble("avgDailyVisitors");
-				int maxCapacity = rs.getInt("maxCapacity");
+	        while (rs.next()) {
 
-				double avgCapacity;
+	            LocalDateTime entry = rs.getTimestamp("entryTime").toLocalDateTime();
+	            LocalDateTime exit = rs.getTimestamp("exitTime").toLocalDateTime();
+	            int count = rs.getInt("actualVisitorCount");
 
-				if (maxCapacity == 0) {
-					avgCapacity = 0;
-				} else {
-					avgCapacity = avgDailyVisitors / maxCapacity;
-					avgCapacity = avgCapacity * 100;
-				}
+	            maxCapacity = rs.getInt("maxCapacity");
 
-				result.add(new UsageReportData(dayOfWeek, avgCapacity));
-			}
+	            visits.add(new VisitRecord(entry, exit, count));
+	        }
 
-			rs.close();
-			ps.close();
+	        rs.close();
+	        ps.close();
 
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			if (conn != null) {
-				pool.releaseConnection(conn);
-			}
-		}
-		return result;
+	        Map<Integer, Integer> dayToPeak = new HashMap<>();
+	        Map<Integer, Boolean> dayToFull = new HashMap<>();
+
+	        YearMonth ym = YearMonth.of(year, month);
+	        int daysInMonth = ym.lengthOfMonth();
+
+	        for (int day = 1; day <= daysInMonth; day++) {
+
+	            int peak = 0;
+	            boolean full = false;
+
+	            LocalDateTime base = LocalDateTime.of(year, month, day, 0, 0);
+
+	            int startMinute = 9 * 60;
+	            int endMinute = 17 * 60;
+
+	            for (int minute = startMinute; minute < endMinute; minute++) {
+
+	                LocalDateTime t = base.plusMinutes(minute);
+
+	                int current = 0;
+
+	                for (VisitRecord v : visits) {
+
+	                    if (!v.entry.isAfter(t) && v.exit.isAfter(t)) {
+	                        current += v.count;
+	                    }
+	                }
+
+	                peak = Math.max(peak, current);
+
+	                if (current >= maxCapacity) {
+	                    full = true;
+	                }
+	            }
+
+	            dayToPeak.put(day, peak);
+	            dayToFull.put(day, full);
+	        }
+
+	        for (int day = 1; day <= daysInMonth; day++) {
+
+	            result.add(new UsageReportData(
+	                    day,
+	                    dayToPeak.getOrDefault(day, 0),
+	                    dayToFull.getOrDefault(day, false)
+	            ));
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    } finally {
+	        if (conn != null) {
+	            pool.releaseConnection(conn);
+	        }
+	    }
+
+	    return result;
 	}
 
 	// =========================================================
@@ -1439,10 +1490,8 @@ public class DBController {
 
 		ArrayList<String> alternativeSlots = new ArrayList<>();
 
-		String[] possibleTimes = {
-				"09:00:00", "10:00:00", "11:00:00", "12:00:00",
-				"13:00:00", "14:00:00", "15:00:00", "16:00:00"
-			};
+		String[] possibleTimes = { "09:00:00", "10:00:00", "11:00:00", "12:00:00", "13:00:00", "14:00:00", "15:00:00",
+				"16:00:00" };
 
 		for (String time : possibleTimes) {
 			if (hasRoomInSlot(parkId, visitDate, time, requestedVisitors)) {
@@ -1562,7 +1611,7 @@ public class DBController {
 			}
 		}
 	}
-	
+
 	// =========================================================
 	// APPROVE REQUEST
 	// =========================================================
@@ -1595,8 +1644,7 @@ public class DBController {
 			selectPs.close();
 
 			if ("MaxCapacity".equals(requestType)) {
-				PreparedStatement gapPs = conn.prepareStatement(
-						"SELECT casualGap FROM Parks WHERE parkId = ?");
+				PreparedStatement gapPs = conn.prepareStatement("SELECT casualGap FROM Parks WHERE parkId = ?");
 				gapPs.setInt(1, parkId);
 
 				ResultSet gapRs = gapPs.executeQuery();
@@ -1619,16 +1667,16 @@ public class DBController {
 					return false;
 				}
 
-				PreparedStatement updateParkPs = conn.prepareStatement(
-						"UPDATE Parks SET maxCapacity = ? WHERE parkId = ?");
+				PreparedStatement updateParkPs = conn
+						.prepareStatement("UPDATE Parks SET maxCapacity = ? WHERE parkId = ?");
 				updateParkPs.setInt(1, requestedCapacity);
 				updateParkPs.setInt(2, parkId);
 				updateParkPs.executeUpdate();
 				updateParkPs.close();
 			}
 
-			PreparedStatement updateRequestPs = conn.prepareStatement(
-					"UPDATE Requests SET status = 'Approved' WHERE requestId = ?");
+			PreparedStatement updateRequestPs = conn
+					.prepareStatement("UPDATE Requests SET status = 'Approved' WHERE requestId = ?");
 			updateRequestPs.setInt(1, requestId);
 			int rows = updateRequestPs.executeUpdate();
 			updateRequestPs.close();
@@ -1639,7 +1687,8 @@ public class DBController {
 		} catch (SQLException e) {
 			e.printStackTrace();
 			try {
-				if (conn != null) conn.rollback();
+				if (conn != null)
+					conn.rollback();
 			} catch (SQLException ex) {
 				ex.printStackTrace();
 			}
@@ -1647,14 +1696,15 @@ public class DBController {
 
 		} finally {
 			try {
-				if (conn != null) conn.setAutoCommit(true);
+				if (conn != null)
+					conn.setAutoCommit(true);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 			pool.releaseConnection(conn);
 		}
 	}
-	
+
 	// =========================================================
 	// GET PENDING REQUESTS
 	// =========================================================
@@ -1724,6 +1774,5 @@ public class DBController {
 			pool.releaseConnection(conn);
 		}
 	}
-	
-	
+
 }

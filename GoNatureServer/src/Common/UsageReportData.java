@@ -5,27 +5,28 @@ import java.io.Serializable;
 @SuppressWarnings("serial")
 public class UsageReportData implements Serializable {
 
-    private int dayOfWeek;
-    private double averageCapacity;
+    private int day;
+    private int peakOccupancy;
+    private boolean full;
 
-    public UsageReportData(int dayOfWeek, double averageCapacity) {
-        this.dayOfWeek = dayOfWeek;
-        this.averageCapacity = averageCapacity;
+    public UsageReportData(int day, int peakOccupancy, boolean full) {
+        this.day = day;
+        this.peakOccupancy = peakOccupancy;
+        this.full = full;
     }
 
-    public int getDayOfWeek() {
-        return dayOfWeek;
+    public int getDay() {
+        return day;
     }
 
-    public double getAverageCapacity() {
-        return averageCapacity;
+    public int getPeakOccupancy() {
+        return peakOccupancy;
     }
 
-    public void setDayOfWeek(int dayOfWeek) {
-        this.dayOfWeek = dayOfWeek;
+    public boolean isFull() {
+        return full;
     }
-
-    public void setAverageCapacity(double averageCapacity) {
-        this.averageCapacity = averageCapacity;
+    public boolean isNotFull() {
+        return !full;
     }
 }

@@ -7,129 +7,118 @@ import Client.GoNatureClient;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.chart.*;
+import javafx.geometry.Pos;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ParkManagerUsageReportsPanelController {
 
-	public static ParkManagerUsageReportsPanelController instance;
+    public static ParkManagerUsageReportsPanelController instance;
 
-	@FXML
-	private ComboBox<Integer> monthCombo;
+    @FXML
+    private ComboBox<Integer> monthCombo;
 
-	@FXML
-	private ComboBox<Integer> yearCombo;
+    @FXML
+    private ComboBox<Integer> yearCombo;
 
-	@FXML
-	private BarChart<String, Number> barChart;
+    @FXML
+    private GridPane heatmapGrid;
 
-	@FXML
-	private CategoryAxis xAxis;
+    @FXML
+    private VBox legendBox;
 
-	@FXML
-	private NumberAxis yAxis;
+    public void initialize() {
 
-	public void initialize() {
+        instance = this;
 
-		instance = this;
+        for (int m = 1; m <= 12; m++) {
+            monthCombo.getItems().add(m);
+        }
 
-		for (int m = 1; m <= 12; m++) {
-			monthCombo.getItems().add(m);
-		}
+        for (int y = 2020; y <= 2030; y++) {
+            yearCombo.getItems().add(y);
+        }
 
-		for (int y = 2020; y <= 2030; y++) {
-			yearCombo.getItems().add(y);
-		}
-	}
+        initLegend();
+    }
 
-	@FXML
-	void generateReport(ActionEvent event) {
+    private void initLegend() {
 
-		String park = GoNatureClient.currentEmployee.getAffiliation();
+        legendBox.getChildren().clear();
 
-		Integer month = monthCombo.getValue();
-		Integer year = yearCombo.getValue();
+        HBox legend = new HBox(15);
+        legend.setAlignment(Pos.CENTER);
 
-		ArrayList<Object> data = new ArrayList<>();
-		data.add(park);
-		data.add(month);
-		data.add(year);
+        Label greenBox = new Label("  ");
+        greenBox.setStyle("-fx-background-color: #2ecc71; -fx-min-width: 20; -fx-min-height: 20;");
 
-		Message msg = new Message("GET_USAGE_REPORT", data);
+        Label greenText = new Label("Not Full");
 
-		try {
-			ClientUI.client.sendToServer(msg);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+        Label redBox = new Label("  ");
+        redBox.setStyle("-fx-background-color: #e74c3c; -fx-min-width: 20; -fx-min-height: 20;");
 
-	public void showReport(ArrayList<UsageReportData> report) {
+        Label redText = new Label("Full");
 
-		if (report == null || report.isEmpty())
-			return;
+        legend.getChildren().addAll(
+                greenBox, greenText,
+                redBox, redText
+        );
 
-		Platform.runLater(() -> {
+        legendBox.getChildren().add(legend);
+    }
 
-			barChart.setAnimated(false);
-			barChart.getData().clear();
+    @FXML
+    void generateReport(ActionEvent event) {
 
-			XYChart.Series<String, Number> series = new XYChart.Series<>();
-			series.setName("Average Capacity");
+        String park = GoNatureClient.currentEmployee.getAffiliation();
 
-			Map<Integer, Double> map = new HashMap<>();
+        Integer month = monthCombo.getValue();
+        Integer year = yearCombo.getValue();
 
-			for (UsageReportData r : report) {
-				map.put(r.getDayOfWeek(), r.getAverageCapacity());
-			}
+        ArrayList<Object> data = new ArrayList<>();
+        data.add(park);
+        data.add(month);
+        data.add(year);
 
-			for (int i = 1; i <= 7; i++) {
+        Message msg = new Message("GET_USAGE_REPORT", data);
 
-				String dayLabel = dayName(i);
-				double value = map.getOrDefault(i, 0.0);
+        try {
+            ClientUI.client.sendToServer(msg);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-				series.getData().add(new XYChart.Data<>(dayLabel, value));
-			}
+    public void showReport(ArrayList<UsageReportData> report) {
 
-			barChart.getData().add(series);
+        Platform.runLater(() -> {
 
-			Platform.runLater(() -> {
-				for (XYChart.Data<String, Number> data : series.getData()) {
+            heatmapGrid.getChildren().clear();
 
-					javafx.scene.control.Label label = new javafx.scene.control.Label(
-							String.format("%.1f", data.getYValue()));
+            for (UsageReportData d : report) {
 
-					label.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
-					label.setMouseTransparent(true);
+                Label cell = new Label(String.valueOf(d.getDay()));
 
-					if (data.getNode() instanceof javafx.scene.layout.StackPane stack) {
-						stack.getChildren().add(label);
-						javafx.scene.layout.StackPane.setAlignment(label, javafx.geometry.Pos.TOP_CENTER);
-					}
-				}
-			});
+                cell.setMinSize(40, 40);
+                cell.setAlignment(Pos.CENTER);
 
-			yAxis.setAutoRanging(false);
-			yAxis.setLowerBound(0);
-			yAxis.setUpperBound(120);
-			yAxis.setTickUnit(10);
-		});
-	}
+                if (d.isFull()) {
+                    cell.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white;");
+                }
+                else {
+                    cell.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white;");
+                }
 
-	private String dayName(int d) {
-		return switch (d) {
-		case 1 -> "Sun";
-		case 2 -> "Mon";
-		case 3 -> "Tue";
-		case 4 -> "Wed";
-		case 5 -> "Thu";
-		case 6 -> "Fri";
-		case 7 -> "Sat";
-		default -> "";
-		};
-	}
+                int col = (d.getDay() - 1) % 7;
+                int row = (d.getDay() - 1) / 7;
+
+                heatmapGrid.add(cell, col, row);
+            }
+        });
+    }
 }
