@@ -1439,7 +1439,10 @@ public class DBController {
 
 		ArrayList<String> alternativeSlots = new ArrayList<>();
 
-		String[] possibleTimes = { "08:00:00", "10:00:00", "12:00:00", "14:00:00", "16:00:00" };
+		String[] possibleTimes = {
+				"09:00:00", "10:00:00", "11:00:00", "12:00:00",
+				"13:00:00", "14:00:00", "15:00:00", "16:00:00"
+			};
 
 		for (String time : possibleTimes) {
 			if (hasRoomInSlot(parkId, visitDate, time, requestedVisitors)) {
@@ -1559,4 +1562,168 @@ public class DBController {
 			}
 		}
 	}
+	
+	// =========================================================
+	// APPROVE REQUEST
+	// =========================================================
+	public boolean approveRequest(int requestId) {
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+			conn.setAutoCommit(false);
+
+			String selectQuery = "SELECT parkId, requestType, newValue FROM Requests WHERE requestId = ?";
+			PreparedStatement selectPs = conn.prepareStatement(selectQuery);
+			selectPs.setInt(1, requestId);
+
+			ResultSet rs = selectPs.executeQuery();
+
+			if (!rs.next()) {
+				rs.close();
+				selectPs.close();
+				conn.rollback();
+				return false;
+			}
+
+			int parkId = rs.getInt("parkId");
+			String requestType = rs.getString("requestType");
+			String newValue = rs.getString("newValue");
+
+			rs.close();
+			selectPs.close();
+
+			if ("MaxCapacity".equals(requestType)) {
+				PreparedStatement gapPs = conn.prepareStatement(
+						"SELECT casualGap FROM Parks WHERE parkId = ?");
+				gapPs.setInt(1, parkId);
+
+				ResultSet gapRs = gapPs.executeQuery();
+
+				if (!gapRs.next()) {
+					gapRs.close();
+					gapPs.close();
+					conn.rollback();
+					return false;
+				}
+
+				int casualGap = gapRs.getInt("casualGap");
+				int requestedCapacity = Integer.parseInt(newValue);
+
+				gapRs.close();
+				gapPs.close();
+
+				if (requestedCapacity <= casualGap) {
+					conn.rollback();
+					return false;
+				}
+
+				PreparedStatement updateParkPs = conn.prepareStatement(
+						"UPDATE Parks SET maxCapacity = ? WHERE parkId = ?");
+				updateParkPs.setInt(1, requestedCapacity);
+				updateParkPs.setInt(2, parkId);
+				updateParkPs.executeUpdate();
+				updateParkPs.close();
+			}
+
+			PreparedStatement updateRequestPs = conn.prepareStatement(
+					"UPDATE Requests SET status = 'Approved' WHERE requestId = ?");
+			updateRequestPs.setInt(1, requestId);
+			int rows = updateRequestPs.executeUpdate();
+			updateRequestPs.close();
+
+			conn.commit();
+			return rows > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			try {
+				if (conn != null) conn.rollback();
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+			return false;
+
+		} finally {
+			try {
+				if (conn != null) conn.setAutoCommit(true);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			pool.releaseConnection(conn);
+		}
+	}
+	
+	// =========================================================
+	// GET PENDING REQUESTS
+	// =========================================================
+	public ArrayList<ArrayList<String>> getPendingRequests() {
+
+		ArrayList<ArrayList<String>> result = new ArrayList<>();
+		String query = "SELECT requestId, parkId, requestType, oldValue, newValue, status "
+				+ "FROM Requests WHERE status = 'Pending'";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ResultSet rs = ps.executeQuery();
+
+			while (rs.next()) {
+				ArrayList<String> row = new ArrayList<>();
+				row.add(String.valueOf(rs.getInt("requestId")));
+				row.add(String.valueOf(rs.getInt("parkId")));
+				row.add(rs.getString("requestType"));
+				row.add(rs.getString("oldValue"));
+				row.add(rs.getString("newValue"));
+				row.add(rs.getString("status"));
+				result.add(row);
+			}
+
+			rs.close();
+			ps.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+
+		return result;
+	}
+
+	// =========================================================
+	// REJECT REQUEST
+	// =========================================================
+	public boolean rejectRequest(int requestId) {
+
+		String query = "UPDATE Requests SET status = 'Rejected' WHERE requestId = ?";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setInt(1, requestId);
+
+			int rows = ps.executeUpdate();
+			ps.close();
+
+			return rows > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+	}
+	
+	
 }

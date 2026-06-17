@@ -75,6 +75,15 @@ public class StrategyFactory {
 		case "GET_CANCELLATION_REPORT":
 			return new GetCancellationReportStrategy();
 
+		case "GET_PENDING_REQUESTS":
+		    return new GetPendingRequestsStrategy();
+
+		case "APPROVE_REQUEST":
+		    return new ApproveRequestStrategy();
+
+		case "REJECT_REQUEST":
+		    return new RejectRequestStrategy();
+		    
 		default:
 			return null;
 		}
