@@ -22,6 +22,7 @@ public class ParkWorkerExitVisitorController {
 	@FXML
 	public void initialize() {
 		instance = this;
+		statusLabel.setText("");
 	}
 
 	@FXML
@@ -30,6 +31,11 @@ public class ParkWorkerExitVisitorController {
 
 		if (visitorId.isEmpty()) {
 			statusLabel.setText("Please enter visitor ID.");
+			return;
+		}
+		
+		if (!visitorId.matches("\\d{9}")) {
+			statusLabel.setText("Visitor ID must be exactly 9 digits.");
 			return;
 		}
 

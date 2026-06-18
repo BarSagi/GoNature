@@ -52,6 +52,12 @@ public class ParkWorkerCreateCasualVisitController {
             statusLabel.setText("Please fill in all fields.");
             return;
         }
+        
+        if (!visitorId.matches("\\d{9}")) {
+            statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+            statusLabel.setText("Visitor ID must be exactly 9 digits.");
+            return;
+        }
 
         try {
             int visitorCount = Integer.parseInt(countStr);

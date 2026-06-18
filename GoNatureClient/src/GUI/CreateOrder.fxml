@@ -10,6 +10,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
+<?import javafx.scene.control.Spinner?>
 
 <VBox alignment="CENTER" prefHeight="500.0" prefWidth="450.0"
 	spacing="20.0" style="-fx-background-color: #f4f4f4;"
@@ -50,10 +51,9 @@
 
 						<Label text="Visitors:" textFill="#7f8c8d"
 							GridPane.columnIndex="0" GridPane.rowIndex="3" />
-						<TextField fx:id="visitorsTextField" prefWidth="200.0"
-							promptText="Number of people"
-							style="-fx-background-radius: 5; -fx-padding: 5;"
-							GridPane.columnIndex="1" GridPane.rowIndex="3" />
+						<Spinner fx:id="visitorsSpinner" prefWidth="200.0"
+  								 style="-fx-background-radius: 5;"
+  								 GridPane.columnIndex="1" GridPane.rowIndex="3" />
 					</children>
 				</GridPane>
 

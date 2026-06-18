@@ -1,5 +1,14 @@
 package GUI;
 
+import java.net.URL;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.ResourceBundle;
+
+import Client.ClientUI;
+import Client.GoNatureClient;
+import Common.Message;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -10,15 +19,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-
-import java.net.URL;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.ResourceBundle;
-
-import Client.ClientUI;
-import Client.GoNatureClient;
-import Common.Message;
 
 public class CreateOrderController implements Initializable {
 
@@ -31,16 +31,15 @@ public class CreateOrderController implements Initializable {
 	@FXML
 	private ComboBox<String> timeComboBox;
 	@FXML
-	private TextField visitorsTextField;
-
-	// Notice: emailTextField is GONE! Better UX!
-
+	private javafx.scene.control.Spinner<Integer> visitorsSpinner;
 	@FXML
 	private Label errorLabel;
 	@FXML
 	private Button backButton;
 	@FXML
 	private Button createOrderButton;
+	
+	private int visitorsCount = 1;
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
@@ -53,6 +52,19 @@ public class CreateOrderController implements Initializable {
 				"09:00", "10:00", "11:00", "12:00",
 				"13:00", "14:00", "15:00", "16:00");
 		timeComboBox.setItems(times);
+		
+		int maxVisitors = 100;
+
+		if (GoNatureClient.currentVisitor != null) {
+		    String visitorType = GoNatureClient.currentVisitor.getVisitorType();
+
+		    if ("Guide".equals(visitorType)) {
+		        maxVisitors = 16;
+		    }
+		}
+		
+		visitorsSpinner.setValueFactory(
+				new javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory(1, maxVisitors, 1));
 	}
 
 	@FXML
@@ -63,17 +75,26 @@ public class CreateOrderController implements Initializable {
 		String selectedPark = parkComboBox.getValue();
 		LocalDate selectedDate = datePicker.getValue();
 		String selectedTime = timeComboBox.getValue();
-		String visitorsAmount = visitorsTextField.getText();
-
+		String visitorsAmount = String.valueOf(visitorsSpinner.getValue());
+		
 		// 2. Basic Validation
 		if (selectedPark == null || selectedDate == null || selectedTime == null || visitorsAmount.trim().isEmpty()) {
 			showError("Please fill in all fields.");
 			return;
 		}
-
-		if (!visitorsAmount.matches("\\d+") || Integer.parseInt(visitorsAmount) <= 0) {
-			showError("Number of visitors must be a valid positive number.");
+		
+		if (selectedDate.isBefore(LocalDate.now())) {
+			showError("You cannot select a past date.");
 			return;
+		}
+		
+		// אם בוחרים את היום הנוכחי, לא לאפשר שעה שכבר עברה
+		if (selectedDate.equals(LocalDate.now())) {
+			LocalTime chosenTime = LocalTime.parse(selectedTime);
+			if (chosenTime.isBefore(LocalTime.now())) {
+				showError("You cannot select a time that has already passed.");
+				return;
+			}
 		}
 
 		// 3. Gather background session data
@@ -106,7 +127,7 @@ public class CreateOrderController implements Initializable {
 
 	@FXML
 	void goBack(ActionEvent event) {
-		// if current visitor isnt null it means we were at the visitor orders screen.
+		// if current visitor isn't null it means we were at the visitor orders screen.
 		if (GoNatureClient.currentVisitor != null) {
 			Message msg = new Message("FETCH_VISITOR_ORDERS", GoNatureClient.currentVisitor.getVisitorId());
 
@@ -124,4 +145,5 @@ public class CreateOrderController implements Initializable {
 		errorLabel.setText(message);
 		errorLabel.setVisible(true);
 	}
+	
 }

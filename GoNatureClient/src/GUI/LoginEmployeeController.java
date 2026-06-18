@@ -26,6 +26,7 @@ public class LoginEmployeeController {
     @FXML
     public void initialize() {
         instance = this;
+        errorLabel.setText("");
         // System.out.println("Controller initialized"); put this as a comment - dont think we need this, gal.
     }
     
@@ -39,6 +40,13 @@ public class LoginEmployeeController {
         String userName = usernameField.getText().trim();
         String password = passwordField.getText().trim();
 
+        errorLabel.setText("");
+        
+        if (userName.isEmpty() || password.isEmpty()) {
+            errorLabel.setText("Please enter both username and password.");
+            return;
+        }
+        
         ArrayList<String> employeeData = new ArrayList<>();
         employeeData.add(userName);
         employeeData.add(password);

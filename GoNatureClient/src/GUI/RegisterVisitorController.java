@@ -48,6 +48,21 @@ public class RegisterVisitorController {
 			showError("ID must contain only numbers.");
 			return;
 		}
+		
+		if (!firstName.matches("[a-zA-Z ]+") || !lastName.matches("[a-zA-Z ]+")) {
+			showError("First and last name must contain letters only.");
+			return;
+		}
+
+		if (!phone.matches("\\d{10}")) {
+			showError("Phone number must be exactly 10 digits.");
+			return;
+		}
+
+		if (!email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+			showError("Please enter a valid email address.");
+			return;
+		}
 
 		// 2. Package the data for the server
 		ArrayList<String> registrationData = new ArrayList<>();

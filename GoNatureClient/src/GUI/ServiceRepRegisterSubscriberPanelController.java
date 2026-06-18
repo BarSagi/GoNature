@@ -75,11 +75,43 @@ public class ServiceRepRegisterSubscriberPanelController {
                 return;
             }
 
-            if ("Credit Card".equals(paymentMethod) && creditCard.isEmpty()) {
-                statusLabel.setText("Please enter credit card number.");
+            if (!firstName.matches("[a-zA-Z ]+") || !lastName.matches("[a-zA-Z ]+")) {
+                statusLabel.setText("First and last name must contain letters only.");
                 return;
             }
 
+            if (!id.matches("\\d{9}")) {
+                statusLabel.setText("ID must be exactly 9 digits.");
+                return;
+            }
+
+            if (!phone.matches("\\d{10}")) {
+                statusLabel.setText("Phone number must be exactly 10 digits.");
+                return;
+            }
+
+            if (!email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+                statusLabel.setText("Please enter a valid email address.");
+                return;
+            }
+
+            if (!familyMembers.matches("\\d+") || Integer.parseInt(familyMembers) <= 0) {
+                statusLabel.setText("Family members must be a positive number.");
+                return;
+            }
+
+            if ("Credit Card".equals(paymentMethod)) {
+                if (creditCard.isEmpty()) {
+                    statusLabel.setText("Please enter credit card number.");
+                    return;
+                }
+
+                if (!creditCard.matches("\\d{16}")) {
+                    statusLabel.setText("Credit card must be exactly 16 digits.");
+                    return;
+                }
+            }
+            
             ArrayList<String> data = new ArrayList<>();
             data.add(id);
             data.add(firstName);

@@ -4,6 +4,7 @@ import Client.ClientUI;
 import Common.Message;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
 public class LoginVisitorController {
@@ -12,12 +13,24 @@ public class LoginVisitorController {
 	private TextField idField;
 
 	@FXML
+	private Label errorLabel;
+
+	@FXML
 	void loginVisitor(ActionEvent event) {
 		String id = idField.getText();
+		errorLabel.setVisible(false);
 
 		// 1. Basic validation
-		if (id == null || id.trim().isEmpty() || !id.matches("\\d+")) {
-			System.out.println("Invalid input: Please enter a valid ID number.");
+		if (id.isEmpty()) {
+			errorLabel.setText("Please enter ID number.");
+			errorLabel.setVisible(true);
+			return;
+		}
+		
+		// exactly 9 numbers
+		if (!id.matches("\\d{9}")) {
+			errorLabel.setText("ID must be exactly 9 digits.");
+			errorLabel.setVisible(true);
 			return;
 		}
 
