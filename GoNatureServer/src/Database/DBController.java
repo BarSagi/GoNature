@@ -1839,5 +1839,54 @@ public class DBController {
 			pool.releaseConnection(conn);
 		}
 	}
+	
+	// =========================================================
+	// GET PARK ORDERS
+	// =========================================================
+	public ArrayList<Order> getOrdersByParkName(String parkName) {
+
+		ArrayList<Order> result = new ArrayList<>();
+
+		String query = "SELECT o.* FROM Orders o "
+				+ "JOIN Parks p ON o.parkId = p.parkId "
+				+ "WHERE p.parkName = ? "
+				+ "ORDER BY o.visitDate, o.visitTime, o.orderId";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setString(1, parkName);
+
+			ResultSet rs = ps.executeQuery();
+
+			while (rs.next()) {
+				result.add(new Order(
+						rs.getInt("orderId"),
+						rs.getInt("parkId"),
+						rs.getString("visitorId"),
+						rs.getDate("visitDate"),
+						rs.getTime("visitTime"),
+						rs.getInt("visitorCount"),
+						rs.getString("email"),
+						rs.getString("orderType"),
+						rs.getString("status")
+				));
+			}
+
+			rs.close();
+			ps.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+
+		return result;
+	}
 
 }

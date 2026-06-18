@@ -7,6 +7,6 @@
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/javaFx"/>
-	<classpathentry kind="lib" path="C:/Users/reutd/Documents/רעות/סמסטר 5/שיטות הנדסיות/mysql-connector-j-9.5.0.jar"/>
+	<classpathentry kind="lib" path="C:/mysql-connector-j-9.5.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

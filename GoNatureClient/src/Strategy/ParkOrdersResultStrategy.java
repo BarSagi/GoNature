@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import Common.Message;
 import Common.Order;
+import GUI.ParkManagerOrdersPanelController;
 import GUI.ParkWorkerViewOrdersController;
 import javafx.application.Platform;
 
@@ -13,11 +14,14 @@ public class ParkOrdersResultStrategy implements MessageStrategy {
 	@Override
 	public void execute(Message message) {
 		ArrayList<Order> orders = (ArrayList<Order>) message.getData();
+
 		Platform.runLater(() -> {
 			if (ParkWorkerViewOrdersController.instance != null) {
 				ParkWorkerViewOrdersController.instance.showOrders(orders);
+			} else if (ParkManagerOrdersPanelController.instance != null) {
+				ParkManagerOrdersPanelController.instance.loadOrders(orders);
 			} else {
-				System.err.println("CRITICAL ERROR: Controller instance is still null!");
+				System.err.println("CRITICAL ERROR: No matching controller instance found!");
 			}
 		});
 	}

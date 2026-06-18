@@ -96,6 +96,9 @@ public class StrategyFactory {
 		case "REJECT_REQUEST_RESULT":
 		    return new RejectRequestResultStrategy();
 		    
+		case "RETURN_PARK_ORDERS":
+		    return new ParkOrdersResultStrategy();
+		    
 		default:
 			return null;
 		}

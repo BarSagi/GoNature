@@ -38,15 +38,7 @@
                 </VBox.margin>
             </VBox>
 
-            <Button text="View Pending Requests" onAction="#showPendingRequests"
-                    prefHeight="45.0" prefWidth="230.0"
-                    style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
-
             <Button text="Approve / Reject Requests" onAction="#showApproveReject"
-                    prefHeight="45.0" prefWidth="230.0"
-                    style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
-
-            <Button text="View Reports" onAction="#showReports"
                     prefHeight="45.0" prefWidth="230.0"
                     style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
 

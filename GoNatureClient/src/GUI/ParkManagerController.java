@@ -53,6 +53,11 @@ public class ParkManagerController {
 	void showUsageReports(ActionEvent event) {
 		loadPanel("/GUI/ParkManagerUsageReportsPanel.fxml");
 	}
+	
+	@FXML
+	void showParkOrders(ActionEvent event) {
+		loadPanel("/GUI/ParkManagerOrdersPanel.fxml");
+	}
 
 	@FXML
 	void showSubmitRequest(ActionEvent event) {

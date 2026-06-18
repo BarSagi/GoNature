@@ -37,20 +37,10 @@ public class DeptManagerController {
     }
 
     @FXML
-    void showPendingRequests(ActionEvent event) {
-        loadPanel("/DeptManagerPendingRequestsPanel.fxml");
-    }
-
-    @FXML
     void showApproveReject(ActionEvent event) {
         loadPanel("/GUI/DeptManagerApproveRejectPanel.fxml");
     }
 
-    @FXML
-    void showReports(ActionEvent event) {
-        loadPanel("/GUI/DeptManagerReportsPanel.fxml");
-    }
-    
     @FXML
     void showVisitDurationReport(ActionEvent event) {
     	loadPanel("/GUI/DeptManagerVisitDurationReportPanel.fxml");
