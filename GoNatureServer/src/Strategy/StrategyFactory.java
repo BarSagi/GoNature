@@ -86,6 +86,9 @@ public class StrategyFactory {
 		    
 		case "GET_PARK_ORDERS":
 		    return new GetParkOrdersStrategy();
+		 
+		case "CALCULATE_PRICE_PREORDER":
+			return new CalculatePricePreorderStrategy();
 		    
 		default:
 			return null;

@@ -52,8 +52,15 @@
 						<Label text="Visitors:" textFill="#7f8c8d"
 							GridPane.columnIndex="0" GridPane.rowIndex="3" />
 						<Spinner fx:id="visitorsSpinner" prefWidth="200.0"
-  								 style="-fx-background-radius: 5;"
-  								 GridPane.columnIndex="1" GridPane.rowIndex="3" />
+							style="-fx-background-radius: 5;" GridPane.columnIndex="1"
+							GridPane.rowIndex="3" />
+						<Label text="Payment Method:" textFill="#7f8c8d"
+							GridPane.columnIndex="0" GridPane.rowIndex="4" />
+
+						<ComboBox fx:id="paymentComboBox" prefWidth="200.0"
+							promptText="Choose payment method..."
+							style="-fx-background-radius: 5;" GridPane.columnIndex="1"
+							GridPane.rowIndex="4" />
 					</children>
 				</GridPane>
 

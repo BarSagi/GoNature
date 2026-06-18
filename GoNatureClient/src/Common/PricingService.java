@@ -1,4 +1,4 @@
-package Pricing;
+package Common;
 
 public class PricingService {
 

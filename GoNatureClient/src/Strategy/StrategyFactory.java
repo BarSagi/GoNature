@@ -99,6 +99,9 @@ public class StrategyFactory {
 		case "RETURN_PARK_ORDERS":
 		    return new ParkOrdersResultStrategy();
 		    
+		case "PRICE_RESULT_PREORDER":
+			return new PriceResultPreorderStrategy();
+		    
 		default:
 			return null;
 		}
