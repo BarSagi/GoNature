@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import Common.Message;
 import GUI.DeptManagerCancellationReportPanelController;
 import GUI.DeptManagerVisitDurationReportController;
+import GUI.ParkWorkerCreateOrderController;
 import javafx.application.Platform;
 
 public class AllParksStrategy implements MessageStrategy {
@@ -23,6 +24,10 @@ public class AllParksStrategy implements MessageStrategy {
 
             if (DeptManagerCancellationReportPanelController.instance != null) {
                 DeptManagerCancellationReportPanelController.instance.loadParks(parks);
+            }
+            
+            if (ParkWorkerCreateOrderController.instance != null) {
+                ParkWorkerCreateOrderController.instance.loadParks(parks);
             }
         });
     }
