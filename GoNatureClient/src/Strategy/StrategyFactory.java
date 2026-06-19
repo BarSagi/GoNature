@@ -107,6 +107,9 @@ public class StrategyFactory {
 		    
 		case "VISITOR_TYPE_RESULT":
 			return new VisitorTypeResultStrategy();
+		
+		case "PARK_DASHBOARD_DATA":
+			return new ParkDashboardDataStrategy();
 		    
 		default:
 			return null;

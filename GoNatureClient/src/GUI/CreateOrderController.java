@@ -16,6 +16,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.stage.Stage;
 
 public class CreateOrderController implements Initializable {
 
@@ -58,6 +59,7 @@ public class CreateOrderController implements Initializable {
 		}
 
 		visitorsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, maxVisitors, 1));
+		
 	}
 
 	@FXML

@@ -2,12 +2,15 @@ package GUI;
 
 import Client.ClientUI;
 import Client.GoNatureClient;
+import Common.Message;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
 
 import java.io.IOException;
 
@@ -34,6 +37,14 @@ public class DeptManagerController {
             welcomeLabel.setText("Welcome!");
             departmentLabel.setText("Department: Unknown");
         }
+        
+        Platform.runLater(() -> {
+            // Get the current window (Stage) using one of the nodes (contentArea)
+            Stage stage = (Stage) contentArea.getScene().getWindow();
+            if (stage != null) {
+                stage.setMaximized(true);
+            }
+        });
     }
 
     @FXML
@@ -53,7 +64,21 @@ public class DeptManagerController {
     
     @FXML
     void handleLogout(ActionEvent event) {
-        ClientUI.changeScreen("/GUI/LoginRoute.fxml", "GoNature - Choose Role");
+    	try {
+			String userID = GoNatureClient.currentEmployee.getEmployeeId();
+			GoNatureClient.currentEmployee = null;
+			Message msg = new Message("CLIENT_LOGOUT", userID);
+
+			try {
+				ClientUI.send(msg);
+			} catch (Exception e) {
+				System.out.println("Error sending message to server");
+				e.printStackTrace();
+			}
+			ClientUI.changeScreen("/GUI/LoginRoute.fxml", "GoNature Login");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
     }
 
     private void loadPanel(String fxmlPath) {

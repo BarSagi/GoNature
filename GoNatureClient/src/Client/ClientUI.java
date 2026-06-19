@@ -125,6 +125,8 @@ public class ClientUI extends Application {
 
 					mainStage.setTitle(title);
 					mainStage.setScene(scene);
+                    
+                    // Removed the redundant setMaximized call here
 
 				} catch (Exception e) {
 					System.out.println("Error loading screen: " + fxmlPath);

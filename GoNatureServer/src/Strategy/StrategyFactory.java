@@ -84,9 +84,6 @@ public class StrategyFactory {
 		case "REJECT_REQUEST":
 		    return new RejectRequestStrategy();
 		    
-		case "GET_PARK_ORDERS":
-		    return new GetParkOrdersStrategy();
-		 
 		case "CALCULATE_PRICE_PREORDER":
 			return new CalculatePricePreorderStrategy();
 			
@@ -95,6 +92,9 @@ public class StrategyFactory {
 		    
 		case "GET_VISITOR_TYPE":
 			return new GetVisitorTypeStrategy();
+			
+		case "GET_PARK_DASHBOARD":
+			return new GetParkDashboardStrategy();
 		    
 		default:
 			return null;

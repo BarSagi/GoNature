@@ -124,4 +124,19 @@ public class ParkWorkerViewOrdersController {
             }
         });
     }
+    
+    @FXML
+    void refreshOrders(ActionEvent event) {
+        try {
+            Message msg = new Message("GET_ORDERS", GoNatureClient.currentEmployee.getAffiliation());
+            ClientUI.client.sendToServer(msg);
+            statusLabel.setStyle("-fx-text-fill: #2980b9;"); // צבע כחול לרענון
+            statusLabel.setText("Refreshing orders...");
+        } catch (Exception e) {
+            statusLabel.setStyle("-fx-text-fill: red;");
+            statusLabel.setText("Failed to refresh orders.");
+            e.printStackTrace();
+        }
+    }
+
 }

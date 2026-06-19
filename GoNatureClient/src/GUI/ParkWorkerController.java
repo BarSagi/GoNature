@@ -3,12 +3,14 @@ package GUI;
 import Client.ClientUI;
 import Client.GoNatureClient;
 import Common.Message;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
 
 import java.io.IOException;
 
@@ -31,10 +33,30 @@ public class ParkWorkerController {
 
 			welcomeLabel.setText("Welcome " + fullName + "!");
 			parkNameLabel.setText("Park: " + GoNatureClient.currentEmployee.getAffiliation());
+			
+			// Request dashboard data from the server 
+			try {
+				Message msg = new Message("GET_PARK_DASHBOARD", GoNatureClient.currentEmployee.getAffiliation());
+				ClientUI.client.sendToServer(msg);
+			} catch (Exception e) {
+				System.out.println("Error requesting dashboard data.");
+				e.printStackTrace();
+			}
+			
+			loadPanel("/GUI/ParkDashboard.fxml");
+			
 		} else {
 			welcomeLabel.setText("Welcome!");
 			parkNameLabel.setText("Park: Unknown");
 		}
+		
+		Platform.runLater(() -> {
+            // Get the current window (Stage) using one of the nodes (contentArea)
+            Stage stage = (Stage) contentArea.getScene().getWindow();
+            if (stage != null) {
+                stage.setMaximized(true);
+            }
+        });
 	}
 
 	@FXML

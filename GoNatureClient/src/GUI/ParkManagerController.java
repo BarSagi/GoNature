@@ -3,12 +3,14 @@ package GUI;
 import Client.ClientUI;
 import Client.GoNatureClient;
 import Common.Message;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
 
 import java.io.IOException;
 
@@ -33,11 +35,32 @@ public class ParkManagerController {
 
 			welcomeLabel.setText("Welcome " + fullName + "!");
 			parkLabel.setText("Park: " + GoNatureClient.currentEmployee.getAffiliation());
-
+			
+			// Request dashboard data from the server 
+			try {
+				Message msg = new Message("GET_PARK_DASHBOARD", GoNatureClient.currentEmployee.getAffiliation());
+				ClientUI.client.sendToServer(msg);
+			} catch (Exception e) {
+				System.out.println("Error requesting dashboard data.");
+				e.printStackTrace();
+			}
+						
+			loadPanel("/GUI/ParkDashboard.fxml");
+			
 		} else {
 			welcomeLabel.setText("Welcome!");
 			parkLabel.setText("Park: Unknown");
 		}
+		
+		Platform.runLater(() -> {
+            // Get the current window (Stage) using one of the nodes (contentArea)
+            Stage stage = (Stage) contentArea.getScene().getWindow();
+            if (stage != null) {
+                stage.setMaximized(true);
+            }
+        });
+		
+		
 	}
 
 	// =========================
@@ -56,7 +79,9 @@ public class ParkManagerController {
 	
 	@FXML
 	void showParkOrders(ActionEvent event) {
-		loadPanel("/GUI/ParkManagerOrdersPanel.fxml");
+		// Same as park worker screen 
+		loadPanel("/GUI/ParkWorkerViewOrders.fxml");
+		// loadPanel("/GUI/ParkManagerOrdersPanel.fxml");
 	}
 
 	@FXML

@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
 <VBox alignment="CENTER" prefHeight="500.0" prefWidth="550.0"
@@ -15,16 +16,23 @@
         <Insets top="30.0" right="30.0" bottom="30.0" left="30.0"/>
     </padding>
 
-    <Label text="Park Worker Orders"
+    <Label text="Park Orders"
            style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
 
-    <ListView fx:id="ordersListView" prefHeight="350.0" prefWidth="450.0" />
+    <ListView fx:id="ordersListView" prefHeight="350.0" prefWidth="450.0" VBox.vgrow="ALWAYS" />
 
-    <Button text="Load Orders"
-    		prefHeight="55.0" prefWidth="280.0"
-            style="-fx-background-color: #27ae60; -fx-background-radius: 30; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-cursor: hand;"
-            onAction="#loadOrders" />
+    <HBox alignment="CENTER" spacing="20.0">
+        <Button text="Load Orders"
+                prefHeight="45.0" prefWidth="180.0"
+                style="-fx-background-color: #27ae60; -fx-background-radius: 30; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 15px; -fx-cursor: hand;"
+                onAction="#loadOrders" />
 
-    <Label fx:id="statusLabel" text="" style="-fx-text-fill: red;" />
+        <Button text="Refresh"
+                prefHeight="45.0" prefWidth="120.0"
+                style="-fx-background-color: #2980b9; -fx-background-radius: 30; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 15px; -fx-cursor: hand;"
+                onAction="#refreshOrders" />
+    </HBox>
+
+    <Label fx:id="statusLabel" text="" style="-fx-text-fill: red; -fx-font-weight: bold;" />
 
 </VBox>

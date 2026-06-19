@@ -8,7 +8,7 @@ import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
 public class GetOrdersStrategy implements MessageStrategy {
-	// Reusing for park worker "view orders" screen 
+	// Reusing for park worker and manager "view orders" screen 
 	@Override
 	public void execute(Message message, ConnectionToClient client, EchoServer server) {
 		

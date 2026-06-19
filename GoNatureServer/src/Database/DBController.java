@@ -1871,6 +1871,7 @@ public class DBController {
 		return result;
 	}
 
+	
 	public String getVisitorTypeById(String visitorId) {
 
 		String query = "SELECT visitorType FROM Visitors WHERE visitorId = ?";
@@ -1914,5 +1915,40 @@ public class DBController {
 			}
 		}
 	}
-
+	
+	// =========================================================
+	// GET PARK DATA FOR DASHBOARD
+	// =========================================================
+	public ArrayList<String> getParkDashboardData(String parkName) {
+		ArrayList<String> parkData = new ArrayList<>();
+		String query = "SELECT parkName, maxCapacity, casualGap, avgStayDuration, CurrentVisitorCount, OpenCasualSpots "
+				     + "FROM Parks WHERE parkName = ?";
+		
+		try {
+			Connection conn = pool.getConnection();
+			PreparedStatement stmt = conn.prepareStatement(query);
+			stmt.setString(1, parkName);
+			ResultSet rs = stmt.executeQuery();
+			
+			if (rs.next()) {
+				// Add data to the list in the exact order we queried it
+				parkData.add(rs.getString("parkName"));
+				parkData.add(String.valueOf(rs.getInt("maxCapacity")));
+				parkData.add(String.valueOf(rs.getInt("casualGap")));
+				parkData.add(String.valueOf(rs.getInt("avgStayDuration")));
+				parkData.add(String.valueOf(rs.getInt("CurrentVisitorCount")));
+				parkData.add(String.valueOf(rs.getInt("OpenCasualSpots")));
+			}
+			
+			rs.close();
+			stmt.close();
+			pool.releaseConnection(conn);
+			
+		} catch (SQLException e) {
+			System.out.println("Error fetching park dashboard data:");
+			e.printStackTrace();
+		}
+		
+		return parkData;
+	}
 }

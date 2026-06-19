@@ -5,12 +5,15 @@ import Client.GoNatureClient;
 import Common.Message;
 
 import java.io.IOException;
+
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
 
 public class ServiceRepresentativeDashboardController {
 
@@ -33,6 +36,14 @@ public class ServiceRepresentativeDashboardController {
 			welcomeLabel.setText("Welcome!");
 			departmentLabel.setText("Central Office");
 		}
+		
+		Platform.runLater(() -> {
+            // Get the current window (Stage) using one of the nodes (contentArea)
+            Stage stage = (Stage) contentArea.getScene().getWindow();
+            if (stage != null) {
+                stage.setMaximized(true);
+            }
+        });
 	}
 
 	/**
