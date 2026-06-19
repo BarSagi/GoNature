@@ -89,6 +89,9 @@ public class StrategyFactory {
 		 
 		case "CALCULATE_PRICE_PREORDER":
 			return new CalculatePricePreorderStrategy();
+			
+		case "CALCULATE_PRICE_CASUAL":
+		    return new CalculatePriceCasualStrategy();
 		    
 		default:
 			return null;

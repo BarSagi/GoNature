@@ -265,7 +265,6 @@ public class DBController {
 			rs.close();
 			find.close();
 
-			// אם יש מקום - לשמור כהזמנה מאושרת=====================================
 			if (hasRoomInSlot(parkId, visitDate, visitTime, visitorCount)) {
 
 				String insert = "INSERT INTO Orders "
@@ -905,115 +904,107 @@ public class DBController {
 	// =========================================================
 	public ArrayList<UsageReportData> getUsageReport(String parkName, int month, int year) {
 
-	    ArrayList<UsageReportData> result = new ArrayList<>();
-	    Connection conn = null;
+		ArrayList<UsageReportData> result = new ArrayList<>();
+		Connection conn = null;
 
-	    try {
-	        conn = pool.getConnection();
+		try {
+			conn = pool.getConnection();
 
-	        int parkId = getParkIdByName(parkName);
-	        if (parkId == -1) {
-	            return result;
-	        }
+			int parkId = getParkIdByName(parkName);
+			if (parkId == -1) {
+				return result;
+			}
 
-	        String sql = "SELECT v.entryTime, v.exitTime, v.actualVisitorCount, p.maxCapacity " +
-	                     "FROM Visits v " +
-	                     "JOIN Parks p ON v.parkId = p.parkId " +
-	                     "WHERE v.parkId = ? " +
-	                     "AND YEAR(v.entryTime) = ? " +
-	                     "AND MONTH(v.entryTime) = ? " +
-	                     "ORDER BY v.entryTime";
+			String sql = "SELECT v.entryTime, v.exitTime, v.actualVisitorCount, p.maxCapacity " + "FROM Visits v "
+					+ "JOIN Parks p ON v.parkId = p.parkId " + "WHERE v.parkId = ? " + "AND YEAR(v.entryTime) = ? "
+					+ "AND MONTH(v.entryTime) = ? " + "ORDER BY v.entryTime";
 
-	        PreparedStatement ps = conn.prepareStatement(sql);
-	        ps.setInt(1, parkId);
-	        ps.setInt(2, year);
-	        ps.setInt(3, month);
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setInt(1, parkId);
+			ps.setInt(2, year);
+			ps.setInt(3, month);
 
-	        ResultSet rs = ps.executeQuery();
+			ResultSet rs = ps.executeQuery();
 
-	        List<VisitRecord> visits = new ArrayList<>();
-	        int maxCapacity = 0;
+			List<VisitRecord> visits = new ArrayList<>();
+			int maxCapacity = 0;
 
-	        while (rs.next()) {
+			while (rs.next()) {
 
-	            LocalDateTime entry = rs.getTimestamp("entryTime").toLocalDateTime();
-	            LocalDateTime exit = rs.getTimestamp("exitTime").toLocalDateTime();
-	            int count = rs.getInt("actualVisitorCount");
+				LocalDateTime entry = rs.getTimestamp("entryTime").toLocalDateTime();
+				LocalDateTime exit = rs.getTimestamp("exitTime").toLocalDateTime();
+				int count = rs.getInt("actualVisitorCount");
 
-	            maxCapacity = rs.getInt("maxCapacity");
+				maxCapacity = rs.getInt("maxCapacity");
 
-	            visits.add(new VisitRecord(entry, exit, count));
-	        }
+				visits.add(new VisitRecord(entry, exit, count));
+			}
 
-	        rs.close();
-	        ps.close();
+			rs.close();
+			ps.close();
 
-	        
-	        Map<Integer, Integer> dayToPeak = new HashMap<>();
-	        Map<Integer, Boolean> dayToFull = new HashMap<>();
+			Map<Integer, Integer> dayToPeak = new HashMap<>();
+			Map<Integer, Boolean> dayToFull = new HashMap<>();
 
-	        YearMonth ym = YearMonth.of(year, month);
-	        int daysInMonth = ym.lengthOfMonth();
+			YearMonth ym = YearMonth.of(year, month);
+			int daysInMonth = ym.lengthOfMonth();
 
-	        if (visits.isEmpty()) {
-	            for (int day = 1; day <= daysInMonth; day++) {
-	                result.add(new UsageReportData(day, 0, false));
-	            }
-	            return result;
-	        }
-	        
-	        for (int day = 1; day <= daysInMonth; day++) {
+			if (visits.isEmpty()) {
+				for (int day = 1; day <= daysInMonth; day++) {
+					result.add(new UsageReportData(day, 0, false));
+				}
+				return result;
+			}
 
-	            int peak = 0;
-	            boolean full = false;
+			for (int day = 1; day <= daysInMonth; day++) {
 
-	            LocalDateTime base = LocalDateTime.of(year, month, day, 0, 0);
+				int peak = 0;
+				boolean full = false;
 
-	            int startMinute = 9 * 60;
-	            int endMinute = 17 * 60;
+				LocalDateTime base = LocalDateTime.of(year, month, day, 0, 0);
 
-	            for (int minute = startMinute; minute < endMinute; minute++) {
+				int startMinute = 9 * 60;
+				int endMinute = 17 * 60;
 
-	                LocalDateTime t = base.plusMinutes(minute);
+				for (int minute = startMinute; minute < endMinute; minute++) {
 
-	                int current = 0;
+					LocalDateTime t = base.plusMinutes(minute);
 
-	                for (VisitRecord v : visits) {
+					int current = 0;
 
-	                    if (!v.entry.isAfter(t) && v.exit.isAfter(t)) {
-	                        current += v.count;
-	                    }
-	                }
+					for (VisitRecord v : visits) {
 
-	                peak = Math.max(peak, current);
+						if (!v.entry.isAfter(t) && v.exit.isAfter(t)) {
+							current += v.count;
+						}
+					}
 
-	                if (current >= maxCapacity) {
-	                    full = true;
-	                }
-	            }
+					peak = Math.max(peak, current);
 
-	            dayToPeak.put(day, peak);
-	            dayToFull.put(day, full);
-	        }
+					if (current >= maxCapacity) {
+						full = true;
+					}
+				}
 
-	        for (int day = 1; day <= daysInMonth; day++) {
+				dayToPeak.put(day, peak);
+				dayToFull.put(day, full);
+			}
 
-	            result.add(new UsageReportData(
-	                    day,
-	                    dayToPeak.getOrDefault(day, 0),
-	                    dayToFull.getOrDefault(day, false)
-	            ));
-	        }
+			for (int day = 1; day <= daysInMonth; day++) {
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    } finally {
-	        if (conn != null) {
-	            pool.releaseConnection(conn);
-	        }
-	    }
+				result.add(
+						new UsageReportData(day, dayToPeak.getOrDefault(day, 0), dayToFull.getOrDefault(day, false)));
+			}
 
-	    return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
+
+		return result;
 	}
 
 	// =========================================================
@@ -1625,149 +1616,152 @@ public class DBController {
 	// =========================================================
 	public boolean approveRequest(int requestId) {
 
-	    Connection conn = null;
+		Connection conn = null;
 
-	    try {
-	        conn = pool.getConnection();
-	        conn.setAutoCommit(false);
+		try {
+			conn = pool.getConnection();
+			conn.setAutoCommit(false);
 
-	        // 1. Fetch request details
-	        String selectQuery = "SELECT parkId, requestType, newValue FROM Requests WHERE requestId = ?";
-	        PreparedStatement selectPs = conn.prepareStatement(selectQuery);
-	        selectPs.setInt(1, requestId);
+			// 1. Fetch request details
+			String selectQuery = "SELECT parkId, requestType, newValue FROM Requests WHERE requestId = ?";
+			PreparedStatement selectPs = conn.prepareStatement(selectQuery);
+			selectPs.setInt(1, requestId);
 
-	        ResultSet rs = selectPs.executeQuery();
+			ResultSet rs = selectPs.executeQuery();
 
-	        if (!rs.next()) {
-	            rs.close();
-	            selectPs.close();
-	            conn.rollback();
-	            return false;
-	        }
+			if (!rs.next()) {
+				rs.close();
+				selectPs.close();
+				conn.rollback();
+				return false;
+			}
 
-	        int parkId = rs.getInt("parkId");
-	        String requestType = rs.getString("requestType");
-	        String newValue = rs.getString("newValue");
+			int parkId = rs.getInt("parkId");
+			String requestType = rs.getString("requestType");
+			String newValue = rs.getString("newValue");
 
-	        rs.close();
-	        selectPs.close();
+			rs.close();
+			selectPs.close();
 
-	        // =========================================================
-	        // CASE 1: Request is for updating MaxCapacity
-	        // =========================================================
-	        if ("MaxCapacity".equals(requestType)) {
-	            PreparedStatement gapPs = conn.prepareStatement("SELECT casualGap FROM Parks WHERE parkId = ?");
-	            gapPs.setInt(1, parkId);
+			// =========================================================
+			// CASE 1: Request is for updating MaxCapacity
+			// =========================================================
+			if ("MaxCapacity".equals(requestType)) {
+				PreparedStatement gapPs = conn.prepareStatement("SELECT casualGap FROM Parks WHERE parkId = ?");
+				gapPs.setInt(1, parkId);
 
-	            ResultSet gapRs = gapPs.executeQuery();
+				ResultSet gapRs = gapPs.executeQuery();
 
-	            if (!gapRs.next()) {
-	                gapRs.close();
-	                gapPs.close();
-	                conn.rollback();
-	                return false;
-	            }
+				if (!gapRs.next()) {
+					gapRs.close();
+					gapPs.close();
+					conn.rollback();
+					return false;
+				}
 
-	            int casualGap = gapRs.getInt("casualGap");
-	            int requestedCapacity = Integer.parseInt(newValue);
+				int casualGap = gapRs.getInt("casualGap");
+				int requestedCapacity = Integer.parseInt(newValue);
 
-	            gapRs.close();
-	            gapPs.close();
+				gapRs.close();
+				gapPs.close();
 
-	            // Business Rule: maxCapacity cannot be less than or equal to the casual gap
-	            if (requestedCapacity <= casualGap) {
-	                conn.rollback();
-	                return false;
-	            }
+				// Business Rule: maxCapacity cannot be less than or equal to the casual gap
+				if (requestedCapacity <= casualGap) {
+					conn.rollback();
+					return false;
+				}
 
-	            PreparedStatement updateParkPs = conn
-	                    .prepareStatement("UPDATE Parks SET maxCapacity = ? WHERE parkId = ?");
-	            updateParkPs.setInt(1, requestedCapacity);
-	            updateParkPs.setInt(2, parkId);
-	            updateParkPs.executeUpdate();
-	            updateParkPs.close();
-	        }
+				PreparedStatement updateParkPs = conn
+						.prepareStatement("UPDATE Parks SET maxCapacity = ? WHERE parkId = ?");
+				updateParkPs.setInt(1, requestedCapacity);
+				updateParkPs.setInt(2, parkId);
+				updateParkPs.executeUpdate();
+				updateParkPs.close();
+			}
 
-	        // =========================================================
-	        // CASE 2: Request is for updating CasualGap (New Logic Added)
-	        // =========================================================
-	        else if ("CasualGap".equals(requestType)) {
-	            // Fetch current casualGap and maxCapacity to validate and calculate the difference
-	            PreparedStatement parkPs = conn.prepareStatement("SELECT maxCapacity, casualGap FROM Parks WHERE parkId = ?");
-	            parkPs.setInt(1, parkId);
-	            ResultSet parkRs = parkPs.executeQuery();
+			// =========================================================
+			// CASE 2: Request is for updating CasualGap (New Logic Added)
+			// =========================================================
+			else if ("CasualGap".equals(requestType)) {
+				// Fetch current casualGap and maxCapacity to validate and calculate the
+				// difference
+				PreparedStatement parkPs = conn
+						.prepareStatement("SELECT maxCapacity, casualGap FROM Parks WHERE parkId = ?");
+				parkPs.setInt(1, parkId);
+				ResultSet parkRs = parkPs.executeQuery();
 
-	            if (!parkRs.next()) {
-	                parkRs.close();
-	                parkPs.close();
-	                conn.rollback();
-	                return false;
-	            }
+				if (!parkRs.next()) {
+					parkRs.close();
+					parkPs.close();
+					conn.rollback();
+					return false;
+				}
 
-	            int maxCapacity = parkRs.getInt("maxCapacity");
-	            int currentCasualGap = parkRs.getInt("casualGap");
-	            int requestedCasualGap = Integer.parseInt(newValue);
+				int maxCapacity = parkRs.getInt("maxCapacity");
+				int currentCasualGap = parkRs.getInt("casualGap");
+				int requestedCasualGap = Integer.parseInt(newValue);
 
-	            parkRs.close();
-	            parkPs.close();
+				parkRs.close();
+				parkPs.close();
 
-	            // Business Rule Validation: New gap cannot exceed or equal total max capacity
-	            if (requestedCasualGap >= maxCapacity) {
-	                conn.rollback();
-	                return false;
-	            }
+				// Business Rule Validation: New gap cannot exceed or equal total max capacity
+				if (requestedCasualGap >= maxCapacity) {
+					conn.rollback();
+					return false;
+				}
 
-	            // Calculate the difference between the new gap and the old gap
-	            int gapDifference = requestedCasualGap - currentCasualGap;
+				// Calculate the difference between the new gap and the old gap
+				int gapDifference = requestedCasualGap - currentCasualGap;
 
-	            // Update the casualGap inside the Parks table
-	            PreparedStatement updateGapPs = conn
-	                    .prepareStatement("UPDATE Parks SET casualGap = ? WHERE parkId = ?");
-	            updateGapPs.setInt(1, requestedCasualGap);
-	            updateGapPs.setInt(2, parkId);
-	            updateGapPs.executeUpdate();
-	            updateGapPs.close();
+				// Update the casualGap inside the Parks table
+				PreparedStatement updateGapPs = conn
+						.prepareStatement("UPDATE Parks SET casualGap = ? WHERE parkId = ?");
+				updateGapPs.setInt(1, requestedCasualGap);
+				updateGapPs.setInt(2, parkId);
+				updateGapPs.executeUpdate();
+				updateGapPs.close();
 
-	            // Dynamic adjustment: Add the gap difference directly to the current open casual spots
-	            String updateSpotsQuery = "UPDATE Parks SET OpenCasualSpots = OpenCasualSpots + ? WHERE parkId = ?";
-	            PreparedStatement updateSpotsPs = conn.prepareStatement(updateSpotsQuery);
-	            updateSpotsPs.setInt(1, gapDifference);
-	            updateSpotsPs.setInt(2, parkId);
-	            updateSpotsPs.executeUpdate();
-	            updateSpotsPs.close();
-	        }
+				// Dynamic adjustment: Add the gap difference directly to the current open
+				// casual spots
+				String updateSpotsQuery = "UPDATE Parks SET OpenCasualSpots = OpenCasualSpots + ? WHERE parkId = ?";
+				PreparedStatement updateSpotsPs = conn.prepareStatement(updateSpotsQuery);
+				updateSpotsPs.setInt(1, gapDifference);
+				updateSpotsPs.setInt(2, parkId);
+				updateSpotsPs.executeUpdate();
+				updateSpotsPs.close();
+			}
 
-	        // =========================================================
-	        // Final Step: Update the request status to 'Approved'
-	        // =========================================================
-	        PreparedStatement updateRequestPs = conn
-	                .prepareStatement("UPDATE Requests SET status = 'Approved' WHERE requestId = ?");
-	        updateRequestPs.setInt(1, requestId);
-	        int rows = updateRequestPs.executeUpdate();
-	        updateRequestPs.close();
+			// =========================================================
+			// Final Step: Update the request status to 'Approved'
+			// =========================================================
+			PreparedStatement updateRequestPs = conn
+					.prepareStatement("UPDATE Requests SET status = 'Approved' WHERE requestId = ?");
+			updateRequestPs.setInt(1, requestId);
+			int rows = updateRequestPs.executeUpdate();
+			updateRequestPs.close();
 
-	        conn.commit();
-	        return rows > 0;
+			conn.commit();
+			return rows > 0;
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        try {
-	            if (conn != null)
-	                conn.rollback();
-	        } catch (SQLException ex) {
-	            ex.printStackTrace();
-	        }
-	        return false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			try {
+				if (conn != null)
+					conn.rollback();
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+			return false;
 
-	    } finally {
-	        try {
-	            if (conn != null)
-	                conn.setAutoCommit(true);
-	        } catch (SQLException e) {
-	            e.printStackTrace();
-	        }
-	        pool.releaseConnection(conn);
-	    }
+		} finally {
+			try {
+				if (conn != null)
+					conn.setAutoCommit(true);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			pool.releaseConnection(conn);
+		}
 	}
 
 	// =========================================================
@@ -1839,7 +1833,7 @@ public class DBController {
 			pool.releaseConnection(conn);
 		}
 	}
-	
+
 	// =========================================================
 	// GET PARK ORDERS
 	// =========================================================
@@ -1847,9 +1841,7 @@ public class DBController {
 
 		ArrayList<Order> result = new ArrayList<>();
 
-		String query = "SELECT o.* FROM Orders o "
-				+ "JOIN Parks p ON o.parkId = p.parkId "
-				+ "WHERE p.parkName = ? "
+		String query = "SELECT o.* FROM Orders o " + "JOIN Parks p ON o.parkId = p.parkId " + "WHERE p.parkName = ? "
 				+ "ORDER BY o.visitDate, o.visitTime, o.orderId";
 
 		Connection conn = null;
@@ -1863,17 +1855,9 @@ public class DBController {
 			ResultSet rs = ps.executeQuery();
 
 			while (rs.next()) {
-				result.add(new Order(
-						rs.getInt("orderId"),
-						rs.getInt("parkId"),
-						rs.getString("visitorId"),
-						rs.getDate("visitDate"),
-						rs.getTime("visitTime"),
-						rs.getInt("visitorCount"),
-						rs.getString("email"),
-						rs.getString("orderType"),
-						rs.getString("status")
-				));
+				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
+						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
+						rs.getString("email"), rs.getString("orderType"), rs.getString("status")));
 			}
 
 			rs.close();
@@ -1887,6 +1871,50 @@ public class DBController {
 		}
 
 		return result;
+	}
+
+	public String getVisitorTypeById(String visitorId) {
+
+		String query = "SELECT visitorType FROM Visitors WHERE visitorId = ?";
+
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			conn = pool.getConnection();
+
+			ps = conn.prepareStatement(query);
+			ps.setString(1, visitorId);
+
+			rs = ps.executeQuery();
+
+			if (rs.next()) {
+				return rs.getString("visitorType");
+			}
+
+			return null;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+
+		} finally {
+
+			try {
+				if (rs != null)
+					rs.close();
+
+				if (ps != null)
+					ps.close();
+
+				if (conn != null)
+					pool.releaseConnection(conn);
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 }

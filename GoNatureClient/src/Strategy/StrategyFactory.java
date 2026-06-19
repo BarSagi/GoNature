@@ -101,6 +101,9 @@ public class StrategyFactory {
 		    
 		case "PRICE_RESULT_PREORDER":
 			return new PriceResultPreorderStrategy();
+			
+		case "PRICE_RESULT_CASUAL":
+		    return new PriceResultCasualStrategy();
 		    
 		default:
 			return null;

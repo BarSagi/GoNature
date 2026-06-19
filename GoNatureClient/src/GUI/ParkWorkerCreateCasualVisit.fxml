@@ -4,35 +4,57 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.HBox?> <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
-<VBox alignment="CENTER" prefHeight="400.0" prefWidth="450.0" spacing="15.0" 
-      style="-fx-background-color: #f4f7f6;" 
-      xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" 
-      fx:controller="GUI.ParkWorkerCreateCasualVisitController">
-    
-    <padding>
-        <Insets bottom="30.0" left="40.0" right="40.0" top="30.0" />
-    </padding>
-    
-    <Label style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Register Casual Visit" />
-    
-    <Label fx:id="parkLabel" style="-fx-font-size: 14px; -fx-text-fill: #7f8c8d; -fx-font-style: italic;" text="Park: Loading..." />
+<VBox alignment="CENTER" prefHeight="400.0" prefWidth="450.0"
+	spacing="15.0" style="-fx-background-color: #f4f7f6;"
+	xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="GUI.ParkWorkerCreateCasualVisitController">
 
-    <VBox alignment="CENTER_LEFT" maxWidth="300.0" spacing="5.0">
-        <Label style="-fx-font-weight: bold; -fx-text-fill: #34495e;" text="Visitor ID Number:" />
-        <TextField fx:id="visitorIdField" prefHeight="35.0" promptText="Enter 9-digit ID" />
-    </VBox>
-    
-    <VBox alignment="CENTER_LEFT" maxWidth="300.0" spacing="5.0">
-        <Label style="-fx-font-weight: bold; -fx-text-fill: #34495e;" text="Number of Visitors:" />
-        <TextField fx:id="visitorCountField" prefHeight="35.0" promptText="e.g. 1, 4, 12" />
-    </VBox>
-    
-    <Label fx:id="statusLabel" style="-fx-text-fill: #e74c3c; -fx-font-weight: bold;" text="" />
-    
-    <HBox alignment="CENTER" spacing="15.0">
-        <Button onAction="#handleRegisterEntry" prefHeight="35.0" prefWidth="140.0" 
-                style="-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" text="Register Entry" />
-    </HBox>
+	<padding>
+		<Insets bottom="30.0" left="40.0" right="40.0" top="30.0" />
+	</padding>
+
+	<Label
+		style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"
+		text="Register Casual Visit" />
+
+	<Label fx:id="parkLabel"
+		style="-fx-font-size: 14px; -fx-text-fill: #7f8c8d; -fx-font-style: italic;"
+		text="Park: Loading..." />
+
+	<VBox alignment="CENTER_LEFT" maxWidth="300.0" spacing="5.0">
+		<Label style="-fx-font-weight: bold; -fx-text-fill: #34495e;"
+			text="Visitor ID Number:" />
+		<TextField fx:id="visitorIdField" prefHeight="35.0"
+			promptText="Enter 9-digit ID" />
+	</VBox>
+
+	<VBox alignment="CENTER_LEFT" maxWidth="300.0" spacing="5.0">
+		<Label style="-fx-font-weight: bold; -fx-text-fill: #34495e;"
+			text="Number of Visitors:" />
+		<TextField fx:id="visitorCountField" prefHeight="35.0"
+			promptText="e.g. 1, 4, 12" />
+	</VBox>
+
+	<VBox alignment="CENTER_LEFT" maxWidth="300.0" spacing="5.0">
+		<Label style="-fx-font-weight: bold; -fx-text-fill: #34495e;"
+			text="Payment Method:" />
+
+		<ComboBox fx:id="paymentComboBox" prefHeight="35.0"
+			prefWidth="300.0" promptText="Select Cash or Credit Card" />
+	</VBox>
+
+	<Label fx:id="statusLabel"
+		style="-fx-text-fill: #e74c3c; -fx-font-weight: bold;" text="" />
+
+	<HBox alignment="CENTER" spacing="15.0">
+		<Button onAction="#handleRegisterEntry" prefHeight="35.0"
+			prefWidth="140.0"
+			style="-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;"
+			text="Register Entry" />
+	</HBox>
+
 </VBox>
