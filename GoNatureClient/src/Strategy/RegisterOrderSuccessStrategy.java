@@ -1,21 +1,14 @@
 package Strategy; // (Put this in your Client's Strategy package)
 
 import Client.ClientUI;
-import Client.GoNatureClient;
 import Common.Message;
-import Entity.Visitor;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
-import java.util.ArrayList;
 
 public class RegisterOrderSuccessStrategy implements MessageStrategy {
 
 	@Override
 	public void execute(Message message) {
-
-		// 1. Extract the visitor data sent back from the server
-		@SuppressWarnings("unchecked")
-		ArrayList<String> visitorData = (ArrayList<String>) message.getData();
 
 		// 3. Update the UI safely
 		Platform.runLater(() -> {

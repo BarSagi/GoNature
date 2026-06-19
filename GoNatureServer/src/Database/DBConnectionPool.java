@@ -11,7 +11,6 @@ import Server.EchoServer;
 public class DBConnectionPool {
 
 	private static DBConnectionPool instance;
-	private EchoServer server;
 
 	private final Queue<Connection> pool = new LinkedList<>();
 	private final int MAX_POOL_SIZE = 10;
@@ -21,7 +20,6 @@ public class DBConnectionPool {
 	private final String password = "2066"; // CHANGE PASSWORD HERE
 
 	private DBConnectionPool(EchoServer server) {
-		this.server = server;
 		initializePool();
 
 		server.log("MySQL Connection Pool initialized with " + MAX_POOL_SIZE + " connections");

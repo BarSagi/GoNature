@@ -19,7 +19,7 @@ public class CreateCasualVisitStrategy implements MessageStrategy {
             int visitorCount = Integer.parseInt(data.get(2));
 
             // Execute DB logic via DBController
-            boolean success = server.getDatabase().registerCasualVisit(parkName, visitorId, visitorCount);
+            boolean success = server.getDatabase().createCasualVisit(parkName, visitorId, visitorCount);
 
             // Respond back to the client console handler
             if (success) {

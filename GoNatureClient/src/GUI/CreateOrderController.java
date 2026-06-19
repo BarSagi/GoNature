@@ -37,6 +37,7 @@ public class CreateOrderController implements Initializable {
 	private boolean orderCreatedSuccessfully = false;
 	public static double lastCalculatedPrice;
 	public static String selectedPaymentMethod;
+	public static String cachedVisitorType = "Individual";
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
@@ -114,8 +115,7 @@ public class CreateOrderController implements Initializable {
 		newOrder.add(selectedTime);
 		newOrder.add(visitorsAmount);
 		newOrder.add(GoNatureClient.currentVisitor.getEmail());
-		newOrder.add("Individual");
-
+		newOrder.add(cachedVisitorType);
 		lastOrderData = newOrder;
 
 		try {
@@ -192,5 +192,9 @@ public class CreateOrderController implements Initializable {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	public static void handleVisitorTypeResult(String type) {
+	    cachedVisitorType = type;
 	}
 }

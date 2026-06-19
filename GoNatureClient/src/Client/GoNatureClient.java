@@ -3,7 +3,6 @@ package Client;
 import java.util.ArrayList;
 
 import Common.Message;
-import Common.Order;
 import Common.VisitReportData;
 import Entity.*;
 import OCSFUtils.AbstractClient;

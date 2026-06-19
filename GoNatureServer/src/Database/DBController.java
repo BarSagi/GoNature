@@ -17,11 +17,9 @@ import Server.EchoServer;
 
 public class DBController {
 
-	private EchoServer server;
 	private DBConnectionPool pool;
 
 	public DBController(EchoServer server) {
-		this.server = server;
 		this.pool = DBConnectionPool.getInstance(server);
 	}
 
@@ -1134,7 +1132,7 @@ public class DBController {
 	// =========================================================
 	// CREATE NEW CASUAL VISIT
 	// =========================================================
-	public boolean registerCasualVisit(String parkName, String visitorId, int visitorCount) {
+	public boolean createCasualVisit(String parkName, String visitorId, int visitorCount) {
 
 		// Fetch the OpenCasualSpots using the helper method
 		String openSpotsStr = getParkCurrentValue(parkName, "OpenCasualSpots");

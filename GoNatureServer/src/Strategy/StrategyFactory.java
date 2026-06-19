@@ -93,6 +93,9 @@ public class StrategyFactory {
 		case "CALCULATE_PRICE_CASUAL":
 		    return new CalculatePriceCasualStrategy();
 		    
+		case "GET_VISITOR_TYPE":
+			return new GetVisitorTypeStrategy();
+		    
 		default:
 			return null;
 		}

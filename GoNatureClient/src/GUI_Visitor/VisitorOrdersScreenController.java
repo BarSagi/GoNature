@@ -143,7 +143,7 @@ public class VisitorOrdersScreenController {
 
 			// 3. Pass the 3 arguments: the order, the border pane, and the current center
 			// (for canceling)
-			editController.setOrderData(selectedOrder, mainBorderPane);
+			editController.setOrderData(selectedOrder);
 
 			mainBorderPane.setCenter(editView);
 

@@ -1,7 +1,6 @@
 package Reports;
 
 import Database.DBController;
-import Common.Order;
 import Common.Visit;
 import Common.VisitReportData;
 

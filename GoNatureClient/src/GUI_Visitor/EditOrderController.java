@@ -6,12 +6,10 @@ import Common.Message;
 import Common.Order;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.Node; // <-- ADD THIS IMPORT
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.BorderPane;
 
 public class EditOrderController {
 
@@ -29,7 +27,6 @@ public class EditOrderController {
 	private Label statusLabel;
 
 	private Order currentOrder;
-	private BorderPane mainBorderPane;
 
 
 	@FXML
@@ -39,9 +36,8 @@ public class EditOrderController {
 	}
 
 	// --- UPDATE THIS METHOD to receive the original node ---
-	public void setOrderData(Order order, BorderPane borderPane) {
+	public void setOrderData(Order order) {
 		this.currentOrder = order;
-		this.mainBorderPane = borderPane;
 
 		orderIdLabel.setText("Editing Order ID: #" + order.getOrderId());
 

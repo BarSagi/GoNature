@@ -105,6 +105,9 @@ public class StrategyFactory {
 		case "PRICE_RESULT_CASUAL":
 		    return new PriceResultCasualStrategy();
 		    
+		case "VISITOR_TYPE_RESULT":
+			return new VisitorTypeResultStrategy();
+		    
 		default:
 			return null;
 		}
