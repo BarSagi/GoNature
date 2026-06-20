@@ -69,7 +69,7 @@ public class ParkWorkerCreateOrderController {
 		try {
 
 			String visitorId = visitorIdField.getText().trim();
-			String park = parkComboBox.getValue();
+			String parkName = parkComboBox.getValue();
 			LocalDate visitDate = visitDatePicker.getValue();
 			String time = timeComboBox.getValue();
 			String visitorCount = visitorCountField.getText().trim();
@@ -78,7 +78,7 @@ public class ParkWorkerCreateOrderController {
 			numOfVisitors = visitorCount;
 			ID = visitorId;
 
-			if (visitorId.isEmpty() || park == null || visitDate == null || time == null || paymentMethod == null
+			if (visitorId.isEmpty() || parkName == null || visitDate == null || time == null || paymentMethod == null
 					|| visitorCount.isEmpty() || email.isEmpty()) {
 
 				statusLabel.setText("Please fill in all fields.");
@@ -111,7 +111,7 @@ public class ParkWorkerCreateOrderController {
 
 			ArrayList<String> orderData = new ArrayList<>();
 			orderData.add(visitorId);
-			orderData.add(park);
+			orderData.add(parkName);
 			orderData.add(visitDate.toString());
 			orderData.add(time);
 			orderData.add(visitorCount);
@@ -127,6 +127,9 @@ public class ParkWorkerCreateOrderController {
 			paymentData.add(ID);
 			paymentData.add(numOfVisitors);
 			paymentData.add(lastPaymentMethod);
+			paymentData.add(parkName);
+			paymentData.add(LocalDate.now().toString());
+
 
 			ClientUI.client.sendToServer(new Message("CALCULATE_PRICE_PREORDER", paymentData));
 

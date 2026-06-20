@@ -1,6 +1,7 @@
 package Database;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -754,6 +755,14 @@ public class DBController {
 		String oldValue = data.get(2);
 		String newValue = data.get(3);
 
+		LocalDate startDate = null;
+		LocalDate endDate = null;
+
+		if ("Promotion".equals(requestType)) {
+			startDate = LocalDate.parse(data.get(4));
+			endDate = LocalDate.parse(data.get(5));
+		}
+
 		Connection conn = null;
 
 		try {
@@ -777,14 +786,26 @@ public class DBController {
 			rs.close();
 			findPark.close();
 
-			String insertQuery = "INSERT INTO Requests (parkId, requestType, oldValue, newValue, status) "
-					+ "VALUES (?, ?, ?, ?, 'Pending')";
+			String insertQuery = "INSERT INTO Requests (parkId, requestType, oldValue, newValue, status, startDate, endDate) "
+					+ "VALUES (?, ?, ?, ?, 'Pending', ?, ?)";
 
 			PreparedStatement ps = conn.prepareStatement(insertQuery);
 			ps.setInt(1, parkId);
 			ps.setString(2, requestType);
 			ps.setString(3, oldValue);
 			ps.setString(4, newValue);
+
+			if (startDate != null) {
+				ps.setDate(5, java.sql.Date.valueOf(startDate));
+			} else {
+				ps.setNull(5, java.sql.Types.DATE);
+			}
+
+			if (endDate != null) {
+				ps.setDate(6, java.sql.Date.valueOf(endDate));
+			} else {
+				ps.setNull(6, java.sql.Types.DATE);
+			}
 
 			int rows = ps.executeUpdate();
 			ps.close();
@@ -1620,6 +1641,190 @@ public class DBController {
 			conn = pool.getConnection();
 			conn.setAutoCommit(false);
 
+			String selectQuery = "SELECT parkId, requestType, newValue, startDate, endDate FROM Requests WHERE requestId = ?";
+			PreparedStatement selectPs = conn.prepareStatement(selectQuery);
+			selectPs.setInt(1, requestId);
+
+			ResultSet rs = selectPs.executeQuery();
+
+			if (!rs.next()) {
+				rs.close();
+				selectPs.close();
+				conn.rollback();
+				return false;
+			}
+
+			int parkId = rs.getInt("parkId");
+			String requestType = rs.getString("requestType");
+			String newValue = rs.getString("newValue");
+			java.sql.Date startDate = rs.getDate("startDate");
+			java.sql.Date endDate = rs.getDate("endDate");
+
+			rs.close();
+			selectPs.close();
+
+			// =========================================================
+			// CASE 1: Request is for updating MaxCapacity
+			// =========================================================
+			if ("MaxCapacity".equals(requestType)) {
+				PreparedStatement gapPs = conn.prepareStatement("SELECT casualGap FROM Parks WHERE parkId = ?");
+				gapPs.setInt(1, parkId);
+
+				ResultSet gapRs = gapPs.executeQuery();
+
+				if (!gapRs.next()) {
+					gapRs.close();
+					gapPs.close();
+					conn.rollback();
+					return false;
+				}
+
+				int casualGap = gapRs.getInt("casualGap");
+				int requestedCapacity = Integer.parseInt(newValue);
+
+				gapRs.close();
+				gapPs.close();
+
+				// Business Rule: maxCapacity cannot be less than or equal to the casual gap
+				if (requestedCapacity <= casualGap) {
+					conn.rollback();
+					return false;
+				}
+
+				PreparedStatement updateParkPs = conn
+						.prepareStatement("UPDATE Parks SET maxCapacity = ? WHERE parkId = ?");
+				updateParkPs.setInt(1, requestedCapacity);
+				updateParkPs.setInt(2, parkId);
+				updateParkPs.executeUpdate();
+				updateParkPs.close();
+			}
+
+			// =========================================================
+			// CASE 2: Request is for updating CasualGap
+			// =========================================================
+			else if ("CasualGap".equals(requestType)) {
+				// Fetch current casualGap and maxCapacity to validate and calculate the difference
+				PreparedStatement parkPs = conn
+						.prepareStatement("SELECT maxCapacity, casualGap FROM Parks WHERE parkId = ?");
+				parkPs.setInt(1, parkId);
+				ResultSet parkRs = parkPs.executeQuery();
+
+				if (!parkRs.next()) {
+					parkRs.close();
+					parkPs.close();
+					conn.rollback();
+					return false;
+				}
+
+				int maxCapacity = parkRs.getInt("maxCapacity");
+				int currentCasualGap = parkRs.getInt("casualGap");
+				int requestedCasualGap = Integer.parseInt(newValue);
+
+				parkRs.close();
+				parkPs.close();
+
+				// Business Rule Validation: New gap cannot exceed or equal total max capacity
+				if (requestedCasualGap >= maxCapacity) {
+					conn.rollback();
+					return false;
+				}
+
+				// Calculate the difference between the new gap and the old gap
+				int gapDifference = requestedCasualGap - currentCasualGap;
+
+				// Update the casualGap inside the Parks table
+				PreparedStatement updateGapPs = conn
+						.prepareStatement("UPDATE Parks SET casualGap = ? WHERE parkId = ?");
+				updateGapPs.setInt(1, requestedCasualGap);
+				updateGapPs.setInt(2, parkId);
+				updateGapPs.executeUpdate();
+				updateGapPs.close();
+
+				// Dynamic adjustment: Add the gap difference directly to the current open casual spots
+				String updateSpotsQuery = "UPDATE Parks SET OpenCasualSpots = OpenCasualSpots + ? WHERE parkId = ?";
+				PreparedStatement updateSpotsPs = conn.prepareStatement(updateSpotsQuery);
+				updateSpotsPs.setInt(1, gapDifference);
+				updateSpotsPs.setInt(2, parkId);
+				updateSpotsPs.executeUpdate();
+				updateSpotsPs.close();
+			}
+
+			// =========================================================
+			// CASE 3: Request is for AvgStayDuration (New Logic Added)
+			// =========================================================
+			else if ("AvgStayDuration".equals(requestType)) {
+				int requestedDuration = Integer.parseInt(newValue);
+
+				PreparedStatement updateDurationPs = conn
+						.prepareStatement("UPDATE Parks SET avgStayDuration = ? WHERE parkId = ?");
+				updateDurationPs.setInt(1, requestedDuration);
+				updateDurationPs.setInt(2, parkId);
+				updateDurationPs.executeUpdate();
+				updateDurationPs.close();
+			}
+
+			// =========================================================
+			// CASE 4: Request is for Promotion (New Logic Added)
+			// =========================================================
+			else if ("Promotion".equals(requestType)) {
+				double discountPercentage = Double.parseDouble(newValue);
+				
+				String promotionName = "Manager Discount " + discountPercentage + "%"; 
+
+				String insertPromoQuery = "INSERT INTO Promotions (parkId, promotionName, discountPercentage, startDate, endDate, status) "
+						+ "VALUES (?, ?, ?, ?, ?, 'Approved')";
+
+				PreparedStatement insertPromoPs = conn.prepareStatement(insertPromoQuery);
+				insertPromoPs.setInt(1, parkId);
+				insertPromoPs.setString(2, promotionName);
+				insertPromoPs.setDouble(3, discountPercentage);
+				insertPromoPs.setDate(4, startDate);
+				insertPromoPs.setDate(5, endDate);
+				
+				insertPromoPs.executeUpdate();
+				insertPromoPs.close();
+			}
+
+			// =========================================================
+			// Final Step: Update the request status to 'Approved'
+			// =========================================================
+			PreparedStatement updateRequestPs = conn
+					.prepareStatement("UPDATE Requests SET status = 'Approved' WHERE requestId = ?");
+			updateRequestPs.setInt(1, requestId);
+			int rows = updateRequestPs.executeUpdate();
+			updateRequestPs.close();
+
+			conn.commit();
+			return rows > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			try {
+				if (conn != null)
+					conn.rollback();
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+			return false;
+
+		} finally {
+			try {
+				if (conn != null)
+					conn.setAutoCommit(true);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			pool.releaseConnection(conn);
+		}
+	}
+	/*public boolean approveRequest(int requestId) {
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+			conn.setAutoCommit(false);
+
 			// 1. Fetch request details
 			String selectQuery = "SELECT parkId, requestType, newValue FROM Requests WHERE requestId = ?";
 			PreparedStatement selectPs = conn.prepareStatement(selectQuery);
@@ -1760,7 +1965,7 @@ public class DBController {
 			}
 			pool.releaseConnection(conn);
 		}
-	}
+	}*/
 
 	// =========================================================
 	// GET PENDING REQUESTS
@@ -1871,7 +2076,6 @@ public class DBController {
 		return result;
 	}
 
-	
 	public String getVisitorTypeById(String visitorId) {
 
 		String query = "SELECT visitorType FROM Visitors WHERE visitorId = ?";
@@ -1915,21 +2119,21 @@ public class DBController {
 			}
 		}
 	}
-	
+
 	// =========================================================
 	// GET PARK DATA FOR DASHBOARD
 	// =========================================================
 	public ArrayList<String> getParkDashboardData(String parkName) {
 		ArrayList<String> parkData = new ArrayList<>();
 		String query = "SELECT parkName, maxCapacity, casualGap, avgStayDuration, CurrentVisitorCount, OpenCasualSpots "
-				     + "FROM Parks WHERE parkName = ?";
-		
+				+ "FROM Parks WHERE parkName = ?";
+
 		try {
 			Connection conn = pool.getConnection();
 			PreparedStatement stmt = conn.prepareStatement(query);
 			stmt.setString(1, parkName);
 			ResultSet rs = stmt.executeQuery();
-			
+
 			if (rs.next()) {
 				// Add data to the list in the exact order we queried it
 				parkData.add(rs.getString("parkName"));
@@ -1939,16 +2143,59 @@ public class DBController {
 				parkData.add(String.valueOf(rs.getInt("CurrentVisitorCount")));
 				parkData.add(String.valueOf(rs.getInt("OpenCasualSpots")));
 			}
-			
+
 			rs.close();
 			stmt.close();
 			pool.releaseConnection(conn);
-			
+
 		} catch (SQLException e) {
 			System.out.println("Error fetching park dashboard data:");
 			e.printStackTrace();
 		}
-		
+
 		return parkData;
+	}
+
+	// =========================================================
+	// GET TOTAL ACTIVE PROMOTIONS DISCOUNT
+	// =========================================================
+	public double getActivePromotionsDiscount(int parkId, java.time.LocalDate date) {
+
+		String query = "SELECT IFNULL(SUM(discountPercentage), 0) AS totalDiscount " + "FROM promotions "
+				+ "WHERE parkId = ? " + "AND status = 'Approved' " + "AND startDate <= ? " + "AND endDate >= ?";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+
+			ps.setInt(1, parkId);
+			ps.setDate(2, java.sql.Date.valueOf(date));
+			ps.setDate(3, java.sql.Date.valueOf(date));
+
+			ResultSet rs = ps.executeQuery();
+
+			if (rs.next()) {
+				double discount = rs.getDouble("totalDiscount");
+				rs.close();
+				ps.close();
+				System.out.println("DISCOUNT = " + discount);
+				return discount;
+			}
+
+			rs.close();
+			ps.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
+
+		return 0;
 	}
 }

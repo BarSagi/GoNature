@@ -12,6 +12,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 
 public class ParkWorkerCreateCasualVisitController {
@@ -92,6 +93,8 @@ public class ParkWorkerCreateCasualVisitController {
 			ArrayList<String> priceData = new ArrayList<>();
 			priceData.add(visitorId);
 			priceData.add(String.valueOf(visitorCount));
+			priceData.add(parkName);
+			priceData.add(LocalDate.now().toString());
 
 			Message priceMsg = new Message("CALCULATE_PRICE_CASUAL", priceData);
 			ClientUI.client.sendToServer(priceMsg);

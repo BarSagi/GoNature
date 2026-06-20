@@ -6,9 +6,11 @@ import Common.Message;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 
 public class ParkManagerSubmitRequestPanelController {
@@ -25,6 +27,18 @@ public class ParkManagerSubmitRequestPanelController {
     private TextField newValueField;
 
     @FXML
+    private Label startDateLabel;
+
+    @FXML
+    private DatePicker startDatePicker;
+
+    @FXML
+    private Label endDateLabel;
+
+    @FXML
+    private DatePicker endDatePicker;
+
+    @FXML
     private Label statusLabel;
 
     @FXML
@@ -32,7 +46,31 @@ public class ParkManagerSubmitRequestPanelController {
         instance = this;
         requestTypeComboBox.getItems().addAll("MaxCapacity", "CasualGap", "AvgStayDuration", "Promotion");
 
-        requestTypeComboBox.setOnAction(e -> loadCurrentValue());
+        requestTypeComboBox.setOnAction(e -> {
+            loadCurrentValue();
+            handlePromotionFieldsVisibility();
+        });
+    }
+
+
+    private void handlePromotionFieldsVisibility() {
+        String selectedType = requestTypeComboBox.getValue();
+        boolean isPromotion = "Promotion".equals(selectedType);
+
+        startDateLabel.setVisible(isPromotion);
+        startDateLabel.setManaged(isPromotion);
+        startDatePicker.setVisible(isPromotion);
+        startDatePicker.setManaged(isPromotion);
+
+        endDateLabel.setVisible(isPromotion);
+        endDateLabel.setManaged(isPromotion);
+        endDatePicker.setVisible(isPromotion);
+        endDatePicker.setManaged(isPromotion);
+        
+        if (!isPromotion) {
+            startDatePicker.setValue(null);
+            endDatePicker.setValue(null);
+        }
     }
 
     private void loadCurrentValue() {
@@ -78,6 +116,24 @@ public class ParkManagerSubmitRequestPanelController {
             data.add(requestType);
             data.add(oldValue);
             data.add(newValue);
+
+            if ("Promotion".equals(requestType)) {
+                LocalDate startDate = startDatePicker.getValue();
+                LocalDate endDate = endDatePicker.getValue();
+
+                if (startDate == null || endDate == null) {
+                    statusLabel.setText("Please select both start and end dates for Promotion.");
+                    return;
+                }
+                
+                if (endDate.isBefore(startDate)) {
+                    statusLabel.setText("End date cannot be before start date.");
+                    return;
+                }
+
+                data.add(startDate.toString());
+                data.add(endDate.toString());
+            }
 
             Message msg = new Message("SUBMIT_PARK_REQUEST", data);
             ClientUI.send(msg);

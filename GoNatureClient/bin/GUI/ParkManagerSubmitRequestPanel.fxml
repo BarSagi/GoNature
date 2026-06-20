@@ -1,38 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<VBox alignment="TOP_CENTER" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30;"
-      xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="GUI.ParkManagerSubmitRequestPanelController">
+<VBox alignment="TOP_CENTER" spacing="15.0"
+	style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30;"
+	xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="GUI.ParkManagerSubmitRequestPanelController">
 
-    <Label text="Submit Request"
-           style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
+	<Label text="Submit Request"
+		style="-fx-font-size: 24px; -fx-font-weight: bold;" />
 
-    <GridPane hgap="15.0" vgap="15.0">
-        <Label text="Request Type:" GridPane.rowIndex="0" GridPane.columnIndex="0" />
-        <ComboBox fx:id="requestTypeComboBox" prefWidth="220.0"
-                  GridPane.rowIndex="0" GridPane.columnIndex="1" />
+	<GridPane hgap="15.0" vgap="15.0">
 
-        <Label text="Old Value:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
-<TextField fx:id="oldValueField" prefWidth="220.0" editable="false"
-           GridPane.rowIndex="1" GridPane.columnIndex="1" />
+		<Label text="Request Type:" GridPane.rowIndex="0"
+			GridPane.columnIndex="0" />
+		<ComboBox fx:id="requestTypeComboBox" prefWidth="220.0"
+			GridPane.rowIndex="0" GridPane.columnIndex="1" />
 
-        <Label text="New Value:" GridPane.rowIndex="2" GridPane.columnIndex="0" />
-        <TextField fx:id="newValueField" prefWidth="220.0"
-                   GridPane.rowIndex="2" GridPane.columnIndex="1" />
-    </GridPane>
+		<Label text="Old Value:" GridPane.rowIndex="1"
+			GridPane.columnIndex="0" />
+		<TextField fx:id="oldValueField" prefWidth="220.0"
+			editable="false" GridPane.rowIndex="1" GridPane.columnIndex="1" />
 
-    <Button text="Submit Request" onAction="#submitRequest"
-            prefHeight="40.0" prefWidth="160.0"
-            style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5;" />
+		<Label text="New Value:" GridPane.rowIndex="2"
+			GridPane.columnIndex="0" />
+		<TextField fx:id="newValueField" prefWidth="220.0"
+			GridPane.rowIndex="2" GridPane.columnIndex="1" />
 
-    <Label fx:id="statusLabel"
-           style="-fx-text-fill: #e74c3c; -fx-font-size: 14px; -fx-font-weight: bold;" />
+		<Label fx:id="startDateLabel" text="Start Date:" visible="false"
+			managed="false" GridPane.rowIndex="3" GridPane.columnIndex="0" />
+
+		<DatePicker fx:id="startDatePicker" visible="false"
+			managed="false" GridPane.rowIndex="3" GridPane.columnIndex="1" />
+
+		<Label fx:id="endDateLabel" text="End Date:" visible="false"
+			managed="false" GridPane.rowIndex="4" GridPane.columnIndex="0" />
+
+		<DatePicker fx:id="endDatePicker" visible="false"
+			managed="false" GridPane.rowIndex="4" GridPane.columnIndex="1" />
+
+	</GridPane>
+
+	<Button text="Submit Request" onAction="#submitRequest"
+		prefHeight="40.0" prefWidth="160.0"
+		style="-fx-background-color: #2980b9; -fx-text-fill: white;" />
+
+	<Label fx:id="statusLabel" />
+
 </VBox>

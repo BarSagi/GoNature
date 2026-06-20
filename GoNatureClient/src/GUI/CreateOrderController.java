@@ -117,6 +117,8 @@ public class CreateOrderController implements Initializable {
 			paymentData.add(visitorId);
 			paymentData.add(visitorsAmount);
 			paymentData.add(paymentMethod);
+			paymentData.add(selectedPark);
+			paymentData.add(LocalDate.now().toString());
 
 			ClientUI.send(new Message("CALCULATE_PRICE_PREORDER", paymentData));
 

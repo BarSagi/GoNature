@@ -1,5 +1,6 @@
 package Strategy;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 
 import Common.Message;
@@ -21,6 +22,11 @@ public class CalculatePricePreorderStrategy implements MessageStrategy {
 			int numOfVisitors = Integer.parseInt(data.get(1));
 			String paymentMethod = data.get(2);
 			String visitorType = server.getDatabase().getVisitorTypeById(visitorId);
+
+			int parkId = server.getDatabase().getParkIdByName(data.get(3));
+			
+			LocalDate dateOfOrder = LocalDate.parse(data.get(4));
+
 
 			boolean subscriber;
 			String visitType;
@@ -45,8 +51,8 @@ public class CalculatePricePreorderStrategy implements MessageStrategy {
 
 			PricingService pricingService = new PricingService();
 
-			double price = pricingService.calculatePrice(visitType, numOfVisitors, prepaid, subscriber);
-			
+			double price = pricingService.calculatePrice(visitType, numOfVisitors, prepaid, subscriber, parkId,
+					dateOfOrder, server);			
 			client.sendToClient(new Message("PRICE_RESULT_PREORDER", price));
 
 		} catch (Exception e) {

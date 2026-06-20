@@ -1,5 +1,6 @@
 package Strategy;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 
 import Common.Message;
@@ -20,8 +21,12 @@ public class CalculatePriceCasualStrategy implements MessageStrategy {
 			String visitorId = data.get(0);
 			int visitorCount = Integer.parseInt(data.get(1));
 
+			int parkId = server.getDatabase().getParkIdByName(data.get(2));
+
+			LocalDate dateOfOrder = LocalDate.parse(data.get(3));
+
 			String visitorType = server.getDatabase().getVisitorTypeById(visitorId);
-			
+
 			String visitType;
 			boolean subscriber;
 
@@ -43,7 +48,8 @@ public class CalculatePriceCasualStrategy implements MessageStrategy {
 
 			PricingService pricingService = new PricingService();
 
-			double price = pricingService.calculatePrice(visitType, visitorCount, false, subscriber);
+			double price = pricingService.calculatePrice(visitType, visitorCount, false, subscriber, parkId,
+					dateOfOrder, server);
 
 			client.sendToClient(new Message("PRICE_RESULT_CASUAL", price));
 

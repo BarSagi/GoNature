@@ -1,10 +1,15 @@
 package PricingService;
 
+import java.time.LocalDate;
+
+import Server.EchoServer;
+
 public class PricingService {
 
 	private double fullPrice = 100;
 
-	public double calculatePrice(String visitType, int numOfVisitors, boolean prepaid, boolean subscriber) {
+	public double calculatePrice(String visitType, int numOfVisitors, boolean prepaid, boolean subscriber, int parkId,
+			LocalDate orderDate, EchoServer server) {
 
 		double discount = 0;
 
@@ -35,6 +40,10 @@ public class PricingService {
 		if (subscriber) {
 			discount += 10;
 		}
+
+		double promotionsDiscount = server.getDatabase().getActivePromotionsDiscount(parkId, orderDate);
+		
+		discount=Math.min(discount+promotionsDiscount, 100);
 
 		return numOfVisitors * fullPrice * (1 - discount / 100.0);
 	}
