@@ -2155,12 +2155,11 @@ public class DBController {
 
 		return parkData;
 	}
-<<<<<<< HEAD
 
 	// =========================================================
 	// GET TOTAL ACTIVE PROMOTIONS DISCOUNT
 	// =========================================================
-	public double getActivePromotionsDiscount(int parkId, java.time.LocalDate date) {
+	public double getActivePromotionsDiscount(int parkId, LocalDate date) {
 
 		String query = "SELECT IFNULL(SUM(discountPercentage), 0) AS totalDiscount " + "FROM promotions "
 				+ "WHERE parkId = ? " + "AND status = 'Approved' " + "AND startDate <= ? " + "AND endDate >= ?";
@@ -2191,7 +2190,9 @@ public class DBController {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
-=======
+		}
+		return 0;
+	}
 	
 	// =========================================================
 	// GET QUICK SEARCH RESULT
@@ -2235,18 +2236,11 @@ public class DBController {
 			System.out.println("Error fetching orders for quick search:");
 			e.printStackTrace();
 			
->>>>>>> 807aa82e4c992650664865270d9ea56810d806d1
 		} finally {
 			if (conn != null) {
 				pool.releaseConnection(conn);
 			}
 		}
-<<<<<<< HEAD
-
-		return 0;
-=======
-		
 		return ordersList;
->>>>>>> 807aa82e4c992650664865270d9ea56810d806d1
 	}
 }
