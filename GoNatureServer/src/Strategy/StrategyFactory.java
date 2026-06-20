@@ -98,6 +98,10 @@ public class StrategyFactory {
 		
 		case "QUICK_SEARCH_RECORD":
 			return new QuickSearchStrategy();
+			
+		case "CONFIRM_ORDER":
+		    return new ConfirmOrderStrategy();
+		    
 		default:
 			return null;
 		}

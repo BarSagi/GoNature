@@ -96,6 +96,10 @@
 					prefHeight="35.0" prefWidth="180.0"
 					style="-fx-background-color: #c0392b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" />
 
+				<Button text="Confirm Selected Order"
+					onAction="#confirmOrder" prefHeight="35.0" prefWidth="180.0"
+					style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" />
+
 				<Region HBox.hgrow="ALWAYS" />
 
 				<Button text="Edit Selected Order" onAction="#editOrder"

@@ -1,12 +1,14 @@
 package Common;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.sql.Date;
 import java.sql.Time;
 
 // this class will handle order logic
-@SuppressWarnings("serial")
 public class Order implements Serializable {
+	
+	private static final long serialVersionUID = 1L;
 
 	private int orderId;
 	private int parkId;
@@ -17,6 +19,7 @@ public class Order implements Serializable {
 	private String email;
 	private String orderType;
 	private String orderStatus;
+	private Timestamp holdUntil;
 
 	public Order(int orderId, int parkId, String visitorId, Date visitDate, Time visitTime, int visitorCount,
 			String email, String orderType, String orderStatus) {
@@ -31,6 +34,20 @@ public class Order implements Serializable {
 		this.orderType = orderType;
 		this.orderStatus = orderStatus;
 	}
+	
+	public Order(int orderId, int parkId, String visitorId, Date visitDate, Time visitTime, int visitorCount,
+			String email, String orderType, String orderStatus, Timestamp holdUntil) {
+		this.orderId = orderId;
+		this.parkId = parkId;
+		this.visitorId = visitorId;
+		this.visitDate = visitDate;
+		this.visitTime = visitTime;
+		this.visitorCount = visitorCount;
+		this.email = email;
+		this.orderType = orderType;
+		this.orderStatus = orderStatus;
+		this.holdUntil = holdUntil;
+	}
 
 	public Order() { // empty constructor
 	}
@@ -40,7 +57,7 @@ public class Order implements Serializable {
 
 		return "Order [ID=" + orderId + ", ParkID=" + parkId + ", VisitorID='" + visitorId + '\'' + ", Date="
 				+ visitDate + ", Time=" + visitTime + ", Guests=" + visitorCount + ", Email='" + email + '\''
-				+ ", Type='" + orderType + '\'' + ", Status='" + orderStatus + '\'' + "]";
+				+ ", Type='" + orderType + '\'' + ", Status='" + orderStatus + '\'' + ", HoldUntil=" + holdUntil + "]";
 	}
 
 	public int getOrderId() {
@@ -113,5 +130,13 @@ public class Order implements Serializable {
 
 	public void setOrderStatus(String orderStatus) {
 		this.orderStatus = orderStatus;
+	}
+	
+	public Timestamp getHoldUntil() {
+		return holdUntil;
+	}
+
+	public void setHoldUntil(Timestamp holdUntil) {
+		this.holdUntil = holdUntil;
 	}
 }

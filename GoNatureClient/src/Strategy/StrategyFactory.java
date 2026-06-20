@@ -113,6 +113,9 @@ public class StrategyFactory {
 		
 		case "QUICK_SEARCH_RESULT":
 			return new QuickSearchResultStrategy();
+			
+		case "CONFIRM_ORDER_RESULT":
+		    return new ConfirmOrderResultStrategy();
 		    
 		default:
 			return null;

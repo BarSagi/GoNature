@@ -1,5 +1,13 @@
 package GUI_Visitor;
 
+import java.sql.Date;
+import java.sql.Time;
+import java.util.ArrayList;
+
+import Client.ClientUI;
+import Client.GoNatureClient;
+import Common.Message;
+import Common.Order;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -10,19 +18,12 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 
-import java.sql.Date;
-import java.sql.Time;
-import java.util.ArrayList;
-
-import Client.ClientUI;
-import Client.GoNatureClient;
-import Common.Message;
-import Common.Order;
-
 public class VisitorOrdersScreenController {
 
 	public static VisitorOrdersScreenController instance;
 
+	private boolean pendingPopupShown = false;
+	
 	// Tell the TableView to use your Entity.Order class
 	@FXML
 	private TableView<Order> ordersTable;
@@ -156,15 +157,35 @@ public class VisitorOrdersScreenController {
 	// Method to parse the raw Strings from the Server into your Order entities
 	public void loadOrders(ArrayList<Order> rawOrders) {
 		tableData.clear();
+		pendingPopupShown = false;
 
 		for (Order order : rawOrders) {
 			try {
 				tableData.add(order);
+
+				if (!pendingPopupShown && "PendingConfirmation".equalsIgnoreCase(order.getOrderStatus())) {
+					pendingPopupShown = true;
+
+					java.time.format.DateTimeFormatter formatter =
+							java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+					String receivedTime = java.time.LocalDateTime.now().format(formatter);
+
+					javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+							javafx.scene.control.Alert.AlertType.INFORMATION);
+					alert.setTitle("New SMS Notification");
+					alert.setHeaderText("A place has become available for your waiting list order.");
+					alert.setContentText("You received this notification at: " + receivedTime
+							+ "\n\nYou have one hour to confirm your order.");
+					alert.showAndWait();
+				}
+
 			} catch (Exception e) {
 				System.out.println("Error displaying order in table: " + e.getMessage());
 				e.printStackTrace();
 			}
 		}
+
 		System.out.println("Controller: Finished loading. tableData size is now: " + tableData.size());
 	}
 
@@ -205,7 +226,7 @@ public class VisitorOrdersScreenController {
 
 		if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
 			try {
-				Message msg = new Message("CANCEL_ORDER", selectedOrder);
+				Message msg = new Message("CANCEL_ORDER", selectedOrder.getOrderId());
 				ClientUI.send(msg);
 				System.out.println("Cancellation request sent for Order ID: " + selectedOrder.getOrderId());
 			} catch (Exception e) {
@@ -238,6 +259,30 @@ public class VisitorOrdersScreenController {
 			}
 			ClientUI.changeScreen("/GUI/LoginRoute.fxml", "GoNature Login");
 		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@FXML
+	void confirmOrder(ActionEvent event) {
+		Order selectedOrder = ordersTable.getSelectionModel().getSelectedItem();
+
+		if (selectedOrder == null) {
+			showErrorAlert("Please select an order to confirm!");
+			return;
+		}
+
+		if (!"PendingConfirmation".equalsIgnoreCase(selectedOrder.getOrderStatus())) {
+			showErrorAlert("Only orders waiting for confirmation can be confirmed.");
+			return;
+		}
+
+		try {
+			Message msg = new Message("CONFIRM_ORDER", selectedOrder.getOrderId());
+			ClientUI.send(msg);
+			System.out.println("Confirmation request sent for Order ID: " + selectedOrder.getOrderId());
+		} catch (Exception e) {
+			System.out.println("Error sending confirmation request to server.");
 			e.printStackTrace();
 		}
 	}

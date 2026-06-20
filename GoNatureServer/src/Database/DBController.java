@@ -42,9 +42,17 @@ public class DBController {
 			ResultSet rs = ps.executeQuery();
 
 			while (rs.next()) {
-				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
-						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
-						rs.getString("email"), rs.getString("orderType"), rs.getString("status")));
+				result.add(new Order(
+				        rs.getInt("orderId"),
+				        rs.getInt("parkId"),
+				        rs.getString("visitorId"),
+				        rs.getDate("visitDate"),
+				        rs.getTime("visitTime"),
+				        rs.getInt("visitorCount"),
+				        rs.getString("email"),
+				        rs.getString("orderType"),
+				        rs.getString("status"),
+				        rs.getTimestamp("holdUntil")));
 			}
 
 			rs.close();
@@ -88,9 +96,18 @@ public class DBController {
 			rs = ps.executeQuery();
 
 			while (rs.next()) {
-				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
-						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
-						rs.getString("email"), rs.getString("orderType"), rs.getString("status")));
+				result.add(new Order(
+				        rs.getInt("orderId"),
+				        rs.getInt("parkId"),
+				        rs.getString("visitorId"),
+				        rs.getDate("visitDate"),
+				        rs.getTime("visitTime"),
+				        rs.getInt("visitorCount"),
+				        rs.getString("email"),
+				        rs.getString("orderType"),
+				        rs.getString("status"),
+				        rs.getTimestamp("holdUntil")
+				));
 			}
 
 		} finally {
@@ -358,9 +375,18 @@ public class DBController {
 			ResultSet rs = ps.executeQuery();
 
 			while (rs.next()) {
-				list.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
-						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
-						rs.getString("email"), rs.getString("orderType"), rs.getString("status")));
+				list.add(new Order(
+						rs.getInt("orderId"),
+						rs.getInt("parkId"),
+						rs.getString("visitorId"),
+						rs.getDate("visitDate"),
+						rs.getTime("visitTime"),
+						rs.getInt("visitorCount"),
+						rs.getString("email"),
+						rs.getString("orderType"),
+						rs.getString("status"),
+						rs.getTimestamp("holdUntil")
+				));
 			}
 
 			rs.close();
@@ -1367,16 +1393,39 @@ public class DBController {
 			while (rs.next()) {
 				int orderId = rs.getInt("orderId");
 				int visitorCount = rs.getInt("visitorCount");
+				String email = rs.getString("email");
 
 				if (hasRoomInSlot(parkId, visitDate, visitTime, visitorCount)) {
-					PreparedStatement updatePs = conn
-							.prepareStatement("UPDATE Orders SET status = 'Approved' WHERE orderId = ?");
+					PreparedStatement updatePs = conn.prepareStatement(
+							"UPDATE Orders SET status = 'PendingConfirmation', holdUntil = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE orderId = ?");
 					updatePs.setInt(1, orderId);
 
 					int rows = updatePs.executeUpdate();
 					updatePs.close();
 
-					return rows > 0;
+					if (rows > 0) {
+						PreparedStatement notifEmailPs = conn.prepareStatement(
+								"INSERT INTO Notifications (orderId, notificationType, contactMethod, destinationAddress, messageContent, scheduledTime, isSent) "
+										+ "VALUES (?, 'WaitingListTurn', 'Email', ?, ?, NOW(), false)");
+						notifEmailPs.setInt(1, orderId);
+						notifEmailPs.setString(2, email);
+						notifEmailPs.setString(3,
+								"A place has become available. You have one hour to confirm your order.");
+						notifEmailPs.executeUpdate();
+						notifEmailPs.close();
+
+						PreparedStatement notifSmsPs = conn.prepareStatement(
+								"INSERT INTO Notifications (orderId, notificationType, contactMethod, destinationAddress, messageContent, scheduledTime, isSent) "
+										+ "VALUES (?, 'WaitingListTurn', 'SMS', ?, ?, NOW(), false)");
+						notifSmsPs.setInt(1, orderId);
+						notifSmsPs.setString(2, email);
+						notifSmsPs.setString(3,
+								"A place has become available. You have one hour to confirm your order.");
+						notifSmsPs.executeUpdate();
+						notifSmsPs.close();
+
+						return true;
+					}
 				}
 			}
 
@@ -2058,9 +2107,18 @@ public class DBController {
 			ResultSet rs = ps.executeQuery();
 
 			while (rs.next()) {
-				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
-						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
-						rs.getString("email"), rs.getString("orderType"), rs.getString("status")));
+				result.add(new Order(
+				        rs.getInt("orderId"),
+				        rs.getInt("parkId"),
+				        rs.getString("visitorId"),
+				        rs.getDate("visitDate"),
+				        rs.getTime("visitTime"),
+				        rs.getInt("visitorCount"),
+				        rs.getString("email"),
+				        rs.getString("orderType"),
+				        rs.getString("status"),
+				        rs.getTimestamp("holdUntil")
+				));
 			}
 
 			rs.close();
@@ -2217,15 +2275,16 @@ public class DBController {
 			while (rs.next()) {
 				// Create the Order object using the exact requested structure
 				ordersList.add(new Order(
-						rs.getInt("orderId"), 
-						rs.getInt("parkId"), 
-						rs.getString("visitorId"),
-						rs.getDate("visitDate"), 
-						rs.getTime("visitTime"), 
-						rs.getInt("visitorCount"),
-						rs.getString("email"), 
-						rs.getString("orderType"), 
-						rs.getString("status")
+						 rs.getInt("orderId"),
+					        rs.getInt("parkId"),
+					        rs.getString("visitorId"),
+					        rs.getDate("visitDate"),
+					        rs.getTime("visitTime"),
+					        rs.getInt("visitorCount"),
+					        rs.getString("email"),
+					        rs.getString("orderType"),
+					        rs.getString("status"),
+					        rs.getTimestamp("holdUntil")
 				));
 			}
 			
@@ -2242,5 +2301,34 @@ public class DBController {
 			}
 		}
 		return ordersList;
+	}
+	
+	// =========================================================
+	// CONFIRM ORDER
+	// =========================================================
+	public boolean confirmOrder(int orderId) {
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(
+					"UPDATE Orders SET status = 'Approved', holdUntil = NULL "
+							+ "WHERE orderId = ? AND status = 'PendingConfirmation' AND holdUntil >= NOW()");
+			ps.setInt(1, orderId);
+
+			int rows = ps.executeUpdate();
+			ps.close();
+
+			return rows > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
 	}
 }
