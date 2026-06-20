@@ -16,8 +16,9 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public class ServiceRepresentativeDashboardController {
-
+	
 	@FXML
+	
 	private Label welcomeLabel;
 
 	@FXML
@@ -28,6 +29,7 @@ public class ServiceRepresentativeDashboardController {
 
 	@FXML
 	public void initialize() {
+		
 		// Set user details once upon login
 		if (GoNatureClient.currentEmployee != null) {
 			welcomeLabel.setText("Welcome, " + GoNatureClient.currentEmployee.getFirstName() + "!");
@@ -37,6 +39,7 @@ public class ServiceRepresentativeDashboardController {
 			departmentLabel.setText("Central Office");
 		}
 		
+		
 		Platform.runLater(() -> {
             // Get the current window (Stage) using one of the nodes (contentArea)
             Stage stage = (Stage) contentArea.getScene().getWindow();
@@ -44,6 +47,8 @@ public class ServiceRepresentativeDashboardController {
                 stage.setMaximized(true);
             }
         });
+		
+		loadPanel("/GUI/ServiceRepSearch.fxml");
 	}
 
 	/**
@@ -68,6 +73,11 @@ public class ServiceRepresentativeDashboardController {
 	@FXML
 	void showCreateCasualVisitPanel(ActionEvent event) {
 		loadPanel("/GUI/ServiceRepCreateCasualVisit.fxml");
+	}
+	
+	@FXML
+	void showQuickSearchPanel(ActionEvent event) {
+		loadPanel("/GUI/ServiceRepSearch.fxml");
 	}
 
 	/**

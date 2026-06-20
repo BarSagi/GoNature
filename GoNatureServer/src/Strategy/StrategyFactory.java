@@ -95,7 +95,9 @@ public class StrategyFactory {
 			
 		case "GET_PARK_DASHBOARD":
 			return new GetParkDashboardStrategy();
-		    
+		
+		case "QUICK_SEARCH_RECORD":
+			return new QuickSearchStrategy();
 		default:
 			return null;
 		}

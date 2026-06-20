@@ -83,6 +83,12 @@ public class ParkWorkerController {
 	void exitVisitor(ActionEvent event) {
 		loadPanel("/GUI/ParkWorkerExitVisitor.fxml");
 	}
+	
+
+	@FXML
+	void showParkDashboard(ActionEvent event) {
+		loadPanel("/GUI/ParkDashboard.fxml");
+	}
 
 	@FXML
 	void goBack(ActionEvent event) {

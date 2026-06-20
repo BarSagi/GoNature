@@ -56,18 +56,22 @@ public class ParkDashboardController {
      * This method should be called by the client when it receives the Park details from the server.
      * Ensure you pass the data dynamically. For now, it takes strings for simplicity.
      */
-    public void updateDashboardData(String parkName, int maxCapacity, int casualGap, 
-                                    int avgStay, int currentVisitors, int openSpots) {
-        Platform.runLater(() -> {
-            parkNameLabel.setText("Park: " + parkName);
-            maxCapacityLabel.setText(String.valueOf(maxCapacity));
-            casualGapLabel.setText(String.valueOf(casualGap));
-            avgStayDurationLabel.setText(String.valueOf(avgStay));
-            currentVisitorsLabel.setText(String.valueOf(currentVisitors));
-            openCasualSpotsLabel.setText(String.valueOf(openSpots));
-            
-            statusLabel.setStyle("-fx-text-fill: #27ae60;");
-            statusLabel.setText("Data is up to date.");
-        });
-    }
+    public void updateDashboardData(String parkName, int maxCapacity, int casualGap, int avgStay, int currentVisitors, int openSpots) {
+		Platform.runLater(() -> {
+			parkNameLabel.setText("Park: " + parkName);
+			maxCapacityLabel.setText(String.valueOf(maxCapacity));
+			casualGapLabel.setText(String.valueOf(casualGap));
+			avgStayDurationLabel.setText(String.valueOf(avgStay));
+			currentVisitorsLabel.setText(String.valueOf(currentVisitors));
+			openCasualSpotsLabel.setText(String.valueOf(openSpots));
+			
+			statusLabel.setStyle("-fx-text-fill: #27ae60;");
+			statusLabel.setText("Data is up to date.");
+			
+			// Clear the success message after 3 seconds
+			javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(3));
+			pause.setOnFinished(e -> statusLabel.setText(""));
+			pause.play();
+		});
+}
 }
