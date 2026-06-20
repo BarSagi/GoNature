@@ -3,6 +3,7 @@ package Strategy;
 import java.util.ArrayList;
 
 import Common.Message;
+import GUI.CreateOrderController;
 import GUI.DeptManagerCancellationReportPanelController;
 import GUI.DeptManagerVisitDurationReportController;
 import GUI.ParkWorkerCreateOrderController;
@@ -10,25 +11,28 @@ import javafx.application.Platform;
 
 public class AllParksStrategy implements MessageStrategy {
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public void execute(Message msg) {
+	@SuppressWarnings("unchecked")
+	@Override
+	public void execute(Message msg) {
 
-        ArrayList<String> parks = (ArrayList<String>) msg.getData();
+		ArrayList<String> parks = (ArrayList<String>) msg.getData();
 
-        Platform.runLater(() -> {
+		Platform.runLater(() -> {
 
-            if (DeptManagerVisitDurationReportController.instance != null) {
-                DeptManagerVisitDurationReportController.instance.loadParks(parks);
-            }
+			if (DeptManagerVisitDurationReportController.instance != null) {
+				DeptManagerVisitDurationReportController.instance.loadParks(parks);
+			}
 
-            if (DeptManagerCancellationReportPanelController.instance != null) {
-                DeptManagerCancellationReportPanelController.instance.loadParks(parks);
-            }
-            
-            if (ParkWorkerCreateOrderController.instance != null) {
-                ParkWorkerCreateOrderController.instance.loadParks(parks);
-            }
-        });
-    }
+			if (DeptManagerCancellationReportPanelController.instance != null) {
+				DeptManagerCancellationReportPanelController.instance.loadParks(parks);
+			}
+
+			if (ParkWorkerCreateOrderController.instance != null) {
+				ParkWorkerCreateOrderController.instance.loadParks(parks);
+			}
+			if (CreateOrderController.instance != null) {
+			    CreateOrderController.instance.loadParks(parks);
+			}
+		});
+	}
 }

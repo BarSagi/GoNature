@@ -20,31 +20,33 @@ public class CalculatePricePreorderStrategy implements MessageStrategy {
 			String visitorId = data.get(0);
 			int numOfVisitors = Integer.parseInt(data.get(1));
 			String paymentMethod = data.get(2);
-
 			String visitorType = server.getDatabase().getVisitorTypeById(visitorId);
 
-			boolean subscriber = "Subscriber".equals(visitorType);
-			boolean guide = "Guide".equals(visitorType);
-
+			boolean subscriber;
 			String visitType;
 
-			if (guide) {
+			if ("Guide".equals(visitorType)) {
+
 				visitType = "GUIDE_PREORDER";
-			} else {
+				subscriber = false;
+
+			} else if ("Subscriber".equals(visitorType)) {
+
 				visitType = "REGULAR_PREORDER";
+				subscriber = true;
+
+			} else {
+
+				visitType = "REGULAR_PREORDER";
+				subscriber = false;
 			}
 
 			boolean prepaid = "Credit Card".equals(paymentMethod);
 
 			PricingService pricingService = new PricingService();
 
-			double price = pricingService.calculatePrice(
-					visitType,
-					numOfVisitors,
-					prepaid,
-					subscriber
-			);
-
+			double price = pricingService.calculatePrice(visitType, numOfVisitors, prepaid, subscriber);
+			
 			client.sendToClient(new Message("PRICE_RESULT_PREORDER", price));
 
 		} catch (Exception e) {
