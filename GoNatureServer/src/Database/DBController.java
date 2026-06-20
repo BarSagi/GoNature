@@ -2155,6 +2155,7 @@ public class DBController {
 
 		return parkData;
 	}
+<<<<<<< HEAD
 
 	// =========================================================
 	// GET TOTAL ACTIVE PROMOTIONS DISCOUNT
@@ -2190,12 +2191,62 @@ public class DBController {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+=======
+	
+	// =========================================================
+	// GET QUICK SEARCH RESULT
+	// =========================================================
+	public ArrayList<Order> quickSearchOrders(String searchInput) {
+		ArrayList<Order> ordersList = new ArrayList<>();
+		
+		// We use OR to check both columns
+		String query = "SELECT * FROM Orders WHERE orderId = ? OR visitorId = ?";
+		
+		Connection conn = null;
+		
+		try {
+			conn = pool.getConnection();
+			PreparedStatement ps = conn.prepareStatement(query);
+			
+			ps.setString(1, searchInput);
+			ps.setString(2, searchInput);
+			
+			ResultSet rs = ps.executeQuery();
+			
+			while (rs.next()) {
+				// Create the Order object using the exact requested structure
+				ordersList.add(new Order(
+						rs.getInt("orderId"), 
+						rs.getInt("parkId"), 
+						rs.getString("visitorId"),
+						rs.getDate("visitDate"), 
+						rs.getTime("visitTime"), 
+						rs.getInt("visitorCount"),
+						rs.getString("email"), 
+						rs.getString("orderType"), 
+						rs.getString("status")
+				));
+			}
+			
+			rs.close();
+			ps.close();
+			
+		} catch (SQLException e) {
+			System.out.println("Error fetching orders for quick search:");
+			e.printStackTrace();
+			
+>>>>>>> 807aa82e4c992650664865270d9ea56810d806d1
 		} finally {
 			if (conn != null) {
 				pool.releaseConnection(conn);
 			}
 		}
+<<<<<<< HEAD
 
 		return 0;
+=======
+		
+		return ordersList;
+>>>>>>> 807aa82e4c992650664865270d9ea56810d806d1
 	}
 }

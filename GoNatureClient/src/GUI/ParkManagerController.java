@@ -88,6 +88,11 @@ public class ParkManagerController {
 	void showSubmitRequest(ActionEvent event) {
 		loadPanel("/GUI/ParkManagerSubmitRequestPanel.fxml");
 	}
+	
+	@FXML
+	void showParkDashboard(ActionEvent event) {
+		loadPanel("/GUI/ParkDashboard.fxml");
+	}
 
 	@FXML
 	void handleLogout(ActionEvent event) {
