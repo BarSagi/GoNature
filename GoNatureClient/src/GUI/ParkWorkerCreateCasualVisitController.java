@@ -39,18 +39,11 @@ public class ParkWorkerCreateCasualVisitController {
 	@FXML
 	public void initialize() {
 		instance = this;
-
-		// Display the current park name based on the employee's logged-in affiliation
-		if (GoNatureClient.currentEmployee != null) {
-			parkLabel.setText("Park Location: " + GoNatureClient.currentEmployee.getAffiliation());
-		} else {
-			parkLabel.setText("Park Location: Unknown");
-		}
 		paymentComboBox.setItems(FXCollections.observableArrayList("Cash", "Credit Card"));
 	}
 
 	@FXML
-	void handleRegisterEntry(ActionEvent event) {
+	void submitOrder(ActionEvent event) {
 		String visitorId = visitorIdField.getText().trim();
 		String countStr = visitorCountField.getText().trim();
 		String paymentMethod = paymentComboBox.getValue();

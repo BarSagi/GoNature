@@ -1,6 +1,7 @@
 package Strategy;
 
 import Common.Message;
+import GUI.CreateOrderController;
 import GUI.ParkWorkerCreateOrderController;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
@@ -17,6 +18,11 @@ public class OrderCreationStrategy implements MessageStrategy {
 			if (ParkWorkerCreateOrderController.instance != null) {
 				ParkWorkerCreateOrderController.instance.handleOrderResult(success, success ? null : "Unknown error");
 			}
+			
+			if (CreateOrderController.instance != null) {
+				CreateOrderController.instance.handleOrderResult(success, success ? null : "Unknown error");
+			}
+			
 
 			Alert alert = new Alert(success ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR);
 

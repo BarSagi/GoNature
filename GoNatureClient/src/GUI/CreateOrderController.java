@@ -19,8 +19,6 @@ import javafx.scene.control.*;
 
 public class CreateOrderController implements Initializable {
 
-	public static ArrayList<String> lastOrderData;
-
 	@FXML
 	private ComboBox<String> parkComboBox;
 	@FXML
@@ -39,11 +37,18 @@ public class CreateOrderController implements Initializable {
 	public static String selectedPaymentMethod;
 	public static String cachedVisitorType = "Individual";
 
+	public static CreateOrderController instance;
+
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 
-		ObservableList<String> parks = FXCollections.observableArrayList("Carmel", "Banias", "Hula");
-		parkComboBox.setItems(parks);
+		instance = this;
+
+		try {
+			ClientUI.client.sendToServer(new Message("GET_ALL_PARKS", null));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 		ObservableList<String> times = FXCollections.observableArrayList("09:00", "10:00", "11:00", "12:00", "13:00",
 				"14:00", "15:00", "16:00");
@@ -52,131 +57,122 @@ public class CreateOrderController implements Initializable {
 		paymentComboBox.setItems(FXCollections.observableArrayList("Credit Card", "Cash"));
 
 		int maxVisitors = 100;
+		int minVisitors = 1;
 
 		if (GoNatureClient.currentVisitor != null && "Guide".equals(GoNatureClient.currentVisitor.getVisitorType())) {
 			maxVisitors = 16;
+			minVisitors = 2;
 		}
 
-		visitorsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, maxVisitors, 1));
-		
+		visitorsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(minVisitors, maxVisitors, minVisitors));
+
 	}
 
 	@FXML
 	void submitOrder(ActionEvent event) {
 
-		orderCreatedSuccessfully = false;
-		
-		errorLabel.setVisible(false);
+		try {
+			errorLabel.setVisible(false);
 
-		String selectedPark = parkComboBox.getValue();
-		LocalDate selectedDate = datePicker.getValue();
-		String selectedTime = timeComboBox.getValue();
-		String visitorsAmount = String.valueOf(visitorsSpinner.getValue());
-		String paymentMethod = paymentComboBox.getValue();
+			String selectedPark = parkComboBox.getValue();
+			LocalDate selectedDate = datePicker.getValue();
+			String selectedTime = timeComboBox.getValue();
+			String visitorsAmount = String.valueOf(visitorsSpinner.getValue());
+			String paymentMethod = paymentComboBox.getValue();
 
-		selectedPaymentMethod = paymentMethod;
+			if (selectedPark == null || selectedDate == null || selectedTime == null || paymentMethod == null
+					|| visitorsAmount.trim().isEmpty()) {
 
-		if (selectedPark == null || selectedDate == null || selectedTime == null || paymentMethod == null
-				|| visitorsAmount.trim().isEmpty()) {
-
-			showError("Please fill in all fields.");
-			return;
-		}
-
-		if (selectedDate.isBefore(LocalDate.now())) {
-			showError("You cannot select a past date.");
-			return;
-		}
-
-		if (selectedDate.equals(LocalDate.now())) {
-			LocalTime chosenTime = LocalTime.parse(selectedTime);
-			if (chosenTime.isBefore(LocalTime.now())) {
-				showError("You cannot select a time that has already passed.");
+				showError("Please fill in all fields.");
 				return;
 			}
+
+			if (selectedDate.isBefore(LocalDate.now())) {
+				showError("You cannot select a past date.");
+				return;
+			}
+
+			if (selectedDate.equals(LocalDate.now())) {
+				LocalTime chosenTime = LocalTime.parse(selectedTime);
+				if (chosenTime.isBefore(LocalTime.now())) {
+					showError("You cannot select a time that has already passed.");
+					return;
+				}
+			}
+
+			String visitorId = GoNatureClient.currentVisitor.getVisitorId();
+
+			ArrayList<String> newOrder = new ArrayList<>();
+			newOrder.add(visitorId);
+			newOrder.add(selectedPark);
+			newOrder.add(selectedDate.toString());
+			newOrder.add(selectedTime);
+			newOrder.add(visitorsAmount);
+			newOrder.add(GoNatureClient.currentVisitor.getEmail());
+			newOrder.add(cachedVisitorType);
+
+			ClientUI.send(new Message("SUBMIT_NEW_ORDER", newOrder));
+
+			ArrayList<String> paymentData = new ArrayList<>();
+			paymentData.add(visitorId);
+			paymentData.add(visitorsAmount);
+			paymentData.add(paymentMethod);
+
+			ClientUI.send(new Message("CALCULATE_PRICE_PREORDER", paymentData));
+
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 
-		String visitorType = GoNatureClient.currentVisitor.getVisitorType();
+	}
 
-		boolean subscriber = GoNatureClient.currentVisitor.getSubNumber() != 0 && !visitorType.equals("Guide");
+	public void handleOrderResult(boolean success, String reason) {
 
-		String visitType = "Guide".equals(visitorType) ? "GUIDE_PREORDER" : "REGULAR_PREORDER";
+		if (success) {
+			orderCreatedSuccessfully = true;
 
-		boolean prepaid = "Guide".equals(visitorType) && "Credit Card".equals(paymentMethod);
+			errorLabel.setStyle("-fx-text-fill: #27ae60;");
+			errorLabel.setText("Order created successfully!");
+		} else {
+			orderCreatedSuccessfully = false;
 
-		String visitorId = GoNatureClient.currentVisitor.getVisitorId();
+			errorLabel.setStyle("-fx-text-fill: #e74c3c;");
+			errorLabel.setText(reason != null ? reason : "Order failed.");
 
-		// =========================
-		// 1. CREATE ORDER IMMEDIATELY
-		// =========================
-		ArrayList<String> newOrder = new ArrayList<>();
-		newOrder.add(visitorId);
-		newOrder.add(selectedPark);
-		newOrder.add(selectedDate.toString());
-		newOrder.add(selectedTime);
-		newOrder.add(visitorsAmount);
-		newOrder.add(GoNatureClient.currentVisitor.getEmail());
-		newOrder.add(cachedVisitorType);
-		lastOrderData = newOrder;
+			return;
+		}
+	}
 
-		try {
-			ClientUI.send(new Message("SUBMIT_NEW_ORDER", newOrder));
-			System.out.println("Order sent immediately.");
-		} catch (Exception e) {
-			showError("Error sending order.");
-			e.printStackTrace();
+	public void handlePriceResult(double price) {
+
+		if (!orderCreatedSuccessfully) {
 			return;
 		}
 
-		// =========================
-		// 2. REQUEST PRICE ONLY AFTER ORDER EXISTS
-		// =========================
-		ArrayList<String> paymentData = new ArrayList<>();
-		paymentData.add(visitType);
-		paymentData.add(visitorsAmount);
-		paymentData.add(String.valueOf(prepaid));
-		paymentData.add(String.valueOf(subscriber));
+		Platform.runLater(() -> {
 
-		try {
-			ClientUI.send(new Message("CALCULATE_PRICE_PREORDER", paymentData));
-		} catch (Exception e) {
-			showError("Error sending price request.");
-			e.printStackTrace();
-		}
+			Alert alert = new Alert(Alert.AlertType.INFORMATION);
+			alert.setTitle("SIMULATION");
+			alert.setHeaderText("Order Price");
+			alert.setContentText("Total price: " + price + " NIS\n");
+
+			alert.showAndWait();
+		});
 	}
-	
-	public void handleOrderResult(boolean success, String reason) {
 
-	    if (success) {
-	        orderCreatedSuccessfully = true;
+	public void loadParks(ArrayList<String> parks) {
 
-	        errorLabel.setStyle("-fx-text-fill: #27ae60;");
-	        errorLabel.setText("Order created successfully!");
-	    } else {
-	        orderCreatedSuccessfully = false;
+		Platform.runLater(() -> {
 
-	        errorLabel.setStyle("-fx-text-fill: #e74c3c;");
-	        errorLabel.setText(reason != null ? reason : "Order failed.");
+			if (parks == null || parks.isEmpty())
+				return;
 
-	        return;
-	    }
-	}
-	
-	public void handlePriceResult(double price) {
-
-	    if (!orderCreatedSuccessfully) {
-	        return;
-	    }
-
-	    Platform.runLater(() -> {
-
-	        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-	        alert.setTitle("SIMULATION");
-	        alert.setHeaderText("Order Price");
-	        alert.setContentText("Total price: " + price + " NIS\n");
-
-	        alert.showAndWait();
-	    });
+			parkComboBox.getItems().clear();
+			parkComboBox.getItems().addAll(parks);
+		});
 	}
 
 	private void showError(String message) {
@@ -196,6 +192,6 @@ public class CreateOrderController implements Initializable {
 	}
 
 	public static void handleVisitorTypeResult(String type) {
-	    cachedVisitorType = type;
+		cachedVisitorType = (type != null) ? type : "Individual";
 	}
 }
