@@ -3,11 +3,12 @@ package Strategy;
 import Client.ClientUI;
 import Client.GoNatureClient;
 import Common.Message;
+import javafx.application.Platform;
 
 public class UpdateSuccessStrategy implements MessageStrategy {
 	@Override
 	public void execute(Message message) {
-		javafx.application.Platform.runLater(() -> {
+		Platform.runLater(() -> {
 			javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
 					javafx.scene.control.Alert.AlertType.INFORMATION);
 			alert.setTitle("Success");

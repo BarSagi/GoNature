@@ -39,6 +39,10 @@ public class CheckVisitorOrdersStrategy implements MessageStrategy {
 			visitor = server.getDatabase().fetchVisitor(visitorId);
 		}
 
+		else {
+			server.logoutUser(client);
+		}
+
 		// =========================================================
 		// 3. THE FIX: Combine both into an ArrayList of Objects!
 		// =========================================================

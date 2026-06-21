@@ -24,8 +24,7 @@ public class OrderCancelResultStrategy implements MessageStrategy {
 
 				if (GoNatureClient.currentVisitor != null) {
 					try {
-						String visitorId = GoNatureClient.currentVisitor.getVisitorId();
-						ClientUI.send(new Message("GET_VISITOR_ORDERS", visitorId));
+						ClientUI.send(new Message("FETCH_VISITOR_ORDERS", GoNatureClient.currentVisitor.getVisitorId()));
 					} catch (Exception e) {
 						System.out.println("Error requesting updated orders list.");
 						e.printStackTrace();

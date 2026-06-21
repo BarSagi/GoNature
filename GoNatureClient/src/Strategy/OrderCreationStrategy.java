@@ -1,5 +1,7 @@
 package Strategy;
 
+import Client.ClientUI;
+import Client.GoNatureClient;
 import Common.Message;
 import GUI.CreateOrderController;
 import GUI.ParkWorkerCreateOrderController;
@@ -18,11 +20,10 @@ public class OrderCreationStrategy implements MessageStrategy {
 			if (ParkWorkerCreateOrderController.instance != null) {
 				ParkWorkerCreateOrderController.instance.handleOrderResult(success, success ? null : "Unknown error");
 			}
-			
+
 			if (CreateOrderController.instance != null) {
 				CreateOrderController.instance.handleOrderResult(success, success ? null : "Unknown error");
 			}
-			
 
 			Alert alert = new Alert(success ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR);
 
@@ -34,5 +35,14 @@ public class OrderCreationStrategy implements MessageStrategy {
 
 			alert.showAndWait();
 		});
+
+		Message msg = new Message("FETCH_VISITOR_ORDERS", GoNatureClient.currentVisitor.getVisitorId());
+
+		try {
+			ClientUI.send(msg);
+		} catch (Exception e) {
+			System.out.println("Error sending message to server");
+			e.printStackTrace();
+		}
 	}
 }

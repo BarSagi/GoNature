@@ -9,7 +9,14 @@ import javafx.scene.control.TextField;
 import java.util.ArrayList;
 
 public class RegisterVisitorController {
-
+	/*
+	 * 
+	 * 
+	 * I THINK WE DONT USE THIS, gal
+	 * 
+	 * 
+	 * 
+	 */
 	@FXML
 	private TextField idField;
 
@@ -48,7 +55,7 @@ public class RegisterVisitorController {
 			showError("ID must contain only numbers.");
 			return;
 		}
-		
+
 		if (!firstName.matches("[a-zA-Z ]+") || !lastName.matches("[a-zA-Z ]+")) {
 			showError("First and last name must contain letters only.");
 			return;

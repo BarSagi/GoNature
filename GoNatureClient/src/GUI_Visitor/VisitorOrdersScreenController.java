@@ -3,7 +3,6 @@ package GUI_Visitor;
 import java.sql.Date;
 import java.sql.Time;
 import java.util.ArrayList;
-
 import Client.ClientUI;
 import Client.GoNatureClient;
 import Common.Message;
@@ -23,7 +22,7 @@ public class VisitorOrdersScreenController {
 	public static VisitorOrdersScreenController instance;
 
 	private boolean pendingPopupShown = false;
-	
+
 	// Tell the TableView to use your Entity.Order class
 	@FXML
 	private TableView<Order> ordersTable;
@@ -114,7 +113,7 @@ public class VisitorOrdersScreenController {
 		ordersTable.setOnMouseClicked(event -> {
 			// Check if it was a double click AND a row is actually selected
 			if (event.getClickCount() == 2 && ordersTable.getSelectionModel().getSelectedItem() != null) {
-				editOrder(null); // Trigger the edit logic
+				showTicket(null); // CHANGED: Trigger the ticket display
 			}
 		});
 	}
@@ -166,8 +165,8 @@ public class VisitorOrdersScreenController {
 				if (!pendingPopupShown && "PendingConfirmation".equalsIgnoreCase(order.getOrderStatus())) {
 					pendingPopupShown = true;
 
-					java.time.format.DateTimeFormatter formatter =
-							java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+					java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter
+							.ofPattern("dd/MM/yyyy HH:mm");
 
 					String receivedTime = java.time.LocalDateTime.now().format(formatter);
 
@@ -245,6 +244,36 @@ public class VisitorOrdersScreenController {
 	}
 
 	@FXML
+	void showTicket(ActionEvent event) {
+		Order selectedOrder = ordersTable.getSelectionModel().getSelectedItem();
+
+		// 1. Validate selection
+		if (selectedOrder == null) {
+			showErrorAlert("Please select an order to view its ticket!");
+			return;
+		}
+
+		// 2. Only approved orders should get to see their entrance code!
+		if (!"Approved".equalsIgnoreCase(selectedOrder.getOrderStatus())) {
+			showErrorAlert("Only approved orders have an active entrance ticket.");
+			return;
+		}
+
+		// 3. Show a nice pop-up with the QR Code
+		javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+				javafx.scene.control.Alert.AlertType.INFORMATION);
+		alert.setTitle("Entrance Ticket");
+		alert.setHeaderText("Entrance Ticket for Order #" + selectedOrder.getOrderId());
+
+		// If you added qrCode to the Order object, use it here:
+		String code = selectedOrder.getQrCode() != null ? selectedOrder.getQrCode() : "N/A";
+
+		alert.setContentText("Please present this code to the Park Employee at the entrance:\n\n" + "QR CODE: " + code);
+
+		alert.showAndWait();
+	}
+
+	@FXML
 	void logout(ActionEvent event) {
 		try {
 			String userID = GoNatureClient.currentVisitor.getVisitorId();
@@ -262,7 +291,7 @@ public class VisitorOrdersScreenController {
 			e.printStackTrace();
 		}
 	}
-	
+
 	@FXML
 	void confirmOrder(ActionEvent event) {
 		Order selectedOrder = ordersTable.getSelectionModel().getSelectedItem();
@@ -284,6 +313,80 @@ public class VisitorOrdersScreenController {
 		} catch (Exception e) {
 			System.out.println("Error sending confirmation request to server.");
 			e.printStackTrace();
+		}
+	}
+
+	@FXML
+	public void refreshOrders(ActionEvent event) {
+		// Ensure we have a logged-in visitor before trying to fetch orders
+		if (GoNatureClient.currentVisitor != null) {
+			try {
+				String visitorId = GoNatureClient.currentVisitor.getVisitorId();
+
+				// Create the message.
+				// IMPORTANT: Ensure "FETCH_VISITOR_ORDERS" exactly matches the command
+				// your Server Strategy expects to grab a visitor's orders!
+				Message msg = new Message("FETCH_VISITOR_ORDERS", visitorId);
+
+				ClientUI.send(msg);
+				System.out.println("Refresh request sent for Visitor ID: " + visitorId);
+
+			} catch (Exception e) {
+				System.out.println("Error sending refresh request to server.");
+				e.printStackTrace();
+				showErrorAlert("Failed to refresh orders. Please check your connection.");
+			}
+		} else {
+			showErrorAlert("Cannot refresh: No visitor is currently logged in.");
+		}
+	}
+
+	@FXML
+	void reportExit(ActionEvent event) {
+		Order selectedOrder = ordersTable.getSelectionModel().getSelectedItem();
+
+		// 1. Validate selection
+		if (selectedOrder == null) {
+			showErrorAlert("Please select an order to report exit!");
+			return;
+		}
+
+		// 2. Prevent exiting an order that isn't currently inside the park
+		if (!"Entered".equalsIgnoreCase(selectedOrder.getOrderStatus())) {
+			showErrorAlert("You can only report exit for an order that is currently marked as 'Entered'.");
+			return;
+		}
+
+		// 3. Ask for confirmation
+		javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+				javafx.scene.control.Alert.AlertType.CONFIRMATION);
+		alert.setTitle("Report Exit");
+		alert.setHeaderText("Report Exit for Order #" + selectedOrder.getOrderId());
+		alert.setContentText(
+				"Are you sure you want to report exit? This will mark the order as fulfilled and free up park capacity.");
+
+		java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
+
+		if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+			try {
+				// 4. Prepare the ArrayList<String> exactly as ExitVisitorStrategy expects it
+				ArrayList<String> dataToServer = new ArrayList<>();
+
+				// Grab the visitor ID from the currently logged-in user
+				String visitorId = GoNatureClient.currentVisitor.getVisitorId();
+				dataToServer.add(visitorId);
+
+				// 5. Send the specific "EXIT_VISITOR" command with the ArrayList
+				Message msg = new Message("EXIT_VISITOR", dataToServer);
+				ClientUI.send(msg);
+
+				System.out.println("Exit request sent for Visitor ID: " + visitorId);
+
+			} catch (Exception e) {
+				System.out.println("Error sending exit request to server.");
+				e.printStackTrace();
+				showErrorAlert("Failed to communicate with the server.");
+			}
 		}
 	}
 }
