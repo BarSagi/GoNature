@@ -7,7 +7,7 @@ import java.sql.Timestamp;
 
 // this class will handle order logic
 public class Order implements Serializable {
-	
+
 	private static final long serialVersionUID = 1L;
 
 	private int orderId;
@@ -21,9 +21,24 @@ public class Order implements Serializable {
 	private String orderStatus;
 	private Timestamp holdUntil;
 	private Timestamp reminderUntil;
+	private String QRCode;
 
 	public Order(int orderId, int parkId, String visitorId, Date visitDate, Time visitTime, int visitorCount,
-			String email, String orderType, String orderStatus, java.sql.Timestamp holdUntil) {
+			String email, String orderType, String orderStatus) {
+
+		this.orderId = orderId;
+		this.parkId = parkId;
+		this.visitorId = visitorId;
+		this.visitDate = visitDate;
+		this.visitTime = visitTime;
+		this.visitorCount = visitorCount;
+		this.email = email;
+		this.orderType = orderType;
+		this.orderStatus = orderStatus;
+	}
+
+	public Order(int orderId, int parkId, String visitorId, Date visitDate, Time visitTime, int visitorCount,
+			String email, String orderType, String orderStatus, Timestamp holdUntil) {
 		this.orderId = orderId;
 		this.parkId = parkId;
 		this.visitorId = visitorId;
@@ -59,7 +74,7 @@ public class Order implements Serializable {
 
 		return "Order [ID=" + orderId + ", ParkID=" + parkId + ", VisitorID='" + visitorId + '\'' + ", Date="
 				+ visitDate + ", Time=" + visitTime + ", Guests=" + visitorCount + ", Email='" + email + '\''
-				+ ", Type='" + orderType + '\'' + ", Status='" + orderStatus + '\'' + "]";
+				+ ", Type='" + orderType + '\'' + ", Status='" + orderStatus + '\'' + ", HoldUntil=" + holdUntil + "]";
 	}
 
 	public int getOrderId() {
@@ -133,7 +148,7 @@ public class Order implements Serializable {
 	public void setOrderStatus(String orderStatus) {
 		this.orderStatus = orderStatus;
 	}
-	
+
 	public Timestamp getHoldUntil() {
 		return holdUntil;
 	}
@@ -148,5 +163,14 @@ public class Order implements Serializable {
 
 	public void setReminderUntil(Timestamp reminderUntil) {
 		this.reminderUntil = reminderUntil;
+	}
+
+	public String getQrCode() {
+		return QRCode;
+	}
+
+	public void setQrCode(String qrCode) {
+		this.QRCode = qrCode;
+
 	}
 }

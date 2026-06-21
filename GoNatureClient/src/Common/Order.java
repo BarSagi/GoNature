@@ -7,7 +7,7 @@ import java.sql.Timestamp;
 
 // this class will handle order logic
 public class Order implements Serializable {
-	
+
 	private static final long serialVersionUID = 1L;
 
 	private int orderId;
@@ -21,6 +21,7 @@ public class Order implements Serializable {
 	private String orderStatus;
 	private Timestamp holdUntil;
 	private Timestamp reminderUntil;
+	private String QRCode;
 
 	public Order(int orderId, int parkId, String visitorId, Date visitDate, Time visitTime, int visitorCount,
 			String email, String orderType, String orderStatus) {
@@ -35,7 +36,7 @@ public class Order implements Serializable {
 		this.orderType = orderType;
 		this.orderStatus = orderStatus;
 	}
-	
+
 	public Order(int orderId, int parkId, String visitorId, Date visitDate, Time visitTime, int visitorCount,
 			String email, String orderType, String orderStatus, Timestamp holdUntil) {
 		this.orderId = orderId;
@@ -147,7 +148,7 @@ public class Order implements Serializable {
 	public void setOrderStatus(String orderStatus) {
 		this.orderStatus = orderStatus;
 	}
-	
+
 	public Timestamp getHoldUntil() {
 		return holdUntil;
 	}
@@ -162,5 +163,13 @@ public class Order implements Serializable {
 
 	public void setReminderUntil(Timestamp reminderUntil) {
 		this.reminderUntil = reminderUntil;
+	}
+
+	public String getQrCode() {
+		return QRCode;
+	}
+
+	public void setQrCode(String qrCode) {
+		this.QRCode = qrCode;
 	}
 }

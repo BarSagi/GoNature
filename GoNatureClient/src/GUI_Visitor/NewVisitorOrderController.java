@@ -11,7 +11,8 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
@@ -37,7 +38,7 @@ public class NewVisitorOrderController {
 	@FXML
 	private ComboBox<String> timeComboBox;
 	@FXML
-	private TextField visitorsCountField;
+	private Spinner<Integer> visitorsSpinner;
 
 	// --- UI Elements ---
 	@FXML
@@ -56,6 +57,9 @@ public class NewVisitorOrderController {
 		ObservableList<String> times = FXCollections.observableArrayList("08:00", "09:00", "10:00", "11:00", "12:00",
 				"13:00", "14:00", "15:00", "16:00", "17:00", "18:00");
 		timeComboBox.setItems(times);
+
+		SpinnerValueFactory<Integer> valueFactory = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 1);
+		visitorsSpinner.setValueFactory(valueFactory);
 
 		// Hide error label initially
 		errorLabel.setVisible(false);
@@ -80,11 +84,10 @@ public class NewVisitorOrderController {
 		String park = parkComboBox.getValue();
 		LocalDate date = datePicker.getValue();
 		String time = timeComboBox.getValue();
-		String visitorsCount = visitorsCountField.getText().trim();
+		int visitorsNum = visitorsSpinner.getValue();
 
-		// 2. Validate inputs (Make sure nothing is empty and types are correct)
 		if (id.isEmpty() || firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || phone.isEmpty()
-				|| park == null || date == null || time == null || visitorsCount.isEmpty()) {
+				|| park == null || date == null || time == null) {
 			showError("Please fill in all fields.");
 			return;
 		}
@@ -94,20 +97,22 @@ public class NewVisitorOrderController {
 			return;
 		}
 
-		int visitorsNum;
-		try {
-			visitorsNum = Integer.parseInt(visitorsCount);
-			if (visitorsNum <= 0) {
-				showError("Number of visitors must be a valid positive number.");
-				return;
-			}
-		} catch (NumberFormatException e) {
-			showError("Number of visitors must be a valid number.");
+		// id exactly 9 numbers
+		if (!id.matches("\\d{9}")) {
+			showError("ID must be exactly 9 digits.");
 			return;
 		}
 
-		if (date.isBefore(LocalDate.now())) {
-			showError("Visit date cannot be in the past.");
+		// phone exactly 10 numbers
+		if (!phone.matches("\\d{10}")) {
+			showError("Phone number must be exactly 10 digits.");
+			return;
+		}
+
+		// Checks for: text + @ + text + . + text (at least 2 letters)
+		String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[a-zA-Z]{2,}$";
+		if (!email.matches(emailRegex)) {
+			showError("Please enter a valid email address (e.g., example@domain.com).");
 			return;
 		}
 
@@ -139,7 +144,7 @@ public class NewVisitorOrderController {
 		newOrder.setVisitDate(java.sql.Date.valueOf(date));
 		newOrder.setVisitTime(java.sql.Time.valueOf(time + ":00"));
 		newOrder.setVisitorCount(visitorsNum);
-		newOrder.setOrderType("Individual"); 
+		newOrder.setOrderType("Individual");
 		newOrder.setOrderStatus("Approved");
 
 		// --- 5. PACKAGE BOTH INTO ArrayList<Object> ---
@@ -166,7 +171,9 @@ public class NewVisitorOrderController {
 	void goBack(ActionEvent event) {
 		try {
 			ClientUI.changeScreen("/GUI/LoginVisitor.fxml", "GoNature - Visitor Login");
+
 		} catch (Exception e) {
+			System.out.println("Error loading the Visitor Login screen.");
 			e.printStackTrace();
 		}
 	}

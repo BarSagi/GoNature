@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import Common.CancellationReportData;
 import Common.Order;
@@ -47,17 +48,10 @@ public class DBController {
 			ResultSet rs = ps.executeQuery();
 
 			while (rs.next()) {
-				result.add(new Order(
-				        rs.getInt("orderId"),
-				        rs.getInt("parkId"),
-				        rs.getString("visitorId"),
-				        rs.getDate("visitDate"),
-				        rs.getTime("visitTime"),
-				        rs.getInt("visitorCount"),
-				        rs.getString("email"),
-				        rs.getString("orderType"),
-				        rs.getString("status"),
-				        rs.getTimestamp("holdUntil")));
+				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
+						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
+						rs.getString("email"), rs.getString("orderType"), rs.getString("status"),
+						rs.getTimestamp("holdUntil")));
 			}
 
 			rs.close();
@@ -101,18 +95,10 @@ public class DBController {
 			rs = ps.executeQuery();
 
 			while (rs.next()) {
-				result.add(new Order(
-				        rs.getInt("orderId"),
-				        rs.getInt("parkId"),
-				        rs.getString("visitorId"),
-				        rs.getDate("visitDate"),
-				        rs.getTime("visitTime"),
-				        rs.getInt("visitorCount"),
-				        rs.getString("email"),
-				        rs.getString("orderType"),
-				        rs.getString("status"),
-				        rs.getTimestamp("holdUntil")
-				));
+				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
+						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
+						rs.getString("email"), rs.getString("orderType"), rs.getString("status"),
+						rs.getTimestamp("holdUntil")));
 			}
 
 		} finally {
@@ -262,6 +248,7 @@ public class DBController {
 		int visitorCount = Integer.parseInt(orderData.get(4));
 		String email = orderData.get(5);
 		String orderType = orderData.get(6);
+		String QR = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
 
 		Connection conn = null;
 
@@ -289,8 +276,8 @@ public class DBController {
 			if (hasRoomInSlot(parkId, visitDate, visitTime, visitorCount)) {
 
 				String insert = "INSERT INTO Orders "
-						+ "(parkId, visitorId, visitDate, visitTime, visitorCount, email, orderType, status) "
-						+ "VALUES (?, ?, ?, ?, ?, ?, ?, 'Approved')";
+						+ "(parkId, visitorId, visitDate, visitTime, visitorCount, email, orderType, status, QRCode) "
+						+ "VALUES (?, ?, ?, ?, ?, ?, ?, 'Approved', ?)";
 
 				PreparedStatement ps = conn.prepareStatement(insert);
 
@@ -301,6 +288,7 @@ public class DBController {
 				ps.setInt(5, visitorCount);
 				ps.setString(6, email);
 				ps.setString(7, orderType);
+				ps.setString(8, QR);
 
 				int rows = ps.executeUpdate();
 				ps.close();
@@ -312,7 +300,6 @@ public class DBController {
 				return "Failed";
 			}
 
-			// אם אין מקום - לא שומרים עדיין, רק מחזירים שעות חלופיות
 			ArrayList<String> alternatives = getAlternativeSlots(parkId, visitDate, visitorCount);
 			String joined = String.join(", ", alternatives);
 
@@ -397,6 +384,18 @@ public class DBController {
 						rs.getTimestamp("holdUntil"),
 						rs.getTimestamp("reminderUntil")
 				));
+
+				// 1. Create the Order object first and save it to a variable
+				Order order = new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
+						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
+						rs.getString("email"), rs.getString("orderType"), rs.getString("status"),
+						rs.getTimestamp("holdUntil"));
+
+				// 2. Grab the QR code from the database and set it!
+				order.setQrCode(rs.getString("QRCode"));
+
+				// 3. Now add the fully built order to the list
+				list.add(order);
 			}
 
 			rs.close();
@@ -514,9 +513,13 @@ public class DBController {
 		String insertQuery = "INSERT INTO Visits (parkId, orderId, visitorId, actualVisitorCount, entryTime, exitTime) "
 				+ "VALUES (?, ?, ?, ?, NOW(), NULL)";
 
+		// NEW: Query to update the order status
+		String updateOrderQuery = "UPDATE Orders SET status = 'Entered' WHERE orderId = ?";
+
 		Connection conn = null;
 		PreparedStatement psSelect = null;
 		PreparedStatement psInsert = null;
+		PreparedStatement psUpdateOrder = null;
 		ResultSet rs = null;
 
 		try {
@@ -540,6 +543,11 @@ public class DBController {
 				int rows = psInsert.executeUpdate();
 
 				if (rows > 0) {
+					// NEW: Mark the order as 'Entered' so it cannot be reused!
+					psUpdateOrder = conn.prepareStatement(updateOrderQuery);
+					psUpdateOrder.setInt(1, orderId);
+					psUpdateOrder.executeUpdate();
+
 					boolean isCountUpdated = updateReservedVisitorCount(parkId, visitorCount);
 					return isCountUpdated;
 				}
@@ -559,13 +567,13 @@ public class DBController {
 					psSelect.close();
 				if (psInsert != null)
 					psInsert.close();
+				if (psUpdateOrder != null)
+					psUpdateOrder.close();
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
-
-			if (conn != null) {
+			if (conn != null)
 				pool.releaseConnection(conn);
-			}
 		}
 	}
 
@@ -583,9 +591,13 @@ public class DBController {
 		// 2. UPDATE query to set the exit time for the specific visit we just found
 		String updateQuery = "UPDATE Visits SET exitTime = NOW() WHERE visitId = ?";
 
+		// 3. NEW: UPDATE query to fulfill the order
+		String updateOrderQuery = "UPDATE Orders SET status = 'Fulfilled' WHERE orderId = ?";
+
 		Connection conn = null;
 		PreparedStatement psSelect = null;
 		PreparedStatement psUpdate = null;
+		PreparedStatement psOrderUpdate = null;
 		ResultSet rs = null;
 
 		try {
@@ -602,10 +614,8 @@ public class DBController {
 				int actualVisitorCount = rs.getInt("actualVisitorCount");
 
 				// Read orderId to determine if this was a casual or reserved visit
-				rs.getInt("orderId");
-				// rs.wasNull() returns true if the last read column (orderId) was NULL in the
-				// DB
-				boolean isCasual = rs.wasNull();
+				int orderId = rs.getInt("orderId");
+				boolean isCasual = rs.wasNull(); // true if orderId is NULL
 
 				// Update the exitTime for this specific visitId
 				psUpdate = conn.prepareStatement(updateQuery);
@@ -613,18 +623,21 @@ public class DBController {
 
 				int rows = psUpdate.executeUpdate();
 
-				// If the UPDATE was successful, decrease the relevant visitor counts
+				// If the UPDATE was successful, process the rest
 				if (rows > 0) {
+
+					if (!isCasual) {
+						psOrderUpdate = conn.prepareStatement(updateOrderQuery);
+						psOrderUpdate.setInt(1, orderId);
+						psOrderUpdate.executeUpdate();
+					}
+
 					boolean isCountUpdated = false;
 
 					// Route to the correct update method based on visitor type
 					if (isCasual) {
-						// Casual visitor: Decrease total count AND increase OpenCasualSpots
-						// We pass a negative value to subtract from the visitors and add to the open
-						// spots
 						isCountUpdated = updateCasualVisitorCount(parkId, -actualVisitorCount);
 					} else {
-						// Reserved visitor: Decrease total count ONLY
 						isCountUpdated = updateReservedVisitorCount(parkId, -actualVisitorCount);
 					}
 
@@ -633,12 +646,10 @@ public class DBController {
 								"[DB ERROR] Visitor exit recorded, but failed to decrease current visitor count.");
 					}
 
-					// Return true only if both operations succeeded
 					return isCountUpdated;
 				}
 			}
 
-			// If we reach here, either no active visit was found, or the UPDATE failed
 			return false;
 
 		} catch (SQLException e) {
@@ -646,31 +657,20 @@ public class DBController {
 			return false;
 
 		} finally {
-			// Safely close all resources to prevent memory leaks
-			if (rs != null) {
-				try {
+			try {
+				if (rs != null)
 					rs.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			}
-			if (psSelect != null) {
-				try {
+				if (psSelect != null)
 					psSelect.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			}
-			if (psUpdate != null) {
-				try {
+				if (psUpdate != null)
 					psUpdate.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+				if (psOrderUpdate != null)
+					psOrderUpdate.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
 			}
-			if (conn != null) {
+			if (conn != null)
 				pool.releaseConnection(conn);
-			}
 		}
 	}
 
@@ -1847,189 +1847,6 @@ public class DBController {
 			// CASE 2: Request is for updating CasualGap
 			// =========================================================
 			else if ("CasualGap".equals(requestType)) {
-				// Fetch current casualGap and maxCapacity to validate and calculate the difference
-				PreparedStatement parkPs = conn
-						.prepareStatement("SELECT maxCapacity, casualGap FROM Parks WHERE parkId = ?");
-				parkPs.setInt(1, parkId);
-				ResultSet parkRs = parkPs.executeQuery();
-
-				if (!parkRs.next()) {
-					parkRs.close();
-					parkPs.close();
-					conn.rollback();
-					return false;
-				}
-
-				int maxCapacity = parkRs.getInt("maxCapacity");
-				int currentCasualGap = parkRs.getInt("casualGap");
-				int requestedCasualGap = Integer.parseInt(newValue);
-
-				parkRs.close();
-				parkPs.close();
-
-				// Business Rule Validation: New gap cannot exceed or equal total max capacity
-				if (requestedCasualGap >= maxCapacity) {
-					conn.rollback();
-					return false;
-				}
-
-				// Calculate the difference between the new gap and the old gap
-				int gapDifference = requestedCasualGap - currentCasualGap;
-
-				// Update the casualGap inside the Parks table
-				PreparedStatement updateGapPs = conn
-						.prepareStatement("UPDATE Parks SET casualGap = ? WHERE parkId = ?");
-				updateGapPs.setInt(1, requestedCasualGap);
-				updateGapPs.setInt(2, parkId);
-				updateGapPs.executeUpdate();
-				updateGapPs.close();
-
-				// Dynamic adjustment: Add the gap difference directly to the current open casual spots
-				String updateSpotsQuery = "UPDATE Parks SET OpenCasualSpots = OpenCasualSpots + ? WHERE parkId = ?";
-				PreparedStatement updateSpotsPs = conn.prepareStatement(updateSpotsQuery);
-				updateSpotsPs.setInt(1, gapDifference);
-				updateSpotsPs.setInt(2, parkId);
-				updateSpotsPs.executeUpdate();
-				updateSpotsPs.close();
-			}
-
-			// =========================================================
-			// CASE 3: Request is for AvgStayDuration (New Logic Added)
-			// =========================================================
-			else if ("AvgStayDuration".equals(requestType)) {
-				int requestedDuration = Integer.parseInt(newValue);
-
-				PreparedStatement updateDurationPs = conn
-						.prepareStatement("UPDATE Parks SET avgStayDuration = ? WHERE parkId = ?");
-				updateDurationPs.setInt(1, requestedDuration);
-				updateDurationPs.setInt(2, parkId);
-				updateDurationPs.executeUpdate();
-				updateDurationPs.close();
-			}
-
-			// =========================================================
-			// CASE 4: Request is for Promotion (New Logic Added)
-			// =========================================================
-			else if ("Promotion".equals(requestType)) {
-				double discountPercentage = Double.parseDouble(newValue);
-				
-				String promotionName = "Manager Discount " + discountPercentage + "%"; 
-
-				String insertPromoQuery = "INSERT INTO Promotions (parkId, promotionName, discountPercentage, startDate, endDate, status) "
-						+ "VALUES (?, ?, ?, ?, ?, 'Approved')";
-
-				PreparedStatement insertPromoPs = conn.prepareStatement(insertPromoQuery);
-				insertPromoPs.setInt(1, parkId);
-				insertPromoPs.setString(2, promotionName);
-				insertPromoPs.setDouble(3, discountPercentage);
-				insertPromoPs.setDate(4, startDate);
-				insertPromoPs.setDate(5, endDate);
-				
-				insertPromoPs.executeUpdate();
-				insertPromoPs.close();
-			}
-
-			// =========================================================
-			// Final Step: Update the request status to 'Approved'
-			// =========================================================
-			PreparedStatement updateRequestPs = conn
-					.prepareStatement("UPDATE Requests SET status = 'Approved' WHERE requestId = ?");
-			updateRequestPs.setInt(1, requestId);
-			int rows = updateRequestPs.executeUpdate();
-			updateRequestPs.close();
-
-			conn.commit();
-			return rows > 0;
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			try {
-				if (conn != null)
-					conn.rollback();
-			} catch (SQLException ex) {
-				ex.printStackTrace();
-			}
-			return false;
-
-		} finally {
-			try {
-				if (conn != null)
-					conn.setAutoCommit(true);
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-			pool.releaseConnection(conn);
-		}
-	}
-	/*public boolean approveRequest(int requestId) {
-
-		Connection conn = null;
-
-		try {
-			conn = pool.getConnection();
-			conn.setAutoCommit(false);
-
-			// 1. Fetch request details
-			String selectQuery = "SELECT parkId, requestType, newValue FROM Requests WHERE requestId = ?";
-			PreparedStatement selectPs = conn.prepareStatement(selectQuery);
-			selectPs.setInt(1, requestId);
-
-			ResultSet rs = selectPs.executeQuery();
-
-			if (!rs.next()) {
-				rs.close();
-				selectPs.close();
-				conn.rollback();
-				return false;
-			}
-
-			int parkId = rs.getInt("parkId");
-			String requestType = rs.getString("requestType");
-			String newValue = rs.getString("newValue");
-
-			rs.close();
-			selectPs.close();
-
-			// =========================================================
-			// CASE 1: Request is for updating MaxCapacity
-			// =========================================================
-			if ("MaxCapacity".equals(requestType)) {
-				PreparedStatement gapPs = conn.prepareStatement("SELECT casualGap FROM Parks WHERE parkId = ?");
-				gapPs.setInt(1, parkId);
-
-				ResultSet gapRs = gapPs.executeQuery();
-
-				if (!gapRs.next()) {
-					gapRs.close();
-					gapPs.close();
-					conn.rollback();
-					return false;
-				}
-
-				int casualGap = gapRs.getInt("casualGap");
-				int requestedCapacity = Integer.parseInt(newValue);
-
-				gapRs.close();
-				gapPs.close();
-
-				// Business Rule: maxCapacity cannot be less than or equal to the casual gap
-				if (requestedCapacity <= casualGap) {
-					conn.rollback();
-					return false;
-				}
-
-				PreparedStatement updateParkPs = conn
-						.prepareStatement("UPDATE Parks SET maxCapacity = ? WHERE parkId = ?");
-				updateParkPs.setInt(1, requestedCapacity);
-				updateParkPs.setInt(2, parkId);
-				updateParkPs.executeUpdate();
-				updateParkPs.close();
-			}
-
-			// =========================================================
-			// CASE 2: Request is for updating CasualGap (New Logic Added)
-			// =========================================================
-			else if ("CasualGap".equals(requestType)) {
 				// Fetch current casualGap and maxCapacity to validate and calculate the
 				// difference
 				PreparedStatement parkPs = conn
@@ -2079,6 +1896,42 @@ public class DBController {
 			}
 
 			// =========================================================
+			// CASE 3: Request is for AvgStayDuration (New Logic Added)
+			// =========================================================
+			else if ("AvgStayDuration".equals(requestType)) {
+				int requestedDuration = Integer.parseInt(newValue);
+
+				PreparedStatement updateDurationPs = conn
+						.prepareStatement("UPDATE Parks SET avgStayDuration = ? WHERE parkId = ?");
+				updateDurationPs.setInt(1, requestedDuration);
+				updateDurationPs.setInt(2, parkId);
+				updateDurationPs.executeUpdate();
+				updateDurationPs.close();
+			}
+
+			// =========================================================
+			// CASE 4: Request is for Promotion (New Logic Added)
+			// =========================================================
+			else if ("Promotion".equals(requestType)) {
+				double discountPercentage = Double.parseDouble(newValue);
+
+				String promotionName = "Manager Discount " + discountPercentage + "%";
+
+				String insertPromoQuery = "INSERT INTO Promotions (parkId, promotionName, discountPercentage, startDate, endDate, status) "
+						+ "VALUES (?, ?, ?, ?, ?, 'Approved')";
+
+				PreparedStatement insertPromoPs = conn.prepareStatement(insertPromoQuery);
+				insertPromoPs.setInt(1, parkId);
+				insertPromoPs.setString(2, promotionName);
+				insertPromoPs.setDouble(3, discountPercentage);
+				insertPromoPs.setDate(4, startDate);
+				insertPromoPs.setDate(5, endDate);
+
+				insertPromoPs.executeUpdate();
+				insertPromoPs.close();
+			}
+
+			// =========================================================
 			// Final Step: Update the request status to 'Approved'
 			// =========================================================
 			PreparedStatement updateRequestPs = conn
@@ -2109,7 +1962,108 @@ public class DBController {
 			}
 			pool.releaseConnection(conn);
 		}
-	}*/
+	}
+	/*
+	 * public boolean approveRequest(int requestId) {
+	 * 
+	 * Connection conn = null;
+	 * 
+	 * try { conn = pool.getConnection(); conn.setAutoCommit(false);
+	 * 
+	 * // 1. Fetch request details String selectQuery =
+	 * "SELECT parkId, requestType, newValue FROM Requests WHERE requestId = ?";
+	 * PreparedStatement selectPs = conn.prepareStatement(selectQuery);
+	 * selectPs.setInt(1, requestId);
+	 * 
+	 * ResultSet rs = selectPs.executeQuery();
+	 * 
+	 * if (!rs.next()) { rs.close(); selectPs.close(); conn.rollback(); return
+	 * false; }
+	 * 
+	 * int parkId = rs.getInt("parkId"); String requestType =
+	 * rs.getString("requestType"); String newValue = rs.getString("newValue");
+	 * 
+	 * rs.close(); selectPs.close();
+	 * 
+	 * // ========================================================= // CASE 1:
+	 * Request is for updating MaxCapacity //
+	 * ========================================================= if
+	 * ("MaxCapacity".equals(requestType)) { PreparedStatement gapPs =
+	 * conn.prepareStatement("SELECT casualGap FROM Parks WHERE parkId = ?");
+	 * gapPs.setInt(1, parkId);
+	 * 
+	 * ResultSet gapRs = gapPs.executeQuery();
+	 * 
+	 * if (!gapRs.next()) { gapRs.close(); gapPs.close(); conn.rollback(); return
+	 * false; }
+	 * 
+	 * int casualGap = gapRs.getInt("casualGap"); int requestedCapacity =
+	 * Integer.parseInt(newValue);
+	 * 
+	 * gapRs.close(); gapPs.close();
+	 * 
+	 * // Business Rule: maxCapacity cannot be less than or equal to the casual gap
+	 * if (requestedCapacity <= casualGap) { conn.rollback(); return false; }
+	 * 
+	 * PreparedStatement updateParkPs = conn
+	 * .prepareStatement("UPDATE Parks SET maxCapacity = ? WHERE parkId = ?");
+	 * updateParkPs.setInt(1, requestedCapacity); updateParkPs.setInt(2, parkId);
+	 * updateParkPs.executeUpdate(); updateParkPs.close(); }
+	 * 
+	 * // ========================================================= // CASE 2:
+	 * Request is for updating CasualGap (New Logic Added) //
+	 * ========================================================= else if
+	 * ("CasualGap".equals(requestType)) { // Fetch current casualGap and
+	 * maxCapacity to validate and calculate the // difference PreparedStatement
+	 * parkPs = conn
+	 * .prepareStatement("SELECT maxCapacity, casualGap FROM Parks WHERE parkId = ?"
+	 * ); parkPs.setInt(1, parkId); ResultSet parkRs = parkPs.executeQuery();
+	 * 
+	 * if (!parkRs.next()) { parkRs.close(); parkPs.close(); conn.rollback(); return
+	 * false; }
+	 * 
+	 * int maxCapacity = parkRs.getInt("maxCapacity"); int currentCasualGap =
+	 * parkRs.getInt("casualGap"); int requestedCasualGap =
+	 * Integer.parseInt(newValue);
+	 * 
+	 * parkRs.close(); parkPs.close();
+	 * 
+	 * // Business Rule Validation: New gap cannot exceed or equal total max
+	 * capacity if (requestedCasualGap >= maxCapacity) { conn.rollback(); return
+	 * false; }
+	 * 
+	 * // Calculate the difference between the new gap and the old gap int
+	 * gapDifference = requestedCasualGap - currentCasualGap;
+	 * 
+	 * // Update the casualGap inside the Parks table PreparedStatement updateGapPs
+	 * = conn .prepareStatement("UPDATE Parks SET casualGap = ? WHERE parkId = ?");
+	 * updateGapPs.setInt(1, requestedCasualGap); updateGapPs.setInt(2, parkId);
+	 * updateGapPs.executeUpdate(); updateGapPs.close();
+	 * 
+	 * // Dynamic adjustment: Add the gap difference directly to the current open //
+	 * casual spots String updateSpotsQuery =
+	 * "UPDATE Parks SET OpenCasualSpots = OpenCasualSpots + ? WHERE parkId = ?";
+	 * PreparedStatement updateSpotsPs = conn.prepareStatement(updateSpotsQuery);
+	 * updateSpotsPs.setInt(1, gapDifference); updateSpotsPs.setInt(2, parkId);
+	 * updateSpotsPs.executeUpdate(); updateSpotsPs.close(); }
+	 * 
+	 * // ========================================================= // Final Step:
+	 * Update the request status to 'Approved' //
+	 * ========================================================= PreparedStatement
+	 * updateRequestPs = conn
+	 * .prepareStatement("UPDATE Requests SET status = 'Approved' WHERE requestId = ?"
+	 * ); updateRequestPs.setInt(1, requestId); int rows =
+	 * updateRequestPs.executeUpdate(); updateRequestPs.close();
+	 * 
+	 * conn.commit(); return rows > 0;
+	 * 
+	 * } catch (SQLException e) { e.printStackTrace(); try { if (conn != null)
+	 * conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); } return
+	 * false;
+	 * 
+	 * } finally { try { if (conn != null) conn.setAutoCommit(true); } catch
+	 * (SQLException e) { e.printStackTrace(); } pool.releaseConnection(conn); } }
+	 */
 
 	// =========================================================
 	// GET PENDING REQUESTS
@@ -2202,18 +2156,10 @@ public class DBController {
 			ResultSet rs = ps.executeQuery();
 
 			while (rs.next()) {
-				result.add(new Order(
-				        rs.getInt("orderId"),
-				        rs.getInt("parkId"),
-				        rs.getString("visitorId"),
-				        rs.getDate("visitDate"),
-				        rs.getTime("visitTime"),
-				        rs.getInt("visitorCount"),
-				        rs.getString("email"),
-				        rs.getString("orderType"),
-				        rs.getString("status"),
-				        rs.getTimestamp("holdUntil")
-				));
+				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
+						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
+						rs.getString("email"), rs.getString("orderType"), rs.getString("status"),
+						rs.getTimestamp("holdUntil")));
 			}
 
 			rs.close();
@@ -2346,50 +2292,42 @@ public class DBController {
 		}
 		return 0;
 	}
-	
+
 	// =========================================================
 	// GET QUICK SEARCH RESULT
 	// =========================================================
 	public ArrayList<Order> quickSearchOrders(String searchInput) {
 		ArrayList<Order> ordersList = new ArrayList<>();
-		
+
 		// We use OR to check both columns
 		String query = "SELECT * FROM Orders WHERE orderId = ? OR visitorId = ?";
-		
+
 		Connection conn = null;
-		
+
 		try {
 			conn = pool.getConnection();
 			PreparedStatement ps = conn.prepareStatement(query);
-			
+
 			ps.setString(1, searchInput);
 			ps.setString(2, searchInput);
-			
+
 			ResultSet rs = ps.executeQuery();
-			
+
 			while (rs.next()) {
 				// Create the Order object using the exact requested structure
-				ordersList.add(new Order(
-						 rs.getInt("orderId"),
-					        rs.getInt("parkId"),
-					        rs.getString("visitorId"),
-					        rs.getDate("visitDate"),
-					        rs.getTime("visitTime"),
-					        rs.getInt("visitorCount"),
-					        rs.getString("email"),
-					        rs.getString("orderType"),
-					        rs.getString("status"),
-					        rs.getTimestamp("holdUntil")
-				));
+				ordersList.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
+						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
+						rs.getString("email"), rs.getString("orderType"), rs.getString("status"),
+						rs.getTimestamp("holdUntil")));
 			}
-			
+
 			rs.close();
 			ps.close();
-			
+
 		} catch (SQLException e) {
 			System.out.println("Error fetching orders for quick search:");
 			e.printStackTrace();
-			
+
 		} finally {
 			if (conn != null) {
 				pool.releaseConnection(conn);
@@ -2397,18 +2335,19 @@ public class DBController {
 		}
 		return ordersList;
 	}
-	
+
 	// =========================================================
 	// CONFIRM ORDER
 	// =========================================================
 	public boolean confirmOrder(int orderId) {
 
 		Connection conn = null;
+		PreparedStatement ps = null;
 
 		try {
 			conn = pool.getConnection();
 
-			PreparedStatement ps = conn.prepareStatement(
+			ps = conn.prepareStatement(
 					"UPDATE Orders SET status = 'Approved', holdUntil = NULL, reminderUntil = NULL "
 							+ "WHERE orderId = ? "
 							+ "AND ("
@@ -2416,10 +2355,10 @@ public class DBController {
 							+ "OR "
 							+ "(status = 'PendingVisitReminder' AND reminderUntil >= NOW())"
 							+ ")");
+
 			ps.setInt(1, orderId);
 
 			int rows = ps.executeUpdate();
-			ps.close();
 
 			return rows > 0;
 
@@ -2428,7 +2367,17 @@ public class DBController {
 			return false;
 
 		} finally {
-			pool.releaseConnection(conn);
+			if (ps != null) {
+				try {
+					ps.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
 		}
 	}
 	

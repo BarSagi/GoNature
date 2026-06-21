@@ -26,7 +26,7 @@ public class LoginVisitorController {
 			errorLabel.setVisible(true);
 			return;
 		}
-		
+
 		// exactly 9 numbers
 		if (!id.matches("\\d{9}")) {
 			errorLabel.setText("ID must be exactly 9 digits.");
@@ -35,12 +35,6 @@ public class LoginVisitorController {
 		}
 
 		System.out.println("Attempting to log in visitor with ID: " + id);
-
-		// 2. Save the ID globally so the OrderCreation/History screens can use it later
-		// (Assuming you have a variable like loggedInVisitorId in your ClientUI or a
-		// Session class)
-		// ClientUI.visitorID = id;
-		// CURRENTLY UNUSED MAYBE LATER -------------------------------
 
 		// 3. Send a message to the server asking for this visitor's orders
 		// We package the command and the ID into your Message object
