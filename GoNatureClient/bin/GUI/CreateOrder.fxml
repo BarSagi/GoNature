@@ -58,7 +58,7 @@
 							GridPane.columnIndex="0" GridPane.rowIndex="4" />
 
 						<ComboBox fx:id="paymentComboBox" prefWidth="200.0"
-							promptText="Choose payment method..."
+							promptText="Choose When to Pay"
 							style="-fx-background-radius: 5;" GridPane.columnIndex="1"
 							GridPane.rowIndex="4" />
 					</children>

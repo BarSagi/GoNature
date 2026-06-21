@@ -14,36 +14,34 @@ public class ParkWorkerCreateOrderController {
 
 	@FXML
 	private ComboBox<String> parkComboBox;
-
 	@FXML
 	private DatePicker visitDatePicker;
-
 	@FXML
 	private ComboBox<String> timeComboBox;
-
 	@FXML
 	private TextField visitorCountField;
-
 	@FXML
 	private TextField emailField;
-
 	@FXML
 	private TextField visitorIdField;
-
 	@FXML
 	private Label statusLabel;
-
 	@FXML
 	private ComboBox<String> paymentComboBox;
 
 	public static ParkWorkerCreateOrderController instance;
-	public static String cachedVisitorType = "Individual";
+
+	private String pendingVisitorId;
+	private String pendingParkName;
+	private String pendingDate;
+	private String pendingTime;
+	private String pendingVisitorCount;
+	private String pendingEmail;
+	private String pendingPayment;
 
 	private boolean orderCreatedSuccessfully = false;
 
-	private String ID;
-	private String numOfVisitors;
-	private String lastPaymentMethod;
+	public static String cachedVisitorType = "Individual";
 
 	@FXML
 	public void initialize() {
@@ -51,14 +49,14 @@ public class ParkWorkerCreateOrderController {
 		instance = this;
 
 		try {
-		    ClientUI.client.sendToServer(new Message("GET_ALL_PARKS", null));
+			ClientUI.send(new Message("GET_ALL_PARKS", null));
 		} catch (Exception e) {
-		    e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		timeComboBox.getItems().addAll("09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00");
 
-		paymentComboBox.getItems().addAll("Cash", "Credit Card");
+		paymentComboBox.getItems().addAll("Pay Now", "Pay Later");
 
 		statusLabel.setText("");
 	}
@@ -75,9 +73,8 @@ public class ParkWorkerCreateOrderController {
 			String visitorCount = visitorCountField.getText().trim();
 			String email = emailField.getText().trim();
 			String paymentMethod = paymentComboBox.getValue();
-			numOfVisitors = visitorCount;
-			ID = visitorId;
 
+			// validation
 			if (visitorId.isEmpty() || parkName == null || visitDate == null || time == null || paymentMethod == null
 					|| visitorCount.isEmpty() || email.isEmpty()) {
 
@@ -105,66 +102,122 @@ public class ParkWorkerCreateOrderController {
 				return;
 			}
 
-			lastPaymentMethod = paymentMethod;
+			// store all variables to allow other functions to use those variables
+			pendingVisitorId = visitorId;
+			pendingParkName = parkName;
+			pendingDate = visitDate.toString();
+			pendingTime = time;
+			pendingVisitorCount = visitorCount;
+			pendingEmail = email;
+			pendingPayment = paymentMethod;
 
-			orderCreatedSuccessfully = false;
+			ClientUI.send(new Message("GET_VISITOR_TYPE", visitorId));
 
-			ArrayList<String> orderData = new ArrayList<>();
-			orderData.add(visitorId);
-			orderData.add(parkName);
-			orderData.add(visitDate.toString());
-			orderData.add(time);
-			orderData.add(visitorCount);
-			orderData.add(email);
-			orderData.add(cachedVisitorType);
-			orderData.add(paymentMethod);
-
-			ClientUI.client.sendToServer(new Message("SUBMIT_NEW_ORDER", orderData));
-
-			statusLabel.setText("Processing order...");
-			
-			ArrayList<String> paymentData = new ArrayList<>();
-			paymentData.add(ID);
-			paymentData.add(numOfVisitors);
-			paymentData.add(lastPaymentMethod);
-			paymentData.add(parkName);
-			paymentData.add(LocalDate.now().toString());
-
-
-			ClientUI.client.sendToServer(new Message("CALCULATE_PRICE_PREORDER", paymentData));
-
-			
-		} catch (NumberFormatException e) {
-			statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-			statusLabel.setText("Visitor count must be a valid number.");
 		} catch (Exception e) {
-			statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-			statusLabel.setText("Connection error with the server.");
+			statusLabel.setText("Connection error with server.");
 			e.printStackTrace();
 		}
 	}
 
-	public void handleOrderResult(boolean success, String reason) {
-		if (success) {
-			orderCreatedSuccessfully = true;
+	// =========================
+	// STEP 2: visitor type returned
+	// =========================
+	public void handleVisitorTypeResult(String type) {
 
-		    statusLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
-		    statusLabel.setText("Order registered successfully!");
-		    visitorIdField.clear();
-		    visitorCountField.clear();
+		if (type == null) {
+			cachedVisitorType = "Individual";
+		} else if (type.equals("Individual") || type.equals("SmallGroup")) {
+			cachedVisitorType = "SmallGroup";
 		} else {
-			orderCreatedSuccessfully = false;
+			cachedVisitorType = "OrganizedGroup";
+		}
 
-		    statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-		    statusLabel.setText(reason != null ? reason : "Registration failed. Park may be full.");
+		Platform.runLater(() -> statusLabel.setText("Creating order..."));
+
+		createOrder();
+	}
+
+	// =========================
+	// STEP 3: submit order
+	// =========================
+	private void createOrder() {
+
+		ArrayList<String> orderData = new ArrayList<>();
+		orderData.add(pendingVisitorId);
+		orderData.add(pendingParkName);
+		orderData.add(pendingDate);
+		orderData.add(pendingTime);
+		orderData.add(pendingVisitorCount);
+		orderData.add(pendingEmail);
+		orderData.add(cachedVisitorType);
+		orderData.add(pendingPayment);
+
+		try {
+			ClientUI.send(new Message("SUBMIT_NEW_ORDER", orderData));
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
+	// =========================
+	// STEP 4: order result
+	// =========================
+	// =========================
+	// STEP 4: order result
+	// =========================
+	public void handleOrderResult(boolean success, String reason) {
+
+		if (success) {
+
+			orderCreatedSuccessfully = true;
+
+			Platform.runLater(() -> {
+				statusLabel.setStyle("-fx-text-fill: #27ae60;");
+				statusLabel.setText("Order created successfully!");
+			});
+
+			new Thread(() -> {
+				calculatePriceAsync();
+			}).start();
+
+		} else {
+
+			orderCreatedSuccessfully = false;
+
+			Platform.runLater(() -> {
+				statusLabel.setStyle("-fx-text-fill: #e74c3c;");
+				statusLabel.setText(reason != null ? reason : "Order failed.");
+			});
+		}
+	}
+
+	// =========================
+	// STEP 5: price calculation
+	// =========================
+	private void calculatePriceAsync() {
+
+		ArrayList<String> paymentData = new ArrayList<>();
+		paymentData.add(pendingVisitorId);
+		paymentData.add(pendingVisitorCount);
+		paymentData.add(pendingPayment);
+		paymentData.add(pendingParkName);
+		paymentData.add(LocalDate.now().toString());
+		
+		try {
+			ClientUI.send(new Message("CALCULATE_PRICE_PREORDER", paymentData));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	// =========================
+	// STEP 6: price result
+	// =========================
 	public void handlePriceResult(double price) {
 
-		if (!orderCreatedSuccessfully) {
+		if (!orderCreatedSuccessfully)
 			return;
-		}
 
 		Platform.runLater(() -> {
 
@@ -177,21 +230,17 @@ public class ParkWorkerCreateOrderController {
 		});
 	}
 
-	public static void handleVisitorTypeResult(String type) {
-		cachedVisitorType = (type != null) ? type : "Individual";
-	}
-
 	public void loadParks(ArrayList<String> parks) {
 
-	    Platform.runLater(() -> {
+		Platform.runLater(() -> {
 
-	        if (parks == null || parks.isEmpty()) {
-	            statusLabel.setText("No parks available.");
-	            return;
-	        }
+			if (parks == null || parks.isEmpty()) {
+				statusLabel.setText("No parks available.");
+				return;
+			}
 
-	        parkComboBox.getItems().clear();
-	        parkComboBox.getItems().addAll(parks);
-	    });
+			parkComboBox.getItems().clear();
+			parkComboBox.getItems().addAll(parks);
+		});
 	}
 }

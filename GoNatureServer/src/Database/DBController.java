@@ -249,7 +249,7 @@ public class DBController {
 		String email = orderData.get(5);
 		String orderType = orderData.get(6);
 		String QR = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
-
+		boolean paid = orderData.get(7).equals("Pay Now");
 		Connection conn = null;
 
 		try {
@@ -276,8 +276,8 @@ public class DBController {
 			if (hasRoomInSlot(parkId, visitDate, visitTime, visitorCount)) {
 
 				String insert = "INSERT INTO Orders "
-						+ "(parkId, visitorId, visitDate, visitTime, visitorCount, email, orderType, status, QRCode) "
-						+ "VALUES (?, ?, ?, ?, ?, ?, ?, 'Approved', ?)";
+						+ "(parkId, visitorId, visitDate, visitTime, visitorCount, email, orderType, status, QRCode, paid) "
+						+ "VALUES (?, ?, ?, ?, ?, ?, ?, 'Approved', ?, ?)";
 
 				PreparedStatement ps = conn.prepareStatement(insert);
 
@@ -289,6 +289,7 @@ public class DBController {
 				ps.setString(6, email);
 				ps.setString(7, orderType);
 				ps.setString(8, QR);
+				ps.setBoolean(9, paid);
 
 				int rows = ps.executeUpdate();
 				ps.close();
@@ -360,7 +361,7 @@ public class DBController {
 
 		try {
 			conn = pool.getConnection();
-			
+
 			releaseExpiredPendingConfirmations();
 			sendVisitRemindersForTomorrow();
 			releaseExpiredVisitReminders();
@@ -371,21 +372,10 @@ public class DBController {
 			ResultSet rs = ps.executeQuery();
 
 			while (rs.next()) {
-				System.out.println("SERVER getVisitorOrders -> orderId = " + rs.getInt("orderId"));
-
-				Order order = new Order(
-						rs.getInt("orderId"),
-						rs.getInt("parkId"),
-						rs.getString("visitorId"),
-						rs.getDate("visitDate"),
-						rs.getTime("visitTime"),
-						rs.getInt("visitorCount"),
-						rs.getString("email"),
-						rs.getString("orderType"),
-						rs.getString("status"),
-						rs.getTimestamp("holdUntil"),
-						rs.getTimestamp("reminderUntil")
-				);
+				Order order = new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
+						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
+						rs.getString("email"), rs.getString("orderType"), rs.getString("status"),
+						rs.getTimestamp("holdUntil"), rs.getTimestamp("reminderUntil"));
 
 				order.setQrCode(rs.getString("QRCode"));
 				list.add(order);
@@ -1454,7 +1444,7 @@ public class DBController {
 
 		return false;
 	}
-	
+
 	// =========================================================
 	// RELEASE EXPIRED PENDING CONFIRMATIONS
 	// =========================================================
@@ -1467,8 +1457,7 @@ public class DBController {
 		try {
 			conn = pool.getConnection();
 
-			String query = "SELECT orderId, parkId, visitDate, visitTime "
-					+ "FROM Orders "
+			String query = "SELECT orderId, parkId, visitDate, visitTime " + "FROM Orders "
 					+ "WHERE status = 'PendingConfirmation' AND holdUntil < NOW()";
 
 			ps = conn.prepareStatement(query);
@@ -1490,17 +1479,13 @@ public class DBController {
 			ps.close();
 
 			for (int i = 0; i < expiredOrderIds.size(); i++) {
-				PreparedStatement updatePs = conn.prepareStatement(
-						"UPDATE Orders SET status = 'Canceled', holdUntil = NULL WHERE orderId = ?");
+				PreparedStatement updatePs = conn
+						.prepareStatement("UPDATE Orders SET status = 'Canceled', holdUntil = NULL WHERE orderId = ?");
 				updatePs.setInt(1, expiredOrderIds.get(i));
 				updatePs.executeUpdate();
 				updatePs.close();
 
-				promoteWaitingOrderIfPossible(
-						parkIds.get(i),
-						visitDates.get(i),
-						visitTimes.get(i)
-				);
+				promoteWaitingOrderIfPossible(parkIds.get(i), visitDates.get(i), visitTimes.get(i));
 			}
 
 		} catch (SQLException e) {
@@ -1549,24 +1534,22 @@ public class DBController {
 			Date visitDate = rs.getDate("visitDate");
 			Time visitTime = rs.getTime("visitTime");
 			String status = rs.getString("status");
-			
+
 			if ("Canceled".equalsIgnoreCase(status)) {
 				System.out.println("[CANCEL ORDER] Order " + orderId + " is already canceled.");
 				return false;
 			}
 
 			// Combine the visit date and visit time into one date-time object
-			LocalDateTime visitDateTime = LocalDateTime.of(
-					visitDate.toLocalDate(),
-					visitTime.toLocalTime()
-			);
+			LocalDateTime visitDateTime = LocalDateTime.of(visitDate.toLocalDate(), visitTime.toLocalTime());
 
 			// If the visit time already arrived or passed, cancellation is not allowed
 			if (!visitDateTime.isAfter(LocalDateTime.now())) {
-				System.out.println("[CANCEL ORDER] Cannot cancel order " + orderId + " because visit time already arrived.");
+				System.out.println(
+						"[CANCEL ORDER] Cannot cancel order " + orderId + " because visit time already arrived.");
 				return false;
 			}
-			
+
 			String updateQuery = "UPDATE Orders SET status = 'Canceled' WHERE orderId = ?";
 			updatePs = conn.prepareStatement(updateQuery);
 			updatePs.setInt(1, orderId);
@@ -2275,7 +2258,6 @@ public class DBController {
 				double discount = rs.getDouble("totalDiscount");
 				rs.close();
 				ps.close();
-				System.out.println("DISCOUNT = " + discount);
 				return discount;
 			}
 
@@ -2342,14 +2324,9 @@ public class DBController {
 		try {
 			conn = pool.getConnection();
 
-			ps = conn.prepareStatement(
-					"UPDATE Orders SET status = 'Approved', holdUntil = NULL, reminderUntil = NULL "
-							+ "WHERE orderId = ? "
-							+ "AND ("
-							+ "(status = 'PendingConfirmation' AND holdUntil >= NOW()) "
-							+ "OR "
-							+ "(status = 'PendingVisitReminder' AND reminderUntil >= NOW())"
-							+ ")");
+			ps = conn.prepareStatement("UPDATE Orders SET status = 'Approved', holdUntil = NULL, reminderUntil = NULL "
+					+ "WHERE orderId = ? " + "AND (" + "(status = 'PendingConfirmation' AND holdUntil >= NOW()) "
+					+ "OR " + "(status = 'PendingVisitReminder' AND reminderUntil >= NOW())" + ")");
 
 			ps.setInt(1, orderId);
 
@@ -2375,7 +2352,7 @@ public class DBController {
 			}
 		}
 	}
-	
+
 	// =========================================================
 	// SEND VISIT REMINDERS FOR TOMORROW
 	// =========================================================
@@ -2388,8 +2365,7 @@ public class DBController {
 		try {
 			conn = pool.getConnection();
 
-			String query = "SELECT orderId, email FROM Orders "
-					+ "WHERE status = 'Approved' "
+			String query = "SELECT orderId, email FROM Orders " + "WHERE status = 'Approved' "
 					+ "AND visitDate = DATE_ADD(CURDATE(), INTERVAL 1 DAY)";
 
 			ps = conn.prepareStatement(query);
@@ -2419,8 +2395,7 @@ public class DBController {
 								+ "VALUES (?, 'VisitReminder', 'Email', ?, ?, NOW(), false)");
 				notifEmailPs.setInt(1, orderIds.get(i));
 				notifEmailPs.setString(2, emails.get(i));
-				notifEmailPs.setString(3,
-						"Reminder: your visit is tomorrow. Please confirm or cancel within 2 hours.");
+				notifEmailPs.setString(3, "Reminder: your visit is tomorrow. Please confirm or cancel within 2 hours.");
 				notifEmailPs.executeUpdate();
 				notifEmailPs.close();
 
@@ -2429,8 +2404,7 @@ public class DBController {
 								+ "VALUES (?, 'VisitReminder', 'SMS', ?, ?, NOW(), false)");
 				notifSmsPs.setInt(1, orderIds.get(i));
 				notifSmsPs.setString(2, emails.get(i));
-				notifSmsPs.setString(3,
-						"Reminder: your visit is tomorrow. Please confirm or cancel within 2 hours.");
+				notifSmsPs.setString(3, "Reminder: your visit is tomorrow. Please confirm or cancel within 2 hours.");
 				notifSmsPs.executeUpdate();
 				notifSmsPs.close();
 			}
@@ -2453,7 +2427,7 @@ public class DBController {
 			}
 		}
 	}
-	
+
 	// =========================================================
 	// RELEASE EXPIRED VISIT REMINDERS
 	// =========================================================
@@ -2529,6 +2503,5 @@ public class DBController {
 			}
 		}
 	}
-	
-	
+
 }

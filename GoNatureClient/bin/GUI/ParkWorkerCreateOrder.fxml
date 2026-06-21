@@ -73,11 +73,10 @@
 			<TextField fx:id="emailField" prefWidth="220.0"
 				prefHeight="35.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
 
-			<!-- 🔥 הוספתי את זה -->
 			<Label text="Payment Method:" GridPane.columnIndex="0"
 				GridPane.rowIndex="6" />
 			<ComboBox fx:id="paymentComboBox" prefWidth="220.0"
-				prefHeight="35.0" promptText="Cash / Credit Card"
+				prefHeight="35.0" promptText="Choose When to Pay"
 				GridPane.columnIndex="1" GridPane.rowIndex="6" />
 
 		</GridPane>
