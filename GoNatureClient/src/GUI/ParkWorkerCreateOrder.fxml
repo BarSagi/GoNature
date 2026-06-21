@@ -68,11 +68,6 @@
 			<TextField fx:id="visitorCountField" prefWidth="220.0"
 				prefHeight="35.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
 
-			<Label text="Email:" GridPane.columnIndex="0"
-				GridPane.rowIndex="5" />
-			<TextField fx:id="emailField" prefWidth="220.0"
-				prefHeight="35.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-
 			<Label text="Payment Method:" GridPane.columnIndex="0"
 				GridPane.rowIndex="6" />
 			<ComboBox fx:id="paymentComboBox" prefWidth="220.0"

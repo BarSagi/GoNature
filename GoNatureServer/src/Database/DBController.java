@@ -2504,4 +2504,45 @@ public class DBController {
 		}
 	}
 
+	public String getVisitorEmailById(String visitorId) {
+
+		String query = "SELECT email FROM Visitors WHERE visitorId = ?";
+
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			conn = pool.getConnection();
+
+			ps = conn.prepareStatement(query);
+			ps.setString(1, visitorId);
+
+			rs = ps.executeQuery();
+
+			if (rs.next()) {
+				return rs.getString("email");
+			}
+
+			return null;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+
+		} finally {
+
+			try {
+				if (rs != null)
+					rs.close();
+				if (ps != null)
+					ps.close();
+				if (conn != null)
+					pool.releaseConnection(conn);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 }
