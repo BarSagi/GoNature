@@ -13,12 +13,14 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+import javafx.application.Platform;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
 public class NewVisitorOrderController {
 
-	// --- Visitor Details ---
+	public static NewVisitorOrderController instance;
+
 	@FXML
 	private TextField idField;
 	@FXML
@@ -30,7 +32,6 @@ public class NewVisitorOrderController {
 	@FXML
 	private TextField phoneField;
 
-	// --- Order Details ---
 	@FXML
 	private ComboBox<String> parkComboBox;
 	@FXML
@@ -40,20 +41,19 @@ public class NewVisitorOrderController {
 	@FXML
 	private Spinner<Integer> visitorsSpinner;
 
-	// --- UI Elements ---
 	@FXML
 	private Label errorLabel;
 
-	/**
-	 * Initializes the ComboBoxes with options when the screen loads.
-	 */
 	@FXML
 	public void initialize() {
-		// Initialize Park Options
-		ObservableList<String> parks = FXCollections.observableArrayList("Karmel", "Banias", "Yarkon");
-		parkComboBox.setItems(parks);
+		instance = this;
 
-		// Initialize Time Options (e.g., 08:00 to 18:00)
+		try {
+			ClientUI.send(new Message("GET_ALL_PARKS", null));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 		ObservableList<String> times = FXCollections.observableArrayList("08:00", "09:00", "10:00", "11:00", "12:00",
 				"13:00", "14:00", "15:00", "16:00", "17:00", "18:00");
 		timeComboBox.setItems(times);
@@ -61,21 +61,21 @@ public class NewVisitorOrderController {
 		SpinnerValueFactory<Integer> valueFactory = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 1);
 		visitorsSpinner.setValueFactory(valueFactory);
 
-		// Hide error label initially
 		errorLabel.setVisible(false);
 	}
 
-	/**
-	 * Triggered when the user clicks "Complete Registration & Order"
-	 */
-	/**
-	 * Triggered when the user clicks "Complete Registration & Order"
-	 */
+	public void loadParks(ArrayList<String> parks) {
+		if (parks != null) {
+			Platform.runLater(() -> {
+				parkComboBox.getItems().setAll(parks);
+			});
+		}
+	}
+
 	@FXML
 	void submitRegistrationAndOrder(ActionEvent event) {
-		errorLabel.setVisible(false); // Reset error label on each attempt
+		errorLabel.setVisible(false); 
 
-		// 1. Gather all inputs (Added .trim() to prevent accidental spacebar errors)
 		String id = idField.getText().trim();
 		String firstName = firstNameField.getText().trim();
 		String lastName = lastNameField.getText().trim();
@@ -97,39 +97,25 @@ public class NewVisitorOrderController {
 			return;
 		}
 
-		// id exactly 9 numbers
 		if (!id.matches("\\d{9}")) {
 			showError("ID must be exactly 9 digits.");
 			return;
 		}
 
-		// phone exactly 10 numbers
 		if (!phone.matches("\\d{10}")) {
 			showError("Phone number must be exactly 10 digits.");
 			return;
 		}
 
-		// Checks for: text + @ + text + . + text (at least 2 letters)
 		String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[a-zA-Z]{2,}$";
 		if (!email.matches(emailRegex)) {
 			showError("Please enter a valid email address (e.g., example@domain.com).");
 			return;
 		}
 
-		int parkId = 0;
-		switch (park) {
-		case "Karmel":
-			parkId = 1;
-			break;
-		case "Banias":
-			parkId = 2;
-			break;
-		case "Yarkon":
-			parkId = 3;
-			break;
-		}
+		int selectedIndex = parkComboBox.getSelectionModel().getSelectedIndex();
+		int parkId = selectedIndex + 1;
 
-		// --- 3. CREATE VISITOR INFO (ArrayList of Strings) ---
 		ArrayList<String> visitorInfo = new ArrayList<>();
 		visitorInfo.add(id);
 		visitorInfo.add(firstName);
@@ -137,7 +123,6 @@ public class NewVisitorOrderController {
 		visitorInfo.add(email);
 		visitorInfo.add(phone);
 
-		// --- 4. CREATE ORDER OBJECT ---
 		Order newOrder = new Order();
 		newOrder.setVisitorId(id);
 		newOrder.setParkId(parkId);
@@ -147,12 +132,10 @@ public class NewVisitorOrderController {
 		newOrder.setOrderType("Individual");
 		newOrder.setOrderStatus("Approved");
 
-		// --- 5. PACKAGE BOTH INTO ArrayList<Object> ---
 		ArrayList<Object> dataToServer = new ArrayList<>();
-		dataToServer.add(visitorInfo); // Index 0 is the ArrayList<String>
-		dataToServer.add(newOrder); // Index 1 is the Order Object
+		dataToServer.add(visitorInfo); 
+		dataToServer.add(newOrder); 
 
-		// --- 6. SEND MESSAGE TO SERVER ---
 		Message message = new Message("REGISTER_AND_ORDER", dataToServer);
 
 		try {
@@ -164,23 +147,16 @@ public class NewVisitorOrderController {
 		}
 	}
 
-	/**
-	 * Returns the user to the previous screen
-	 */
 	@FXML
 	void goBack(ActionEvent event) {
 		try {
 			ClientUI.changeScreen("/GUI/LoginVisitor.fxml", "GoNature - Visitor Login");
-
 		} catch (Exception e) {
 			System.out.println("Error loading the Visitor Login screen.");
 			e.printStackTrace();
 		}
 	}
 
-	/**
-	 * Helper method to show error messages cleanly
-	 */
 	private void showError(String message) {
 		errorLabel.setText(message);
 		errorLabel.setVisible(true);

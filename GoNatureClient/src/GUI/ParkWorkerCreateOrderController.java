@@ -12,186 +12,231 @@ import javafx.scene.control.*;
 
 public class ParkWorkerCreateOrderController {
 
-	@FXML
-	private ComboBox<String> parkComboBox;
+    @FXML private ComboBox<String> parkComboBox;
+    @FXML private DatePicker visitDatePicker;
+    @FXML private ComboBox<String> timeComboBox;
+    @FXML private TextField visitorCountField;
+    @FXML private TextField visitorIdField;
+    @FXML private Label statusLabel;
+    @FXML private ComboBox<String> paymentComboBox;
 
-	@FXML
-	private DatePicker visitDatePicker;
+    public static ParkWorkerCreateOrderController instance;
 
-	@FXML
-	private ComboBox<String> timeComboBox;
+    private String pendingVisitorId;
+    private String pendingParkName;
+    private String pendingDate;
+    private String pendingTime;
+    private String pendingVisitorCount;
+    private String pendingEmail;
+    private String pendingPayment;
 
-	@FXML
-	private TextField visitorCountField;
+    private boolean orderCreatedSuccessfully = false;
 
-	@FXML
-	private TextField emailField;
+    public static String cachedVisitorType = "Individual";
 
-	@FXML
-	private TextField visitorIdField;
+    // =========================
+    // INIT
+    // =========================
+    @FXML
+    public void initialize() {
 
-	@FXML
-	private Label statusLabel;
+        instance = this;
 
-	@FXML
-	private ComboBox<String> paymentComboBox;
+        try {
+            ClientUI.send(new Message("GET_ALL_PARKS", null));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-	public static ParkWorkerCreateOrderController instance;
-	public static String cachedVisitorType = "Individual";
+        timeComboBox.getItems().addAll(
+                "09:00","10:00","11:00","12:00",
+                "13:00","14:00","15:00","16:00"
+        );
 
-	private boolean orderCreatedSuccessfully = false;
+        paymentComboBox.getItems().addAll("Pay Now", "Pay Later");
 
-	private String ID;
-	private String numOfVisitors;
-	private String lastPaymentMethod;
+        statusLabel.setText("");
+    }
 
-	@FXML
-	public void initialize() {
+    // =========================
+    // STEP 1: submit
+    // =========================
+    @FXML
+    void submitOrder(ActionEvent event) {
 
-		instance = this;
+        try {
+            String visitorId = visitorIdField.getText().trim();
+            String parkName = parkComboBox.getValue();
+            LocalDate visitDate = visitDatePicker.getValue();
+            String time = timeComboBox.getValue();
+            String visitorCount = visitorCountField.getText().trim();
+            String paymentMethod = paymentComboBox.getValue();
 
-		try {
-		    ClientUI.client.sendToServer(new Message("GET_ALL_PARKS", null));
+            if (visitorId.isEmpty() || parkName == null || visitDate == null ||
+                    time == null || paymentMethod == null || visitorCount.isEmpty()) {
+
+                statusLabel.setText("Please fill in all fields.");
+                return;
+            }
+
+            if (!visitorId.matches("\\d{9}")) {
+                statusLabel.setText("Visitor ID must be exactly 9 digits.");
+                return;
+            }
+
+            if (visitDate.isBefore(LocalDate.now())) {
+                statusLabel.setText("Cannot select past date.");
+                return;
+            }
+
+            if (!visitorCount.matches("\\d+") || Integer.parseInt(visitorCount) <= 0) {
+                statusLabel.setText("Invalid visitor count.");
+                return;
+            }
+
+            // save state
+            pendingVisitorId = visitorId;
+            pendingParkName = parkName;
+            pendingDate = visitDate.toString();
+            pendingTime = time;
+            pendingVisitorCount = visitorCount;
+            pendingPayment = paymentMethod;
+
+            statusLabel.setText("Fetching visitor type...");
+
+            ClientUI.send(new Message("GET_VISITOR_TYPE", visitorId));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            statusLabel.setText("Server connection error.");
+        }
+    }
+
+    // =========================
+    // STEP 2: visitor type
+    // =========================
+    public void handleVisitorTypeResult(String type) {
+
+        if (type == null) {
+            cachedVisitorType = "Individual";
+        } else if (type.equals("Individual") || type.equals("SmallGroup")) {
+            cachedVisitorType = "SmallGroup";
+        } else {
+            cachedVisitorType = "OrganizedGroup";
+        }
+
+        Platform.runLater(() -> statusLabel.setText("Fetching email..."));
+
+        try {
+			ClientUI.send(new Message("GET_VISITOR_EMAIL", pendingVisitorId));
 		} catch (Exception e) {
-		    e.printStackTrace();
-		}
-
-		timeComboBox.getItems().addAll("09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00");
-
-		paymentComboBox.getItems().addAll("Cash", "Credit Card");
-
-		statusLabel.setText("");
-	}
-
-	@FXML
-	void submitOrder(ActionEvent event) {
-
-		try {
-
-			String visitorId = visitorIdField.getText().trim();
-			String parkName = parkComboBox.getValue();
-			LocalDate visitDate = visitDatePicker.getValue();
-			String time = timeComboBox.getValue();
-			String visitorCount = visitorCountField.getText().trim();
-			String email = emailField.getText().trim();
-			String paymentMethod = paymentComboBox.getValue();
-			numOfVisitors = visitorCount;
-			ID = visitorId;
-
-			if (visitorId.isEmpty() || parkName == null || visitDate == null || time == null || paymentMethod == null
-					|| visitorCount.isEmpty() || email.isEmpty()) {
-
-				statusLabel.setText("Please fill in all fields.");
-				return;
-			}
-
-			if (!visitorId.matches("\\d{9}")) {
-				statusLabel.setText("Visitor ID must be exactly 9 digits.");
-				return;
-			}
-
-			if (visitDate.isBefore(LocalDate.now())) {
-				statusLabel.setText("You cannot select a past date.");
-				return;
-			}
-
-			if (!visitorCount.matches("\\d+") || Integer.parseInt(visitorCount) <= 0) {
-				statusLabel.setText("Visitor count must be a positive number.");
-				return;
-			}
-
-			if (!email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
-				statusLabel.setText("Please enter a valid email address.");
-				return;
-			}
-
-			lastPaymentMethod = paymentMethod;
-
-			orderCreatedSuccessfully = false;
-
-			ArrayList<String> orderData = new ArrayList<>();
-			orderData.add(visitorId);
-			orderData.add(parkName);
-			orderData.add(visitDate.toString());
-			orderData.add(time);
-			orderData.add(visitorCount);
-			orderData.add(email);
-			orderData.add(cachedVisitorType);
-			orderData.add(paymentMethod);
-
-			ClientUI.client.sendToServer(new Message("SUBMIT_NEW_ORDER", orderData));
-
-			statusLabel.setText("Processing order...");
-			
-			ArrayList<String> paymentData = new ArrayList<>();
-			paymentData.add(ID);
-			paymentData.add(numOfVisitors);
-			paymentData.add(lastPaymentMethod);
-			paymentData.add(parkName);
-			paymentData.add(LocalDate.now().toString());
-
-
-			ClientUI.client.sendToServer(new Message("CALCULATE_PRICE_PREORDER", paymentData));
-
-			
-		} catch (NumberFormatException e) {
-			statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-			statusLabel.setText("Visitor count must be a valid number.");
-		} catch (Exception e) {
-			statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-			statusLabel.setText("Connection error with the server.");
 			e.printStackTrace();
 		}
-	}
+    }
 
-	public void handleOrderResult(boolean success, String reason) {
-		if (success) {
-			orderCreatedSuccessfully = true;
+    // =========================
+    // STEP 3
+    // =========================
+    public void handleVisitorEmailResult(String emailFromServer) {
 
-		    statusLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
-		    statusLabel.setText("Order registered successfully!");
-		    visitorIdField.clear();
-		    visitorCountField.clear();
-		} else {
-			orderCreatedSuccessfully = false;
+        if (emailFromServer != null && !emailFromServer.isEmpty()) {
+            pendingEmail = emailFromServer;
+        }
 
-		    statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-		    statusLabel.setText(reason != null ? reason : "Registration failed. Park may be full.");
+        Platform.runLater(() -> statusLabel.setText("Creating order..."));
+
+        createOrder();
+    }
+
+    // =========================
+    // STEP 4: create order
+    // =========================
+    private void createOrder() {
+
+        ArrayList<String> orderData = new ArrayList<>();
+        orderData.add(pendingVisitorId);
+        orderData.add(pendingParkName);
+        orderData.add(pendingDate);
+        orderData.add(pendingTime);
+        orderData.add(pendingVisitorCount);
+        orderData.add(pendingEmail);
+        orderData.add(cachedVisitorType);
+        orderData.add(pendingPayment);
+        
+        try {
+			ClientUI.send(new Message("SUBMIT_NEW_ORDER", orderData));
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-	}
+    }
 
-	public void handlePriceResult(double price) {
+    // =========================
+    // STEP 5: order result
+    // =========================
+    public void handleOrderResult(boolean success, String reason) {
 
-		if (!orderCreatedSuccessfully) {
-			return;
+        if (!success) {
+            Platform.runLater(() ->
+                    statusLabel.setText(reason != null ? reason : "Order failed")
+            );
+            return;
+        }
+
+        orderCreatedSuccessfully = true;
+
+        Platform.runLater(() -> {
+            statusLabel.setStyle("-fx-text-fill: #27ae60;");
+            statusLabel.setText("Order created successfully!");
+        });
+
+        new Thread(this::calculatePriceAsync).start();
+    }
+
+    // =========================
+    // STEP 6: price
+    // =========================
+    private void calculatePriceAsync() {
+
+        ArrayList<String> paymentData = new ArrayList<>();
+        paymentData.add(pendingVisitorId);
+        paymentData.add(pendingVisitorCount);
+        paymentData.add(pendingPayment);
+        paymentData.add(pendingParkName);
+        paymentData.add(LocalDate.now().toString());
+
+        try {
+			ClientUI.send(new Message("CALCULATE_PRICE_PREORDER", paymentData));
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
+    }
 
-		Platform.runLater(() -> {
+    public void handlePriceResult(double price) {
 
-			Alert alert = new Alert(Alert.AlertType.INFORMATION);
-			alert.setTitle("SIMULATION");
-			alert.setHeaderText("Order Price");
-			alert.setContentText("Total price: " + price + " NIS");
+        if (!orderCreatedSuccessfully) return;
 
-			alert.showAndWait();
-		});
-	}
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("SIMULATION");
+            alert.setHeaderText("Order Price");
+            alert.setContentText("Total price: " + price + " NIS");
+            alert.showAndWait();
+        });
+    }
 
-	public static void handleVisitorTypeResult(String type) {
-		cachedVisitorType = (type != null) ? type : "Individual";
-	}
+    // =========================
+    // LOAD PARKS
+    // =========================
+    public void loadParks(ArrayList<String> parks) {
 
-	public void loadParks(ArrayList<String> parks) {
+        Platform.runLater(() -> {
 
-	    Platform.runLater(() -> {
+            if (parks == null || parks.isEmpty()) {
+                statusLabel.setText("No parks available.");
+                return;
+            }
 
-	        if (parks == null || parks.isEmpty()) {
-	            statusLabel.setText("No parks available.");
-	            return;
-	        }
-
-	        parkComboBox.getItems().clear();
-	        parkComboBox.getItems().addAll(parks);
-	    });
-	}
+            parkComboBox.getItems().setAll(parks);
+        });
+    }
 }

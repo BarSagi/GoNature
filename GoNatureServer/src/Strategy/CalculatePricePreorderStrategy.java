@@ -26,6 +26,8 @@ public class CalculatePricePreorderStrategy implements MessageStrategy {
 			int parkId = server.getDatabase().getParkIdByName(data.get(3));
 			
 			LocalDate dateOfOrder = LocalDate.parse(data.get(4));
+			
+			System.out.println(data);
 
 
 			boolean subscriber;
@@ -47,7 +49,7 @@ public class CalculatePricePreorderStrategy implements MessageStrategy {
 				subscriber = false;
 			}
 
-			boolean prepaid = "Credit Card".equals(paymentMethod);
+			boolean prepaid = "Pay Now".equals(paymentMethod);
 
 			PricingService pricingService = new PricingService();
 

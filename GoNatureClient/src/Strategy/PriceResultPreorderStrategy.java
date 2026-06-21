@@ -4,7 +4,6 @@ import Common.Message;
 import GUI.CreateOrderController;
 import GUI.ParkWorkerCreateOrderController;
 
-
 public class PriceResultPreorderStrategy implements MessageStrategy {
 
     @Override

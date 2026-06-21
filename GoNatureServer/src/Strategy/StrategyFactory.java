@@ -102,6 +102,9 @@ public class StrategyFactory {
 		case "CONFIRM_ORDER":
 		    return new ConfirmOrderStrategy();
 		    
+		case "GET_VISITOR_EMAIL":
+			return new GetVisitorEmailStrategy();
+		    
 		default:
 			return null;
 		}
