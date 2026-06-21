@@ -1,6 +1,7 @@
 package GUI;
 
 import Client.ClientUI;
+import Client.GoNatureClient;
 import Common.Message;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -14,7 +15,7 @@ public class ParkWorkerEnterVisitorController {
     public static ParkWorkerEnterVisitorController instance;
 
     @FXML
-    private TextField visitorIdField;
+    private TextField identifierField; 
 
     @FXML
     private Label statusLabel;
@@ -27,33 +28,45 @@ public class ParkWorkerEnterVisitorController {
 
     @FXML
     void confirmEntry(ActionEvent event) {
-        String visitorId = visitorIdField.getText().trim();
+        String identifier = identifierField.getText().trim();
 
-        if (visitorId.isEmpty()) {
-            statusLabel.setText("Please enter visitor ID.");
+        if (identifier.isEmpty()) {
+            statusLabel.setText("Please enter Order ID, Visitor ID, or QR Code.");
             return;
         }
-        
-        if (!visitorId.matches("\\d{9}")) {
-            statusLabel.setText("Visitor ID must be exactly 9 digits.");
+
+        if (!identifier.matches("^[A-Z0-9]{1,9}$")) {
+            statusLabel.setText("Invalid input: Max 9 uppercase alphanumeric characters only.");
+            statusLabel.setStyle("-fx-text-fill: red;");
             return;
         }
 
         try {
             ArrayList<String> data = new ArrayList<>();
-            data.add(visitorId);
+            data.add(identifier);
+            
+            String currentParkId = GoNatureClient.currentEmployee.getAffiliation();
+            data.add(currentParkId); 
 
             Message msg = new Message("ENTER_VISITOR", data);
             ClientUI.client.sendToServer(msg);
 
-            statusLabel.setText("Entry request sent.");
+            statusLabel.setText("Entry request sent to server...");
+            statusLabel.setStyle("-fx-text-fill: blue;"); 
         } catch (Exception e) {
             statusLabel.setText("Failed to send entry request.");
+            statusLabel.setStyle("-fx-text-fill: red;");
             e.printStackTrace();
         }
     }
 
     public void showStatus(String text) {
+        if (text.startsWith("Success")) {
+            statusLabel.setStyle("-fx-text-fill: green;");
+            identifierField.clear(); 
+        } else {
+            statusLabel.setStyle("-fx-text-fill: red;");
+        }
         statusLabel.setText(text);
     }
 }

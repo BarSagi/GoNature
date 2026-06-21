@@ -20,7 +20,6 @@ public class ParkDashboardDataStrategy implements MessageStrategy {
 			int casualGap = Integer.parseInt(data.get(2));
 			int avgStay = Integer.parseInt(data.get(3));
 			int currentVisitors = Integer.parseInt(data.get(4));
-			int openSpots = Integer.parseInt(data.get(5));
 			
 			// Safely pass the data to the UI controller
 			// We check if the screen is actually open (instance != null)
@@ -30,8 +29,7 @@ public class ParkDashboardDataStrategy implements MessageStrategy {
 						maxCapacity, 
 						casualGap, 
 						avgStay, 
-						currentVisitors, 
-						openSpots
+						currentVisitors
 				);
 			}
 		}

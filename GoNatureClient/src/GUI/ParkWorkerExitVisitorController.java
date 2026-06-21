@@ -1,6 +1,7 @@
 package GUI;
 
 import Client.ClientUI;
+import Client.GoNatureClient;
 import Common.Message;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -11,49 +12,78 @@ import java.util.ArrayList;
 
 public class ParkWorkerExitVisitorController {
 
-	public static ParkWorkerExitVisitorController instance;
+    public static ParkWorkerExitVisitorController instance;
 
-	@FXML
-	private TextField visitorIdField;
+    @FXML
+    private TextField identifierField; 
 
-	@FXML
-	private Label statusLabel;
+    @FXML
+    private TextField exitAmountField; 
 
-	@FXML
-	public void initialize() {
-		instance = this;
-		statusLabel.setText("");
-	}
+    @FXML
+    private Label statusLabel;
 
-	@FXML
-	void confirmExit(ActionEvent event) {
-		String visitorId = visitorIdField.getText().trim();
+    @FXML
+    public void initialize() {
+        instance = this;
+        statusLabel.setText("");
+    }
 
-		if (visitorId.isEmpty()) {
-			statusLabel.setText("Please enter visitor ID.");
-			return;
-		}
-		
-		if (!visitorId.matches("\\d{9}")) {
-			statusLabel.setText("Visitor ID must be exactly 9 digits.");
-			return;
-		}
+    @FXML
+    void confirmExit(ActionEvent event) {
+      
+        String identifier = identifierField.getText().trim();
+        String amountStr = exitAmountField.getText().trim();
 
-		try {
-			ArrayList<String> data = new ArrayList<>();
-			data.add(visitorId);
+        //  Check that neither field is empty
+        if (identifier.isEmpty() || amountStr.isEmpty()) {
+            statusLabel.setText("Please enter identifier and amount.");
+            statusLabel.setStyle("-fx-text-fill: red;");
+            return;
+        }
 
-			Message msg = new Message("EXIT_VISITOR", data);
-			ClientUI.client.sendToServer(msg);
+       
+        if (!identifier.matches("^[A-Z0-9]{1,9}$")) {
+            statusLabel.setText("Invalid identifier format.");
+            statusLabel.setStyle("-fx-text-fill: red;");
+            return;
+        }
 
-			statusLabel.setText("Exit request sent.");
-		} catch (Exception e) {
-			statusLabel.setText("Failed to send exit request.");
-			e.printStackTrace();
-		}
-	}
+        // Validate amount (Ensure it's a valid positive number starting from 1)
+        if (!amountStr.matches("^[1-9][0-9]*$")) {
+            statusLabel.setText("Amount must be a valid number greater than 0.");
+            statusLabel.setStyle("-fx-text-fill: red;");
+            return;
+        }
 
-	public void showStatus(String text) {
-		statusLabel.setText(text);
-	}
+        try {
+            ArrayList<String> data = new ArrayList<>();
+            data.add(identifier);
+            
+            data.add(GoNatureClient.currentEmployee.getAffiliation());
+            
+            data.add(amountStr);
+
+            Message msg = new Message("EXIT_VISITOR", data);
+            ClientUI.client.sendToServer(msg);
+
+            statusLabel.setText("Exit request sent to server...");
+            statusLabel.setStyle("-fx-text-fill: blue;");
+        } catch (Exception e) {
+            statusLabel.setText("Failed to send exit request.");
+            statusLabel.setStyle("-fx-text-fill: red;");
+            e.printStackTrace();
+        }
+    }
+
+    public void showStatus(String text) {
+        if (text.startsWith("Success")) {
+            statusLabel.setStyle("-fx-text-fill: green;");
+            identifierField.clear();
+            exitAmountField.clear();
+        } else {
+            statusLabel.setStyle("-fx-text-fill: red;");
+        }
+        statusLabel.setText(text);
+    }
 }

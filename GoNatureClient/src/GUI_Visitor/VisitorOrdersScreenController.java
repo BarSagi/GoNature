@@ -394,6 +394,8 @@ public class VisitorOrdersScreenController {
 				// Grab the visitor ID from the currently logged-in user
 				String visitorId = GoNatureClient.currentVisitor.getVisitorId();
 				dataToServer.add(visitorId);
+				dataToServer.add(String.valueOf(selectedOrder.getParkId()));
+				dataToServer.add(String.valueOf(selectedOrder.getVisitorCount()));
 
 				// 5. Send the specific "EXIT_VISITOR" command with the ArrayList
 				Message msg = new Message("EXIT_VISITOR", dataToServer);

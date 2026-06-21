@@ -47,8 +47,6 @@
             <Label text="Current Visitors:" GridPane.columnIndex="0" GridPane.rowIndex="3" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #34495e;" />
             <Label fx:id="currentVisitorsLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="3" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #e67e22;" />
 
-            <Label text="Open Casual Spots:" GridPane.columnIndex="0" GridPane.rowIndex="4" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #34495e;" />
-            <Label fx:id="openCasualSpotsLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="4" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #27ae60;" />
         </GridPane>
     </VBox>
 

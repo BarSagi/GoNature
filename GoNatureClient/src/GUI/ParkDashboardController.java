@@ -23,8 +23,6 @@ public class ParkDashboardController {
     @FXML
     private Label currentVisitorsLabel;
     @FXML
-    private Label openCasualSpotsLabel;
-    @FXML
     private Label statusLabel;
 
     @FXML
@@ -42,6 +40,7 @@ public class ParkDashboardController {
             
             // Assuming currentEmployee knows which park they belong to
             String parkName = GoNatureClient.currentEmployee.getAffiliation();
+            parkNameLabel.setText("Park: " + parkName);
             Message msg = new Message("GET_PARK_DASHBOARD", parkName);
             ClientUI.client.sendToServer(msg);
             
@@ -56,14 +55,13 @@ public class ParkDashboardController {
      * This method should be called by the client when it receives the Park details from the server.
      * Ensure you pass the data dynamically. For now, it takes strings for simplicity.
      */
-    public void updateDashboardData(String parkName, int maxCapacity, int casualGap, int avgStay, int currentVisitors, int openSpots) {
+    public void updateDashboardData(String parkName, int maxCapacity, int casualGap, int avgStay, int currentVisitors) {
 		Platform.runLater(() -> {
 			parkNameLabel.setText("Park: " + parkName);
 			maxCapacityLabel.setText(String.valueOf(maxCapacity));
 			casualGapLabel.setText(String.valueOf(casualGap));
 			avgStayDurationLabel.setText(String.valueOf(avgStay));
 			currentVisitorsLabel.setText(String.valueOf(currentVisitors));
-			openCasualSpotsLabel.setText(String.valueOf(openSpots));
 			
 			statusLabel.setStyle("-fx-text-fill: #27ae60;");
 			statusLabel.setText("Data is up to date.");

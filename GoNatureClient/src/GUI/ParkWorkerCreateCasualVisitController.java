@@ -41,6 +41,7 @@ public class ParkWorkerCreateCasualVisitController {
 	public void initialize() {
 		instance = this;
 		paymentComboBox.setItems(FXCollections.observableArrayList("Cash", "Credit Card"));
+		parkLabel.setText(GoNatureClient.currentEmployee.getAffiliation());
 	}
 
 	@FXML

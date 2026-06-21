@@ -18,12 +18,15 @@
     <Label text="Exit Visitor from Park"
            style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
 
-    <TextField fx:id="visitorIdField" promptText="Visitor ID"
+    <TextField fx:id="identifierField" promptText="Order ID / Visitor ID / QR Code"
+               prefHeight="40.0" prefWidth="250.0" />
+               
+    <TextField fx:id="exitAmountField" promptText="Number of people exiting"
                prefHeight="40.0" prefWidth="250.0" />
 
     <Button text="Confirm Exit"
             prefHeight="55.0" prefWidth="280.0"
-            style="-fx-background-color: #27ae60; -fx-background-radius: 30; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-cursor: hand;"
+            style="-fx-background-color: #e74c3c; -fx-background-radius: 30; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-cursor: hand;"
             onAction="#confirmExit" />
 
     <Label fx:id="statusLabel" text="" style="-fx-text-fill: red;" />
