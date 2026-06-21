@@ -43,7 +43,12 @@ public class ReturnVisitorOrdersAndDataStrategy implements MessageStrategy {
 						subscriptionNumber, familyMembers);
 
 				ClientUI.changeScreen("/GUI_Visitor/VisitorOrdersScreen.fxml", "Your Orders");
-
+//====================
+				System.out.println("RETURN_VISITOR_ORDERS_AND_DATA received. orders size = " + orders.size());
+				for (Order o : orders) {
+					System.out.println("Order from server: " + o.getOrderId());
+				}
+//==========================
 				Platform.runLater(() -> {
 					if (VisitorOrdersScreenController.instance != null) {
 						VisitorOrdersScreenController.instance.loadOrders(orders);

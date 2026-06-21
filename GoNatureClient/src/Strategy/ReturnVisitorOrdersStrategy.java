@@ -14,7 +14,6 @@ public class ReturnVisitorOrdersStrategy implements MessageStrategy {
 	@Override
 	public void execute(Message message) {
 		ArrayList<Order> orders = (ArrayList<Order>) message.getData();
-
 		ClientUI.changeScreen("/GUI_Visitor/VisitorOrdersScreen.fxml", "Your Orders");
 
 		Platform.runLater(() -> {

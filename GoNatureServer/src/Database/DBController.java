@@ -371,7 +371,9 @@ public class DBController {
 			ResultSet rs = ps.executeQuery();
 
 			while (rs.next()) {
-				list.add(new Order(
+				System.out.println("SERVER getVisitorOrders -> orderId = " + rs.getInt("orderId"));
+
+				Order order = new Order(
 						rs.getInt("orderId"),
 						rs.getInt("parkId"),
 						rs.getString("visitorId"),
@@ -383,20 +385,13 @@ public class DBController {
 						rs.getString("status"),
 						rs.getTimestamp("holdUntil"),
 						rs.getTimestamp("reminderUntil")
-				));
+				);
 
-				// 1. Create the Order object first and save it to a variable
-				Order order = new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
-						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
-						rs.getString("email"), rs.getString("orderType"), rs.getString("status"),
-						rs.getTimestamp("holdUntil"));
-
-				// 2. Grab the QR code from the database and set it!
 				order.setQrCode(rs.getString("QRCode"));
-
-				// 3. Now add the fully built order to the list
 				list.add(order);
 			}
+
+			System.out.println("SERVER getVisitorOrders finished. list size = " + list.size());
 
 			rs.close();
 			ps.close();
@@ -1540,7 +1535,7 @@ public class DBController {
 		try {
 			conn = pool.getConnection();
 
-			String selectQuery = "SELECT parkId, visitDate, visitTime FROM Orders WHERE orderId = ?";
+			String selectQuery = "SELECT parkId, visitDate, visitTime, status FROM Orders WHERE orderId = ?";
 			selectPs = conn.prepareStatement(selectQuery);
 			selectPs.setInt(1, orderId);
 
