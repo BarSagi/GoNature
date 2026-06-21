@@ -1,9 +1,9 @@
 package Common;
 
 import java.io.Serializable;
-import java.sql.Timestamp;
 import java.sql.Date;
 import java.sql.Time;
+import java.sql.Timestamp;
 
 // this class will handle order logic
 public class Order implements Serializable {
@@ -20,6 +20,7 @@ public class Order implements Serializable {
 	private String orderType;
 	private String orderStatus;
 	private Timestamp holdUntil;
+	private Timestamp reminderUntil;
 
 	public Order(int orderId, int parkId, String visitorId, Date visitDate, Time visitTime, int visitorCount,
 			String email, String orderType, String orderStatus) {
@@ -47,6 +48,21 @@ public class Order implements Serializable {
 		this.orderType = orderType;
 		this.orderStatus = orderStatus;
 		this.holdUntil = holdUntil;
+	}
+	
+	public Order(int orderId, int parkId, String visitorId, Date visitDate, Time visitTime, int visitorCount,
+			String email, String orderType, String orderStatus, Timestamp holdUntil, Timestamp reminderUntil) {
+		this.orderId = orderId;
+		this.parkId = parkId;
+		this.visitorId = visitorId;
+		this.visitDate = visitDate;
+		this.visitTime = visitTime;
+		this.visitorCount = visitorCount;
+		this.email = email;
+		this.orderType = orderType;
+		this.orderStatus = orderStatus;
+		this.holdUntil = holdUntil;
+		this.reminderUntil = reminderUntil;
 	}
 
 	public Order() { // empty constructor
@@ -138,5 +154,13 @@ public class Order implements Serializable {
 
 	public void setHoldUntil(Timestamp holdUntil) {
 		this.holdUntil = holdUntil;
+	}
+	
+	public Timestamp getReminderUntil() {
+		return reminderUntil;
+	}
+
+	public void setReminderUntil(Timestamp reminderUntil) {
+		this.reminderUntil = reminderUntil;
 	}
 }

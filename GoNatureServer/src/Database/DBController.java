@@ -1,6 +1,11 @@
 package Database;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -368,6 +373,10 @@ public class DBController {
 
 		try {
 			conn = pool.getConnection();
+			
+			releaseExpiredPendingConfirmations();
+			sendVisitRemindersForTomorrow();
+			releaseExpiredVisitReminders();
 
 			PreparedStatement ps = conn.prepareStatement(query);
 			ps.setString(1, visitorId);
@@ -385,7 +394,8 @@ public class DBController {
 						rs.getString("email"),
 						rs.getString("orderType"),
 						rs.getString("status"),
-						rs.getTimestamp("holdUntil")
+						rs.getTimestamp("holdUntil"),
+						rs.getTimestamp("reminderUntil")
 				));
 			}
 
@@ -1449,6 +1459,73 @@ public class DBController {
 
 		return false;
 	}
+	
+	// =========================================================
+	// RELEASE EXPIRED PENDING CONFIRMATIONS
+	// =========================================================
+	public void releaseExpiredPendingConfirmations() {
+
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			conn = pool.getConnection();
+
+			String query = "SELECT orderId, parkId, visitDate, visitTime "
+					+ "FROM Orders "
+					+ "WHERE status = 'PendingConfirmation' AND holdUntil < NOW()";
+
+			ps = conn.prepareStatement(query);
+			rs = ps.executeQuery();
+
+			ArrayList<Integer> expiredOrderIds = new ArrayList<>();
+			ArrayList<Integer> parkIds = new ArrayList<>();
+			ArrayList<String> visitDates = new ArrayList<>();
+			ArrayList<String> visitTimes = new ArrayList<>();
+
+			while (rs.next()) {
+				expiredOrderIds.add(rs.getInt("orderId"));
+				parkIds.add(rs.getInt("parkId"));
+				visitDates.add(rs.getDate("visitDate").toString());
+				visitTimes.add(rs.getTime("visitTime").toString());
+			}
+
+			rs.close();
+			ps.close();
+
+			for (int i = 0; i < expiredOrderIds.size(); i++) {
+				PreparedStatement updatePs = conn.prepareStatement(
+						"UPDATE Orders SET status = 'Canceled', holdUntil = NULL WHERE orderId = ?");
+				updatePs.setInt(1, expiredOrderIds.get(i));
+				updatePs.executeUpdate();
+				updatePs.close();
+
+				promoteWaitingOrderIfPossible(
+						parkIds.get(i),
+						visitDates.get(i),
+						visitTimes.get(i)
+				);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+		} finally {
+			try {
+				if (rs != null)
+					rs.close();
+				if (ps != null)
+					ps.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
+	}
 
 	// =========================================================
 	// CANCEL ORDER
@@ -1474,9 +1551,27 @@ public class DBController {
 			}
 
 			int parkId = rs.getInt("parkId");
-			String visitDate = rs.getString("visitDate");
-			String visitTime = rs.getString("visitTime");
+			Date visitDate = rs.getDate("visitDate");
+			Time visitTime = rs.getTime("visitTime");
+			String status = rs.getString("status");
+			
+			if ("Canceled".equalsIgnoreCase(status)) {
+				System.out.println("[CANCEL ORDER] Order " + orderId + " is already canceled.");
+				return false;
+			}
 
+			// Combine the visit date and visit time into one date-time object
+			LocalDateTime visitDateTime = LocalDateTime.of(
+					visitDate.toLocalDate(),
+					visitTime.toLocalTime()
+			);
+
+			// If the visit time already arrived or passed, cancellation is not allowed
+			if (!visitDateTime.isAfter(LocalDateTime.now())) {
+				System.out.println("[CANCEL ORDER] Cannot cancel order " + orderId + " because visit time already arrived.");
+				return false;
+			}
+			
 			String updateQuery = "UPDATE Orders SET status = 'Canceled' WHERE orderId = ?";
 			updatePs = conn.prepareStatement(updateQuery);
 			updatePs.setInt(1, orderId);
@@ -1484,7 +1579,7 @@ public class DBController {
 			int rows = updatePs.executeUpdate();
 
 			if (rows > 0) {
-				promoteWaitingOrderIfPossible(parkId, visitDate, visitTime);
+				promoteWaitingOrderIfPossible(parkId, visitDate.toString(), visitTime.toString());
 				return true;
 			}
 
@@ -2314,8 +2409,13 @@ public class DBController {
 			conn = pool.getConnection();
 
 			PreparedStatement ps = conn.prepareStatement(
-					"UPDATE Orders SET status = 'Approved', holdUntil = NULL "
-							+ "WHERE orderId = ? AND status = 'PendingConfirmation' AND holdUntil >= NOW()");
+					"UPDATE Orders SET status = 'Approved', holdUntil = NULL, reminderUntil = NULL "
+							+ "WHERE orderId = ? "
+							+ "AND ("
+							+ "(status = 'PendingConfirmation' AND holdUntil >= NOW()) "
+							+ "OR "
+							+ "(status = 'PendingVisitReminder' AND reminderUntil >= NOW())"
+							+ ")");
 			ps.setInt(1, orderId);
 
 			int rows = ps.executeUpdate();
@@ -2331,4 +2431,160 @@ public class DBController {
 			pool.releaseConnection(conn);
 		}
 	}
+	
+	// =========================================================
+	// SEND VISIT REMINDERS FOR TOMORROW
+	// =========================================================
+	public void sendVisitRemindersForTomorrow() {
+
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			conn = pool.getConnection();
+
+			String query = "SELECT orderId, email FROM Orders "
+					+ "WHERE status = 'Approved' "
+					+ "AND visitDate = DATE_ADD(CURDATE(), INTERVAL 1 DAY)";
+
+			ps = conn.prepareStatement(query);
+			rs = ps.executeQuery();
+
+			ArrayList<Integer> orderIds = new ArrayList<>();
+			ArrayList<String> emails = new ArrayList<>();
+
+			while (rs.next()) {
+				orderIds.add(rs.getInt("orderId"));
+				emails.add(rs.getString("email"));
+			}
+
+			rs.close();
+			ps.close();
+
+			for (int i = 0; i < orderIds.size(); i++) {
+				PreparedStatement updatePs = conn.prepareStatement(
+						"UPDATE Orders SET status = 'PendingVisitReminder', reminderUntil = DATE_ADD(NOW(), INTERVAL 2 HOUR) "
+								+ "WHERE orderId = ?");
+				updatePs.setInt(1, orderIds.get(i));
+				updatePs.executeUpdate();
+				updatePs.close();
+
+				PreparedStatement notifEmailPs = conn.prepareStatement(
+						"INSERT INTO Notifications (orderId, notificationType, contactMethod, destinationAddress, messageContent, scheduledTime, isSent) "
+								+ "VALUES (?, 'VisitReminder', 'Email', ?, ?, NOW(), false)");
+				notifEmailPs.setInt(1, orderIds.get(i));
+				notifEmailPs.setString(2, emails.get(i));
+				notifEmailPs.setString(3,
+						"Reminder: your visit is tomorrow. Please confirm or cancel within 2 hours.");
+				notifEmailPs.executeUpdate();
+				notifEmailPs.close();
+
+				PreparedStatement notifSmsPs = conn.prepareStatement(
+						"INSERT INTO Notifications (orderId, notificationType, contactMethod, destinationAddress, messageContent, scheduledTime, isSent) "
+								+ "VALUES (?, 'VisitReminder', 'SMS', ?, ?, NOW(), false)");
+				notifSmsPs.setInt(1, orderIds.get(i));
+				notifSmsPs.setString(2, emails.get(i));
+				notifSmsPs.setString(3,
+						"Reminder: your visit is tomorrow. Please confirm or cancel within 2 hours.");
+				notifSmsPs.executeUpdate();
+				notifSmsPs.close();
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+		} finally {
+			try {
+				if (rs != null)
+					rs.close();
+				if (ps != null)
+					ps.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
+	}
+	
+	// =========================================================
+	// RELEASE EXPIRED VISIT REMINDERS
+	// =========================================================
+	public void releaseExpiredVisitReminders() {
+
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			conn = pool.getConnection();
+
+			String query = "SELECT orderId, email FROM Orders "
+					+ "WHERE status = 'PendingVisitReminder' AND reminderUntil < NOW()";
+
+			ps = conn.prepareStatement(query);
+			rs = ps.executeQuery();
+
+			ArrayList<Integer> expiredOrderIds = new ArrayList<>();
+			ArrayList<String> emails = new ArrayList<>();
+
+			while (rs.next()) {
+				expiredOrderIds.add(rs.getInt("orderId"));
+				emails.add(rs.getString("email"));
+			}
+
+			rs.close();
+			ps.close();
+
+			for (int i = 0; i < expiredOrderIds.size(); i++) {
+				PreparedStatement updatePs = conn.prepareStatement(
+						"UPDATE Orders SET status = 'Canceled', reminderUntil = NULL WHERE orderId = ?");
+				updatePs.setInt(1, expiredOrderIds.get(i));
+				updatePs.executeUpdate();
+				updatePs.close();
+
+				PreparedStatement notifEmailPs = conn.prepareStatement(
+						"INSERT INTO Notifications (orderId, notificationType, contactMethod, destinationAddress, messageContent, scheduledTime, isSent) "
+								+ "VALUES (?, 'VisitReminderExpired', 'Email', ?, ?, NOW(), false)");
+				notifEmailPs.setInt(1, expiredOrderIds.get(i));
+				notifEmailPs.setString(2, emails.get(i));
+				notifEmailPs.setString(3,
+						"Your order was canceled automatically because you did not confirm within 2 hours.");
+				notifEmailPs.executeUpdate();
+				notifEmailPs.close();
+
+				PreparedStatement notifSmsPs = conn.prepareStatement(
+						"INSERT INTO Notifications (orderId, notificationType, contactMethod, destinationAddress, messageContent, scheduledTime, isSent) "
+								+ "VALUES (?, 'VisitReminderExpired', 'SMS', ?, ?, NOW(), false)");
+				notifSmsPs.setInt(1, expiredOrderIds.get(i));
+				notifSmsPs.setString(2, emails.get(i));
+				notifSmsPs.setString(3,
+						"Your order was canceled automatically because you did not confirm within 2 hours.");
+				notifSmsPs.executeUpdate();
+				notifSmsPs.close();
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+		} finally {
+			try {
+				if (rs != null)
+					rs.close();
+				if (ps != null)
+					ps.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
+	}
+	
+	
 }

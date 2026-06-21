@@ -23,6 +23,7 @@ public class VisitorOrdersScreenController {
 	public static VisitorOrdersScreenController instance;
 
 	private boolean pendingPopupShown = false;
+	private boolean reminderPopupShown = false;
 	
 	// Tell the TableView to use your Entity.Order class
 	@FXML
@@ -158,6 +159,7 @@ public class VisitorOrdersScreenController {
 	public void loadOrders(ArrayList<Order> rawOrders) {
 		tableData.clear();
 		pendingPopupShown = false;
+		reminderPopupShown = false;
 
 		for (Order order : rawOrders) {
 			try {
@@ -177,6 +179,23 @@ public class VisitorOrdersScreenController {
 					alert.setHeaderText("A place has become available for your waiting list order.");
 					alert.setContentText("You received this notification at: " + receivedTime
 							+ "\n\nYou have one hour to confirm your order.");
+					alert.showAndWait();
+				}
+				
+				if (!reminderPopupShown && "PendingVisitReminder".equalsIgnoreCase(order.getOrderStatus())) {
+					reminderPopupShown = true;
+
+					java.time.format.DateTimeFormatter formatter =
+							java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+					String receivedTime = java.time.LocalDateTime.now().format(formatter);
+
+					javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+							javafx.scene.control.Alert.AlertType.INFORMATION);
+					alert.setTitle("Visit Reminder SMS");
+					alert.setHeaderText("Reminder: your visit is tomorrow.");
+					alert.setContentText("You received this reminder at: " + receivedTime
+							+ "\n\nPlease confirm or cancel your visit within 2 hours.");
 					alert.showAndWait();
 				}
 
