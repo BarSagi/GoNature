@@ -40,6 +40,8 @@ public class NewVisitorOrderController {
 	private ComboBox<String> timeComboBox;
 	@FXML
 	private Spinner<Integer> visitorsSpinner;
+	@FXML
+	private ComboBox<String> paymentComboBox;
 
 	@FXML
 	private Label errorLabel;
@@ -54,9 +56,11 @@ public class NewVisitorOrderController {
 			e.printStackTrace();
 		}
 
-		ObservableList<String> times = FXCollections.observableArrayList("08:00", "09:00", "10:00", "11:00", "12:00",
-				"13:00", "14:00", "15:00", "16:00", "17:00", "18:00");
+		ObservableList<String> times = FXCollections.observableArrayList("09:00", "10:00", "11:00", "12:00", "13:00",
+				"14:00", "15:00", "16:00");
 		timeComboBox.setItems(times);
+
+		paymentComboBox.setItems(FXCollections.observableArrayList("Pay Later", "Pay Now"));
 
 		SpinnerValueFactory<Integer> valueFactory = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 1);
 		visitorsSpinner.setValueFactory(valueFactory);
@@ -74,7 +78,7 @@ public class NewVisitorOrderController {
 
 	@FXML
 	void submitRegistrationAndOrder(ActionEvent event) {
-		errorLabel.setVisible(false); 
+		errorLabel.setVisible(false);
 
 		String id = idField.getText().trim();
 		String firstName = firstNameField.getText().trim();
@@ -85,9 +89,11 @@ public class NewVisitorOrderController {
 		LocalDate date = datePicker.getValue();
 		String time = timeComboBox.getValue();
 		int visitorsNum = visitorsSpinner.getValue();
+		String paymentMethod = paymentComboBox.getValue();
 
+		// וידוא שגם שיטת התשלום נבחרה
 		if (id.isEmpty() || firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || phone.isEmpty()
-				|| park == null || date == null || time == null) {
+				|| park == null || date == null || time == null || paymentMethod == null) {
 			showError("Please fill in all fields.");
 			return;
 		}
@@ -133,8 +139,9 @@ public class NewVisitorOrderController {
 		newOrder.setOrderStatus("Approved");
 
 		ArrayList<Object> dataToServer = new ArrayList<>();
-		dataToServer.add(visitorInfo); 
-		dataToServer.add(newOrder); 
+		dataToServer.add(visitorInfo);
+		dataToServer.add(newOrder);
+		dataToServer.add(paymentMethod); // הוספת שיטת התשלום לרשימה כדי לפתור את חוסר הנתונים בשרת
 
 		Message message = new Message("REGISTER_AND_ORDER", dataToServer);
 

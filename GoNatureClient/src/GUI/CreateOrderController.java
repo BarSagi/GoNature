@@ -75,9 +75,6 @@ public class CreateOrderController implements Initializable {
 				new SpinnerValueFactory.IntegerSpinnerValueFactory(minVisitors, maxVisitors, minVisitors));
 	}
 
-	// =========================
-	// STEP 1
-	// =========================
 	@FXML
 	void submitOrder(ActionEvent event) {
 
@@ -119,27 +116,21 @@ public class CreateOrderController implements Initializable {
 		}
 	}
 
-	// =========================
-	// STEP 2
-	// =========================
 	public void handleVisitorTypeResult(String type) {
 
-		if (type == null) {
-			cachedVisitorType = "Individual";
-		} else if (type.equals("Individual") || type.equals("SmallGroup")) {
+		if (type.equals("Guide")) {
+			cachedVisitorType = "OrganizedGroup";
+		} else if (type.equals("SmallGroup")) {
 			cachedVisitorType = "SmallGroup";
 		} else {
-			cachedVisitorType = "OrganizedGroup";
+			cachedVisitorType = "Individual";
 		}
-		
+
 		Platform.runLater(() -> errorLabel.setText("Creating order..."));
 
 		submitOrderToServer();
 	}
 
-	// =========================
-	// STEP 3
-	// =========================
 	private void submitOrderToServer() {
 
 		ArrayList<String> newOrder = new ArrayList<>();
@@ -159,9 +150,6 @@ public class CreateOrderController implements Initializable {
 		}
 	}
 
-	// =========================
-	// STEP 4
-	// =========================
 	public void handleOrderResult(boolean success, String reason) {
 
 		if (!success) {
@@ -179,9 +167,6 @@ public class CreateOrderController implements Initializable {
 		calculatePrice();
 	}
 
-	// =========================
-	// STEP 5
-	// =========================
 	private void calculatePrice() {
 
 		ArrayList<String> paymentData = new ArrayList<>();
@@ -198,9 +183,6 @@ public class CreateOrderController implements Initializable {
 		}
 	}
 
-	// =========================
-	// STEP 6
-	// =========================
 	public void handlePriceResult(double price) {
 
 		if (!orderCreatedSuccessfully)
@@ -215,9 +197,6 @@ public class CreateOrderController implements Initializable {
 		});
 	}
 
-	// =========================
-	// UI helpers
-	// =========================
 	public void loadParks(ArrayList<String> parks) {
 
 		Platform.runLater(() -> {

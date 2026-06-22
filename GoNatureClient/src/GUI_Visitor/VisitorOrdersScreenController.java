@@ -29,7 +29,7 @@ public class VisitorOrdersScreenController {
 
 	private boolean pendingPopupShown = false;
 	private boolean reminderPopupShown = false;
-	
+
 	private ArrayList<String> dbParksList = new ArrayList<>();
 
 	@FXML
@@ -89,12 +89,14 @@ public class VisitorOrdersScreenController {
 					if (empty || parkId == null) {
 						setText(null);
 					} else {
-						int index = parkId - 1; 
-						
-						if (dbParksList != null && index >= 0 && index < dbParksList.size()) {
+						int index = parkId - 1;
+
+						// Only display if the list from the server is ready and valid
+						if (dbParksList != null && !dbParksList.isEmpty() && index >= 0 && index < dbParksList.size()) {
 							setText(dbParksList.get(index));
 						} else {
-							setText("Park #" + parkId); 
+							// Leave blank momentarily; loadParks() will refresh the table once data arrives
+							setText("");
 						}
 					}
 				}
@@ -148,12 +150,12 @@ public class VisitorOrdersScreenController {
 							+ "\n\nYou have one hour to confirm your order.");
 					alert.showAndWait();
 				}
-				
+
 				if (!reminderPopupShown && "PendingVisitReminder".equalsIgnoreCase(order.getOrderStatus())) {
 					reminderPopupShown = true;
 
-					java.time.format.DateTimeFormatter formatter =
-							java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+					java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter
+							.ofPattern("dd/MM/yyyy HH:mm");
 					String receivedTime = java.time.LocalDateTime.now().format(formatter);
 
 					Alert alert = new Alert(AlertType.INFORMATION);
@@ -353,7 +355,8 @@ public class VisitorOrdersScreenController {
 		Alert alert = new Alert(AlertType.CONFIRMATION);
 		alert.setTitle("Report Exit");
 		alert.setHeaderText("Report Exit for Order #" + selectedOrder.getOrderId());
-		alert.setContentText("Are you sure you want to report exit? This will mark the order as fulfilled and free up park capacity.");
+		alert.setContentText(
+				"Are you sure you want to report exit? This will mark the order as fulfilled and free up park capacity.");
 
 		Optional<ButtonType> result = alert.showAndWait();
 

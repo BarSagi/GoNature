@@ -23,10 +23,10 @@ public class ClientUI extends Application {
 	private static Stage mainStage;
 
 	public static volatile boolean uiReady = false;
-	
+
 	public static String serverIP; // current client
 	public static int serverPort; // current server port
-	
+
 	private static Timer idleTimer = new Timer(true);
 	private static long lastActivityTime = System.currentTimeMillis();
 	private static final long TIMEOUT = 200000_000; // 20 seconds
@@ -57,8 +57,8 @@ public class ClientUI extends Application {
 
 	public static void startClient(String ip, int port) throws Exception {
 		serverIP = ip;
-	    serverPort = port;
-		
+		serverPort = port;
+
 		uiReady = false;
 
 		if (client != null) {
@@ -72,14 +72,12 @@ public class ClientUI extends Application {
 		// try to connect
 		client = new GoNatureClient(ip, port);
 		client.openConnection();
-		
-		
 
 		// if connection failed
 		if (!client.isConnected()) {
 			throw new Exception("Connection failed");
 		}
-		
+
 		updateActivity();
 		startIdleMonitor();
 
@@ -125,8 +123,6 @@ public class ClientUI extends Application {
 
 					mainStage.setTitle(title);
 					mainStage.setScene(scene);
-                    
-                    // Removed the redundant setMaximized call here
 
 				} catch (Exception e) {
 					System.out.println("Error loading screen: " + fxmlPath);
@@ -156,60 +152,61 @@ public class ClientUI extends Application {
 
 		System.out.println("Client application stopped");
 	}
-	
+
 	public static void updateActivity() {
-	    lastActivityTime = System.currentTimeMillis();
+		lastActivityTime = System.currentTimeMillis();
 	}
-	
+
 	public static void startIdleMonitor() {
-	    idleTimer.scheduleAtFixedRate(new TimerTask() {
-	        @Override
-	        public void run() {
+		idleTimer.scheduleAtFixedRate(new TimerTask() {
+			@Override
+			public void run() {
 
-	            if (client == null) return;
+				if (client == null)
+					return;
 
-	            if (client.isConnected()) {
-	                long now = System.currentTimeMillis();
+				if (client.isConnected()) {
+					long now = System.currentTimeMillis();
 
-	                if (now - lastActivityTime > TIMEOUT) {
-	                    try {
-	                        System.out.println("Idle timeout - closing connection");
-	                        client.closeConnection();
-	                    } catch (Exception e) {
-	                        e.printStackTrace();
-	                    }
-	                }
-	            }
-	        }
-	    }, 1000, 1000);
+					if (now - lastActivityTime > TIMEOUT) {
+						try {
+							System.out.println("Idle timeout - closing connection");
+							client.closeConnection();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+		}, 1000, 1000);
 	}
-	
+
 	public static synchronized void send(Message msg) throws Exception {
 
-	    updateActivity();
+		updateActivity();
 
-	    if (client == null || !client.isConnected()) {
-	        reconnect();
-	    }
+		if (client == null || !client.isConnected()) {
+			reconnect();
+		}
 
-	    client.sendToServer(msg);
+		client.sendToServer(msg);
 	}
-	
+
 	public static void reconnect() throws Exception {
-	    if (serverIP == null || serverPort == 0) {
-	        throw new Exception("No saved server connection info");
-	    }
+		if (serverIP == null || serverPort == 0) {
+			throw new Exception("No saved server connection info");
+		}
 
-	    if (client != null) {
-	        try {
-	            client.closeConnection();
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	        }
-	    }
+		if (client != null) {
+			try {
+				client.closeConnection();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 
-	    client = new GoNatureClient(serverIP, serverPort);
-	    client.openConnection();
+		client = new GoNatureClient(serverIP, serverPort);
+		client.openConnection();
 	}
 
 }
