@@ -1,3 +1,7 @@
+/Client/
+/Common/
+/Entity/
 /GUI/
-/Strategy/
 /GUI_Visitor/
+/OCSFUtils/
+/Strategy/
