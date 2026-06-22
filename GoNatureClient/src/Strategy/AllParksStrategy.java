@@ -21,15 +21,20 @@ public class AllParksStrategy implements MessageStrategy {
 		Platform.runLater(() -> {
 			if (DeptManagerVisitDurationReportController.instance != null) {
 				DeptManagerVisitDurationReportController.instance.loadParks(parks);
-			} else if (DeptManagerCancellationReportPanelController.instance != null) {
+			}
+			if (DeptManagerCancellationReportPanelController.instance != null) {
 				DeptManagerCancellationReportPanelController.instance.loadParks(parks);
-			} else if (ParkWorkerCreateOrderController.instance != null) {
+			}
+			if (ParkWorkerCreateOrderController.instance != null) {
 				ParkWorkerCreateOrderController.instance.loadParks(parks);
-			} else if (CreateOrderController.instance != null) {
+			}
+			if (CreateOrderController.instance != null) {
 				CreateOrderController.instance.loadParks(parks);
-			} else if (NewVisitorOrderController.instance != null) {
+			}
+			if (NewVisitorOrderController.instance != null) {
 				NewVisitorOrderController.instance.loadParks(parks);
-			} else if (VisitorOrdersScreenController.instance != null) {
+			}
+			if (VisitorOrdersScreenController.instance != null) {
 				VisitorOrdersScreenController.instance.loadParks(parks);
 			}
 		});
