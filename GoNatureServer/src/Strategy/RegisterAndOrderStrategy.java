@@ -19,7 +19,7 @@ public class RegisterAndOrderStrategy implements MessageStrategy {
 		// Index 0 = ArrayList<String> (Visitor Info)
 		// Index 1 = Order (Order Object)
 		// Index 2 = String (Payment Method)
-		// =========================================================	
+		// =========================================================
 		@SuppressWarnings("unchecked")
 		ArrayList<String> visitorData = (ArrayList<String>) fullData.get(0);
 		Order receivedOrder = (Order) fullData.get(1);
@@ -73,7 +73,7 @@ public class RegisterAndOrderStrategy implements MessageStrategy {
 
 				ArrayList<Object> timeSlotFullData = new ArrayList<>();
 				timeSlotFullData.add(alternatives); // 0: available alternative times
-				timeSlotFullData.add(orderData);    // 1: original order data for waiting list
+				timeSlotFullData.add(orderData); // 1: original order data for waiting list
 
 				response = new Message("TIME_SLOT_FULL", timeSlotFullData);
 

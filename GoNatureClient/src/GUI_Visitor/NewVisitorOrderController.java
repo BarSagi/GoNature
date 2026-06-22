@@ -91,7 +91,6 @@ public class NewVisitorOrderController {
 		int visitorsNum = visitorsSpinner.getValue();
 		String paymentMethod = paymentComboBox.getValue();
 
-		// וידוא שגם שיטת התשלום נבחרה
 		if (id.isEmpty() || firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || phone.isEmpty()
 				|| park == null || date == null || time == null || paymentMethod == null) {
 			showError("Please fill in all fields.");

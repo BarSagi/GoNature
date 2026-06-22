@@ -50,7 +50,7 @@ public class Order implements Serializable {
 		this.orderStatus = orderStatus;
 		this.holdUntil = holdUntil;
 	}
-	
+
 	public Order(int orderId, int parkId, String visitorId, Date visitDate, Time visitTime, int visitorCount,
 			String email, String orderType, String orderStatus, Timestamp holdUntil, Timestamp reminderUntil) {
 		this.orderId = orderId;
@@ -156,7 +156,7 @@ public class Order implements Serializable {
 	public void setHoldUntil(Timestamp holdUntil) {
 		this.holdUntil = holdUntil;
 	}
-	
+
 	public Timestamp getReminderUntil() {
 		return reminderUntil;
 	}

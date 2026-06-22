@@ -354,9 +354,7 @@ public class DBController {
 	public ArrayList<Order> getVisitorOrders(String visitorId) {
 
 		ArrayList<Order> list = new ArrayList<>();
-
 		String query = "SELECT * FROM Orders WHERE visitorId = ? ORDER BY visitDate DESC";
-
 		Connection conn = null;
 
 		try {
@@ -372,16 +370,40 @@ public class DBController {
 			ResultSet rs = ps.executeQuery();
 
 			while (rs.next()) {
-				Order order = new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
-						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
-						rs.getString("email"), rs.getString("orderType"), rs.getString("status"),
+				int orderId = rs.getInt("orderId");
+				Date visitDate = rs.getDate("visitDate");
+				Time visitTime = rs.getTime("visitTime");
+				String status = rs.getString("status");
+
+				if (status != null && !status.equals("Canceled") && !status.equals("Fulfilled")
+						&& !status.equals("Entered")) {
+					if (visitDate != null && visitTime != null) {
+
+						LocalDateTime visitDateTime = LocalDateTime.of(visitDate.toLocalDate(),
+								visitTime.toLocalTime());
+
+						LocalDateTime expirationTime = visitDateTime.plusMinutes(30);
+
+						if (LocalDateTime.now().isAfter(expirationTime)) {
+
+							String updateQuery = "UPDATE Orders SET status = 'Canceled' WHERE orderId = ?";
+							try (PreparedStatement updatePs = conn.prepareStatement(updateQuery)) {
+								updatePs.setInt(1, orderId);
+								updatePs.executeUpdate();
+							}
+							status = "Canceled";
+						}
+					}
+				}
+
+				Order order = new Order(orderId, rs.getInt("parkId"), rs.getString("visitorId"), visitDate, visitTime,
+						rs.getInt("visitorCount"), rs.getString("email"), rs.getString("orderType"), status,
 						rs.getTimestamp("holdUntil"), rs.getTimestamp("reminderUntil"));
 
 				order.setQrCode(rs.getString("QRCode"));
+
 				list.add(order);
 			}
-
-			System.out.println("SERVER getVisitorOrders finished. list size = " + list.size());
 
 			rs.close();
 			ps.close();
@@ -551,42 +573,33 @@ public class DBController {
 					psUpdateOrder.setInt(1, orderId);
 					psUpdateOrder.executeUpdate();
 
-	                boolean isCountUpdated = updateVisitorCount(parkId, visitorCount);
-	                return isCountUpdated;
-	            }
-	        }
-
 					boolean isCountUpdated = updateReservedVisitorCount(parkId, visitorCount);
 					return isCountUpdated;
 				}
 			}
 
-	return false;
+			return false;
 
-	}catch(
-
-	SQLException e)
-	{
-		e.printStackTrace();
-		return false;
-
-	}finally
-	{
-		try {
-			if (rs != null)
-				rs.close();
-			if (psSelect != null)
-				psSelect.close();
-			if (psInsert != null)
-				psInsert.close();
-			if (psUpdateOrder != null)
-				psUpdateOrder.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
+			return false;
+
+		} finally {
+			try {
+				if (rs != null)
+					rs.close();
+				if (psSelect != null)
+					psSelect.close();
+				if (psInsert != null)
+					psInsert.close();
+				if (psUpdateOrder != null)
+					psUpdateOrder.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			if (conn != null)
+				pool.releaseConnection(conn);
 		}
-		if (conn != null)
-			pool.releaseConnection(conn);
-	}
 	}
 
 	// =========================================================
@@ -668,25 +681,11 @@ public class DBController {
 
 				// Update overall park capacity using your existing methods
 				boolean isCountUpdated = false;
-
 				if (isCasual) {
+					// Pass negative value to decrement the count
 					isCountUpdated = updateCasualVisitorCount(parkId, -exitingAmount);
 				} else {
 					isCountUpdated = updateReservedVisitorCount(parkId, -exitingAmount);
-				}
-
-				// Commit or Rollback transaction
-				if (visitRows > 0 && isCountUpdated) {
-					conn.commit();
-
-					if (isFullExit) {
-						return "Success: Group exited completely. Order Fulfilled.";
-					} else {
-						return "Success: " + exitingAmount + " exited. " + remainingIn + " remaining in park.";
-					}
-				} else {
-					conn.rollback();
-					return "Error: Failed to safely update park counts.";
 				}
 
 				// Commit or Rollback transaction
@@ -1315,7 +1314,8 @@ public class DBController {
 
 			if (rowsAffected > 0) {
 				// The visit was inserted successfully, update the current visitor count
-				boolean isCountUpdated = updateVisitorCount(parkId, visitorCount);
+				// NOTE: updateCurrentVisitorCount should also DECREASE OpenCasualSpots
+				boolean isCountUpdated = updateCasualVisitorCount(parkId, visitorCount);
 
 				if (!isCountUpdated) {
 					System.err.println(
@@ -1366,44 +1366,6 @@ public class DBController {
 				rs.close();
 				ps.close();
 				return capacity;
-			}
-
-			rs.close();
-			ps.close();
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-
-		} finally {
-			if (conn != null) {
-				pool.releaseConnection(conn);
-			}
-		}
-
-		return -1;
-	}
-
-	// =========================================================
-	// GET PARK CASUAL GAP
-	// =========================================================
-	public int getParkCasualGap(int parkId) {
-
-		String query = "SELECT casualGap FROM Parks WHERE parkId = ?";
-		Connection conn = null;
-
-		try {
-			conn = pool.getConnection();
-
-			PreparedStatement ps = conn.prepareStatement(query);
-			ps.setInt(1, parkId);
-
-			ResultSet rs = ps.executeQuery();
-
-			if (rs.next()) {
-				int gap = rs.getInt("casualGap");
-				rs.close();
-				ps.close();
-				return gap;
 			}
 
 			rs.close();
@@ -1481,13 +1443,7 @@ public class DBController {
 			return false;
 		}
 
-		int gap = getParkCasualGap(parkId);
-
-		if (gap == -1) {
-			return false;
-		}
-
-		return approvedVisitors + requestedVisitors <= maxCapacity - gap;
+		return approvedVisitors + requestedVisitors <= maxCapacity;
 	}
 
 	// OVERLOAD: For new orders (Doesn't exclude any IDs)
@@ -1725,68 +1681,26 @@ public class DBController {
 		Connection conn = null;
 		PreparedStatement ps = null;
 
-		String query = "UPDATE Parks SET CurrentVisitorCount = CurrentVisitorCount + ?, "
-				+ "OpenCasualSpots = OpenCasualSpots - ? "
-				+ "WHERE parkId = ?";
-
-		try {
-			conn = pool.getConnection();
-			ps = conn.prepareStatement(query);
-
-			ps.setInt(1, visitorCountToAdd);
-			ps.setInt(2, visitorCountToAdd);
-			ps.setInt(3, parkId);
-
-			return ps.executeUpdate() > 0;
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return false;
-
-		} finally {
-			try {
-				if (ps != null) {
-					ps.close();
-				}
-				if (conn != null) {
-					pool.releaseConnection(conn);
-				}
-			} catch (SQLException ex) {
-				ex.printStackTrace();
-			}
-		}
-	}
-
-	// =========================================================
-	// UPDATE COUNT FOR VISITORS ONLY
-	// =========================================================
-	public boolean updateVisitorCount(int parkId, int visitorCountToAdd) {
-		Connection conn = null;
-		PreparedStatement ps = null;
-
 		String query = "UPDATE Parks SET CurrentVisitorCount = CurrentVisitorCount + ? WHERE parkId = ?";
 
 		try {
 			conn = pool.getConnection();
 			ps = conn.prepareStatement(query);
-
 			ps.setInt(1, visitorCountToAdd);
 			ps.setInt(2, parkId);
 
-			return ps.executeUpdate() > 0;
+			int rowsAffected = ps.executeUpdate();
+			return rowsAffected > 0;
 
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return false;
-
 		} finally {
 			try {
-				if (ps != null) {
+				if (ps != null)
 					ps.close();
-				}
-				if (conn != null) {
+				if (conn != null)
 					pool.releaseConnection(conn);
-				}
 			} catch (SQLException ex) {
 				ex.printStackTrace();
 			}
@@ -1848,7 +1762,7 @@ public class DBController {
 			}
 
 			String insert = "INSERT INTO Orders "
-					+ "(parkId, visitorId, visitDate, visitTime, visitorCount, email, orderType, status, QRCode, paid) "
+					+ "(parkId, visitorId, visitDate, visitTime, visitorCount, email, orderType, status, QRCode, paid)"
 					+ "VALUES (?, ?, ?, ?, ?, ?, ?, 'WaitingList', ?, ?)";
 
 			ps = conn.prepareStatement(insert);
@@ -1883,6 +1797,42 @@ public class DBController {
 				e.printStackTrace();
 			}
 
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
+	}
+
+	// =========================================================
+	// UPDATE COUNT FOR RESERVED VISITORS ONLY
+	// =========================================================
+	public boolean updateReservedVisitorCount(int parkId, int countChange) {
+		String updateQuery = "UPDATE Parks SET CurrentVisitorCount = CurrentVisitorCount + ? " + "WHERE parkId = ?";
+
+		Connection conn = null;
+		PreparedStatement ps = null;
+
+		try {
+			conn = pool.getConnection();
+			ps = conn.prepareStatement(updateQuery);
+
+			ps.setInt(1, countChange);
+			ps.setInt(2, parkId);
+
+			return ps.executeUpdate() > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			if (ps != null) {
+				try {
+					ps.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
 			if (conn != null) {
 				pool.releaseConnection(conn);
 			}
@@ -1977,6 +1927,7 @@ public class DBController {
 				}
 
 				int maxCapacity = parkRs.getInt("maxCapacity");
+				int currentCasualGap = parkRs.getInt("casualGap");
 				int requestedCasualGap = Integer.parseInt(newValue);
 
 				parkRs.close();
@@ -1988,6 +1939,9 @@ public class DBController {
 					return false;
 				}
 
+				// Calculate the difference between the new gap and the old gap
+				int gapDifference = requestedCasualGap - currentCasualGap;
+
 				// Update the casualGap inside the Parks table
 				PreparedStatement updateGapPs = conn
 						.prepareStatement("UPDATE Parks SET casualGap = ? WHERE parkId = ?");
@@ -1996,6 +1950,14 @@ public class DBController {
 				updateGapPs.executeUpdate();
 				updateGapPs.close();
 
+				// Dynamic adjustment: Add the gap difference directly to the current open
+				// casual spots
+				String updateSpotsQuery = "UPDATE Parks SET OpenCasualSpots = OpenCasualSpots + ? WHERE parkId = ?";
+				PreparedStatement updateSpotsPs = conn.prepareStatement(updateSpotsQuery);
+				updateSpotsPs.setInt(1, gapDifference);
+				updateSpotsPs.setInt(2, parkId);
+				updateSpotsPs.executeUpdate();
+				updateSpotsPs.close();
 			}
 
 			// =========================================================

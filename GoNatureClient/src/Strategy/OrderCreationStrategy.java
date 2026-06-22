@@ -28,8 +28,7 @@ public class OrderCreationStrategy implements MessageStrategy {
 			alert.setTitle(success ? "Order Approved" : "Order Failed");
 			alert.setHeaderText(null);
 			alert.setContentText(
-					success ? "Your order has been approved successfully." : "We could not create your order.\nIt is possible that the park has reached its maximum capacity for the requested date and time.");
-			alert.getDialogPane().setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+					success ? "Your order has been approved successfully." : "We could not create your order.");
 			alert.showAndWait();
 		});
 
