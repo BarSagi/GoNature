@@ -493,7 +493,7 @@ public class DBController {
 
 				result.add(new Visit(rs.getInt("visitId"), rs.getInt("parkId"), rs.getInt("orderId"),
 						rs.getString("visitorId"), rs.getInt("actualVisitorCount"), rs.getTimestamp("entryTime"),
-						rs.getTimestamp("exitTime"), rs.getString("orderType")));
+						rs.getTimestamp("exitTime"), rs.getString("visitType")));
 			}
 
 			rs.close();
@@ -573,7 +573,7 @@ public class DBController {
 					psUpdateOrder.setInt(1, orderId);
 					psUpdateOrder.executeUpdate();
 
-					boolean isCountUpdated = updateReservedVisitorCount(parkId, visitorCount);
+					boolean isCountUpdated = updateVisitorCount(parkId, visitorCount);
 					return isCountUpdated;
 				}
 			}
@@ -681,12 +681,7 @@ public class DBController {
 
 				// Update overall park capacity using your existing methods
 				boolean isCountUpdated = false;
-				if (isCasual) {
-					// Pass negative value to decrement the count
-					isCountUpdated = updateCasualVisitorCount(parkId, -exitingAmount);
-				} else {
-					isCountUpdated = updateReservedVisitorCount(parkId, -exitingAmount);
-				}
+				isCountUpdated = updateVisitorCount(parkId, -exitingAmount);
 
 				// Commit or Rollback transaction
 				if (visitRows > 0 && isCountUpdated) {
@@ -1161,7 +1156,7 @@ public class DBController {
 
 				Visit visit = new Visit(rs.getInt("visitId"), rs.getInt("parkId"), rs.getInt("orderId"),
 						rs.getString("visitorId"), rs.getInt("actualVisitorCount"), rs.getTimestamp("entryTime"),
-						rs.getTimestamp("exitTime"), rs.getString("orderType"));
+						rs.getTimestamp("exitTime"), rs.getString("visitType"));
 
 				result.add(visit);
 			}
@@ -1315,7 +1310,7 @@ public class DBController {
 			if (rowsAffected > 0) {
 				// The visit was inserted successfully, update the current visitor count
 				// NOTE: updateCurrentVisitorCount should also DECREASE OpenCasualSpots
-				boolean isCountUpdated = updateCasualVisitorCount(parkId, visitorCount);
+				boolean isCountUpdated = updateVisitorCount(parkId, visitorCount);
 
 				if (!isCountUpdated) {
 					System.err.println(
@@ -1366,6 +1361,44 @@ public class DBController {
 				rs.close();
 				ps.close();
 				return capacity;
+			}
+
+			rs.close();
+			ps.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+		} finally {
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
+
+		return -1;
+	}
+
+	// =========================================================
+	// GET PARK CASUAL GAP
+	// =========================================================
+	public int getParkCasualGap(int parkId) {
+
+		String query = "SELECT casualGap FROM Parks WHERE parkId = ?";
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setInt(1, parkId);
+
+			ResultSet rs = ps.executeQuery();
+
+			if (rs.next()) {
+				int gap = rs.getInt("casualGap");
+				rs.close();
+				ps.close();
+				return gap;
 			}
 
 			rs.close();
@@ -1443,7 +1476,13 @@ public class DBController {
 			return false;
 		}
 
-		return approvedVisitors + requestedVisitors <= maxCapacity;
+		int gap = getParkCasualGap(parkId);
+
+		if (gap == -1) {
+			return false;
+		}
+
+		return approvedVisitors + requestedVisitors <= maxCapacity - gap;
 	}
 
 	// OVERLOAD: For new orders (Doesn't exclude any IDs)
@@ -1535,68 +1574,6 @@ public class DBController {
 	}
 
 	// =========================================================
-	// RELEASE EXPIRED PENDING CONFIRMATIONS
-	// =========================================================
-	public void releaseExpiredPendingConfirmations() {
-
-		Connection conn = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-
-		try {
-			conn = pool.getConnection();
-
-			String query = "SELECT orderId, parkId, visitDate, visitTime " + "FROM Orders "
-					+ "WHERE status = 'PendingConfirmation' AND holdUntil < NOW()";
-
-			ps = conn.prepareStatement(query);
-			rs = ps.executeQuery();
-
-			ArrayList<Integer> expiredOrderIds = new ArrayList<>();
-			ArrayList<Integer> parkIds = new ArrayList<>();
-			ArrayList<String> visitDates = new ArrayList<>();
-			ArrayList<String> visitTimes = new ArrayList<>();
-
-			while (rs.next()) {
-				expiredOrderIds.add(rs.getInt("orderId"));
-				parkIds.add(rs.getInt("parkId"));
-				visitDates.add(rs.getDate("visitDate").toString());
-				visitTimes.add(rs.getTime("visitTime").toString());
-			}
-
-			rs.close();
-			ps.close();
-
-			for (int i = 0; i < expiredOrderIds.size(); i++) {
-				PreparedStatement updatePs = conn
-						.prepareStatement("UPDATE Orders SET status = 'Canceled', holdUntil = NULL WHERE orderId = ?");
-				updatePs.setInt(1, expiredOrderIds.get(i));
-				updatePs.executeUpdate();
-				updatePs.close();
-
-				promoteWaitingOrderIfPossible(parkIds.get(i), visitDates.get(i), visitTimes.get(i));
-			}
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-
-		} finally {
-			try {
-				if (rs != null)
-					rs.close();
-				if (ps != null)
-					ps.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-
-			if (conn != null) {
-				pool.releaseConnection(conn);
-			}
-		}
-	}
-
-	// =========================================================
 	// CANCEL ORDER
 	// =========================================================
 	public boolean cancelOrder(int orderId) {
@@ -1677,7 +1654,7 @@ public class DBController {
 	// =========================================================
 	// UPDATE COUNT FOR CASUAL VISITORS ONLY
 	// =========================================================
-	public boolean updateCasualVisitorCount(int parkId, int visitorCountToAdd) {
+	public boolean updateVisitorCount(int parkId, int visitorCountToAdd) {
 		Connection conn = null;
 		PreparedStatement ps = null;
 
@@ -1804,42 +1781,6 @@ public class DBController {
 	}
 
 	// =========================================================
-	// UPDATE COUNT FOR RESERVED VISITORS ONLY
-	// =========================================================
-	public boolean updateReservedVisitorCount(int parkId, int countChange) {
-		String updateQuery = "UPDATE Parks SET CurrentVisitorCount = CurrentVisitorCount + ? " + "WHERE parkId = ?";
-
-		Connection conn = null;
-		PreparedStatement ps = null;
-
-		try {
-			conn = pool.getConnection();
-			ps = conn.prepareStatement(updateQuery);
-
-			ps.setInt(1, countChange);
-			ps.setInt(2, parkId);
-
-			return ps.executeUpdate() > 0;
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return false;
-
-		} finally {
-			if (ps != null) {
-				try {
-					ps.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			}
-			if (conn != null) {
-				pool.releaseConnection(conn);
-			}
-		}
-	}
-
-	// =========================================================
 	// APPROVE REQUEST
 	// =========================================================
 	public boolean approveRequest(int requestId) {
@@ -1927,7 +1868,6 @@ public class DBController {
 				}
 
 				int maxCapacity = parkRs.getInt("maxCapacity");
-				int currentCasualGap = parkRs.getInt("casualGap");
 				int requestedCasualGap = Integer.parseInt(newValue);
 
 				parkRs.close();
@@ -1939,9 +1879,6 @@ public class DBController {
 					return false;
 				}
 
-				// Calculate the difference between the new gap and the old gap
-				int gapDifference = requestedCasualGap - currentCasualGap;
-
 				// Update the casualGap inside the Parks table
 				PreparedStatement updateGapPs = conn
 						.prepareStatement("UPDATE Parks SET casualGap = ? WHERE parkId = ?");
@@ -1950,14 +1887,6 @@ public class DBController {
 				updateGapPs.executeUpdate();
 				updateGapPs.close();
 
-				// Dynamic adjustment: Add the gap difference directly to the current open
-				// casual spots
-				String updateSpotsQuery = "UPDATE Parks SET OpenCasualSpots = OpenCasualSpots + ? WHERE parkId = ?";
-				PreparedStatement updateSpotsPs = conn.prepareStatement(updateSpotsQuery);
-				updateSpotsPs.setInt(1, gapDifference);
-				updateSpotsPs.setInt(2, parkId);
-				updateSpotsPs.executeUpdate();
-				updateSpotsPs.close();
 			}
 
 			// =========================================================
@@ -2431,6 +2360,68 @@ public class DBController {
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
+			}
+
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
+	}
+
+	// =========================================================
+	// RELEASE EXPIRED PENDING CONFIRMATIONS
+	// =========================================================
+	public void releaseExpiredPendingConfirmations() {
+
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			conn = pool.getConnection();
+
+			String query = "SELECT orderId, parkId, visitDate, visitTime " + "FROM Orders "
+					+ "WHERE status = 'PendingConfirmation' AND holdUntil < NOW()";
+
+			ps = conn.prepareStatement(query);
+			rs = ps.executeQuery();
+
+			ArrayList<Integer> expiredOrderIds = new ArrayList<>();
+			ArrayList<Integer> parkIds = new ArrayList<>();
+			ArrayList<String> visitDates = new ArrayList<>();
+			ArrayList<String> visitTimes = new ArrayList<>();
+
+			while (rs.next()) {
+				expiredOrderIds.add(rs.getInt("orderId"));
+				parkIds.add(rs.getInt("parkId"));
+				visitDates.add(rs.getDate("visitDate").toString());
+				visitTimes.add(rs.getTime("visitTime").toString());
+			}
+
+			rs.close();
+			ps.close();
+
+			for (int i = 0; i < expiredOrderIds.size(); i++) {
+				PreparedStatement updatePs = conn
+						.prepareStatement("UPDATE Orders SET status = 'Canceled', holdUntil = NULL WHERE orderId = ?");
+				updatePs.setInt(1, expiredOrderIds.get(i));
+				updatePs.executeUpdate();
+				updatePs.close();
+
+				promoteWaitingOrderIfPossible(parkIds.get(i), visitDates.get(i), visitTimes.get(i));
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+		} finally {
+			try {
+				if (rs != null)
+					rs.close();
+				if (ps != null)
+					ps.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
 			}
 
 			if (conn != null) {

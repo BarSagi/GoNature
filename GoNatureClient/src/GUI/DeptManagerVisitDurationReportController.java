@@ -16,7 +16,7 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.ComboBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
-
+import javafx.collections.FXCollections;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -55,8 +55,8 @@ public class DeptManagerVisitDurationReportController {
 		for (int y = 2020; y <= 2030; y++) {
 			yearCombo.getItems().add(y);
 		}
-
-		xAxis.setCategories(javafx.collections.FXCollections.observableArrayList(timeSlots));
+		
+		xAxis.setCategories(FXCollections.observableArrayList(timeSlots));
 
 		Message msg = new Message("GET_ALL_PARKS", null);
 		try {
@@ -101,7 +101,7 @@ public class DeptManagerVisitDurationReportController {
 			barChart.getData().clear();
 
 			XYChart.Series<String, Number> regularSeries = new XYChart.Series<>();
-			regularSeries.setName("Regular Visitors");
+			regularSeries.setName("Family Visitors");
 
 			XYChart.Series<String, Number> organizedSeries = new XYChart.Series<>();
 			organizedSeries.setName("Organized Groups");
@@ -119,7 +119,7 @@ public class DeptManagerVisitDurationReportController {
 				LocalDateTime closingTime = entry.toLocalDate().atTime(17, 0);
 
 				if (exit.isAfter(closingTime)) {
-				    exit = closingTime;
+					exit = closingTime;
 				}
 				long minutes = Duration.between(entry, exit).toMinutes();
 				if (minutes <= 0)

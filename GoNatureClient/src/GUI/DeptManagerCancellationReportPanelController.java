@@ -26,184 +26,201 @@ import java.util.Map;
 
 public class DeptManagerCancellationReportPanelController {
 
-    public static DeptManagerCancellationReportPanelController instance;
+	public static DeptManagerCancellationReportPanelController instance;
 
-    @FXML
-    private ComboBox<String> parkCombo;
+	@FXML
+	private ComboBox<String> parkCombo;
 
-    @FXML
-    private ComboBox<Integer> monthCombo;
+	@FXML
+	private ComboBox<Integer> monthCombo;
 
-    @FXML
-    private ComboBox<Integer> yearCombo;
+	@FXML
+	private ComboBox<Integer> yearCombo;
 
-    @FXML
-    private GridPane heatMapGrid;
-    
-    @FXML
-    private HBox legendContainer;
+	@FXML
+	private GridPane heatMapGrid;
 
-    @FXML
-    public void initialize() {
-        instance = this;
+	@FXML
+	private HBox legendContainer;
 
-        for (int i = 1; i <= 12; i++) {
-            monthCombo.getItems().add(i);
-        }
+	@FXML
+	public void initialize() {
+		instance = this;
 
-        for (int i = 2020; i <= 2030; i++) {
-            yearCombo.getItems().add(i);
-        }
+		for (int i = 1; i <= 12; i++) {
+			monthCombo.getItems().add(i);
+		}
 
-        loadParks();
-        drawLegend(0.0);
-    }
+		for (int i = 2020; i <= 2030; i++) {
+			yearCombo.getItems().add(i);
+		}
 
-    private void loadParks() {
-        try {
-            Message msg = new Message("GET_ALL_PARKS", new ArrayList<>());
-            ClientUI.client.sendToServer(msg);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+		loadParks();
+		drawLegend(0.0);
+	}
 
-    @FXML
-    void generateReport(ActionEvent event) {
-        String park = parkCombo.getValue();
-        Integer month = monthCombo.getValue();
-        Integer year = yearCombo.getValue();
+	private void loadParks() {
+		try {
+			Message msg = new Message("GET_ALL_PARKS", new ArrayList<>());
+			ClientUI.client.sendToServer(msg);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
-        if (park == null || month == null || year == null) {
-            System.out.println("Missing input");
-            return;
-        }
+	@FXML
+	void generateReport(ActionEvent event) {
+		String park = parkCombo.getValue();
+		Integer month = monthCombo.getValue();
+		Integer year = yearCombo.getValue();
 
-        ArrayList<Object> data = new ArrayList<>();
-        data.add(park);
-        data.add(month);
-        data.add(year);
+		if (park == null || month == null || year == null) {
+			System.out.println("Missing input");
+			return;
+		}
 
-        Message msg = new Message("GET_CANCELLATION_REPORT", data);
+		ArrayList<Object> data = new ArrayList<>();
+		data.add(park);
+		data.add(month);
+		data.add(year);
 
-        try {
-            ClientUI.client.sendToServer(msg);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+		Message msg = new Message("GET_CANCELLATION_REPORT", data);
 
-    public void showReport(ArrayList<CancellationReportData> report) {
-        Platform.runLater(() -> {
-            heatMapGrid.getChildren().clear();
+		try {
+			ClientUI.client.sendToServer(msg);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
-            if (report == null || report.isEmpty()) {
-                drawLegend(0.0);
-                return;
-            }
+	public void showReport(ArrayList<CancellationReportData> report) {
+		Platform.runLater(() -> {
+			heatMapGrid.getChildren().clear();
 
-            Map<Integer, Double> dayMap = new HashMap<>();
-            double totalCancellations = 0;
+			if (report == null || report.isEmpty()) {
+				heatMapGrid.getChildren().clear();
 
-            for (CancellationReportData r : report) {
-                dayMap.put(r.getDayOfMonth(), r.getValue());
-                totalCancellations += r.getValue();
-            }
+				Label emptyLabel = new Label("No data for selected month");
+				emptyLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
+				emptyLabel.setTextFill(Color.web("#e74c3c"));
 
-            String[] weekDays = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-            for (int i = 0; i < weekDays.length; i++) {
-                Label dayHeader = new Label(weekDays[i]);
-                dayHeader.setFont(Font.font("System", FontWeight.BOLD, 12));
-                dayHeader.setTextFill(Color.web("#34495e"));
-                dayHeader.setAlignment(Pos.CENTER);
-                dayHeader.setPrefWidth(60);
-                heatMapGrid.add(dayHeader, i, 0);
-            }
+				StackPane container = new StackPane(emptyLabel);
+				container.setAlignment(Pos.CENTER);
 
-            int selectedMonth = monthCombo.getValue() != null ? monthCombo.getValue() : 1;
-            int selectedYear = yearCombo.getValue() != null ? yearCombo.getValue() : 2025;
-            YearMonth yearMonthObject = YearMonth.of(selectedYear, selectedMonth);
-            int daysInMonth = yearMonthObject.lengthOfMonth();
+				heatMapGrid.add(container, 0, 1, 7, 1);
 
-            double monthlyAverage = totalCancellations / daysInMonth;
-            drawLegend(monthlyAverage);
+				drawLegend(0.0);
+				return;
+			}
 
-            double cellSize = 60.0;
+			Map<Integer, Double> dayMap = new HashMap<>();
+			double totalCancellations = 0;
 
-            for (int day = 1; day <= daysInMonth; day++) {
-                double value = dayMap.getOrDefault(day, 0.0);
+			for (CancellationReportData r : report) {
+				dayMap.put(r.getDayOfMonth(), r.getValue());
+				totalCancellations += r.getValue();
+			}
 
-                Rectangle cell = new Rectangle(cellSize, cellSize);
-                cell.setFill(getColor(value));
-                cell.setArcWidth(10);
-                cell.setArcHeight(10);
+			String[] weekDays = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+			for (int i = 0; i < weekDays.length; i++) {
+				Label dayHeader = new Label(weekDays[i]);
+				dayHeader.setFont(Font.font("System", FontWeight.BOLD, 12));
+				dayHeader.setTextFill(Color.web("#34495e"));
+				dayHeader.setAlignment(Pos.CENTER);
+				dayHeader.setPrefWidth(60);
+				heatMapGrid.add(dayHeader, i, 0);
+			}
 
-                Label dayLabel = new Label(String.valueOf(day));
-                dayLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
-                dayLabel.setTextFill(Color.BLACK);
+			int selectedMonth = monthCombo.getValue() != null ? monthCombo.getValue() : 1;
+			int selectedYear = yearCombo.getValue() != null ? yearCombo.getValue() : 2025;
+			YearMonth yearMonthObject = YearMonth.of(selectedYear, selectedMonth);
+			int daysInMonth = yearMonthObject.lengthOfMonth();
 
-                StackPane cellStack = new StackPane();
-                cellStack.getChildren().addAll(cell, dayLabel);
-                cellStack.setAlignment(Pos.CENTER);
+			double monthlyAverage = totalCancellations / daysInMonth;
+			drawLegend(monthlyAverage);
 
-                int col = (day - 1) % 7;
-                int row = ((day - 1) / 7) + 1;
+			double cellSize = 60.0;
 
-                heatMapGrid.add(cellStack, col, row);
-            }
-        });
-    }
+			for (int day = 1; day <= daysInMonth; day++) {
+				double value = dayMap.getOrDefault(day, 0.0);
 
-    private Color getColor(double v) {
-        if (v == 0) return Color.LIGHTGREEN;
-        if (v < 2) return Color.YELLOWGREEN;
-        if (v < 5) return Color.YELLOW;
-        if (v < 10) return Color.ORANGE;
-        return Color.RED;
-    }
+				Rectangle cell = new Rectangle(cellSize, cellSize);
+				cell.setFill(getColor(value));
+				cell.setArcWidth(10);
+				cell.setArcHeight(10);
 
-    private void drawLegend(double average) {
-        if (legendContainer == null) return;
-        
-        legendContainer.getChildren().clear();
-        legendContainer.setSpacing(15);
-        legendContainer.setAlignment(Pos.CENTER);
+				Label dayLabel = new Label(String.valueOf(day));
+				dayLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
+				dayLabel.setTextFill(Color.BLACK);
 
-        String[] labels = {"0 Cancellations", "1 Cancellation", "2-4 Cancellations", "5-9 Cancellations", "10+ Cancellations"};
-        Color[] colors = {Color.LIGHTGREEN, Color.YELLOWGREEN, Color.YELLOW, Color.ORANGE, Color.RED};
+				StackPane cellStack = new StackPane();
+				cellStack.getChildren().addAll(cell, dayLabel);
+				cellStack.setAlignment(Pos.CENTER);
 
-        for (int i = 0; i < colors.length; i++) {
-            Rectangle rect = new Rectangle(20, 20);
-            rect.setFill(colors[i]);
-            rect.setArcWidth(5);
-            rect.setArcHeight(5);
+				int col = (day - 1) % 7;
+				int row = ((day - 1) / 7) + 1;
 
-            Label label = new Label(labels[i]);
-            label.setFont(Font.font("System", 12));
+				heatMapGrid.add(cellStack, col, row);
+			}
+		});
+	}
 
-            HBox legendItem = new HBox(5);
-            legendItem.setAlignment(Pos.CENTER_LEFT);
-            legendItem.getChildren().addAll(rect, label);
+	private Color getColor(double v) {
+		if (v == 0)
+			return Color.LIGHTGREEN;
+		if (v < 2)
+			return Color.YELLOWGREEN;
+		if (v < 5)
+			return Color.YELLOW;
+		if (v < 10)
+			return Color.ORANGE;
+		return Color.RED;
+	}
 
-            legendContainer.getChildren().add(legendItem);
-        }
+	private void drawLegend(double average) {
+		if (legendContainer == null)
+			return;
 
-        Separator separator = new Separator();
-        separator.setOrientation(javafx.geometry.Orientation.VERTICAL);
-        separator.setPrefHeight(20);
-        legendContainer.getChildren().add(separator);
+		legendContainer.getChildren().clear();
+		legendContainer.setSpacing(15);
+		legendContainer.setAlignment(Pos.CENTER);
 
-        Label avgLabel = new Label(String.format("Monthly Daily Avg: %.2f", average));
-        avgLabel.setFont(Font.font("System", FontWeight.BOLD, 13));
-        avgLabel.setTextFill(Color.web("#2c3e50"));
-        
-        legendContainer.getChildren().add(avgLabel);
-    }
+		String[] labels = { "0 Cancellations", "1 Cancellation", "2-4 Cancellations", "5-9 Cancellations",
+				"10+ Cancellations" };
+		Color[] colors = { Color.LIGHTGREEN, Color.YELLOWGREEN, Color.YELLOW, Color.ORANGE, Color.RED };
 
-    public void loadParks(List<String> parks) {
-        Platform.runLater(() -> {
-            parkCombo.getItems().clear();
-            parkCombo.getItems().addAll(parks);
-        });
-    }
+		for (int i = 0; i < colors.length; i++) {
+			Rectangle rect = new Rectangle(20, 20);
+			rect.setFill(colors[i]);
+			rect.setArcWidth(5);
+			rect.setArcHeight(5);
+
+			Label label = new Label(labels[i]);
+			label.setFont(Font.font("System", 12));
+
+			HBox legendItem = new HBox(5);
+			legendItem.setAlignment(Pos.CENTER_LEFT);
+			legendItem.getChildren().addAll(rect, label);
+
+			legendContainer.getChildren().add(legendItem);
+		}
+
+		Separator separator = new Separator();
+		separator.setOrientation(javafx.geometry.Orientation.VERTICAL);
+		separator.setPrefHeight(20);
+		legendContainer.getChildren().add(separator);
+
+		Label avgLabel = new Label(String.format("Monthly Daily Avg: %.2f", average));
+		avgLabel.setFont(Font.font("System", FontWeight.BOLD, 13));
+		avgLabel.setTextFill(Color.web("#2c3e50"));
+
+		legendContainer.getChildren().add(avgLabel);
+	}
+
+	public void loadParks(List<String> parks) {
+		Platform.runLater(() -> {
+			parkCombo.getItems().clear();
+			parkCombo.getItems().addAll(parks);
+		});
+	}
 }
