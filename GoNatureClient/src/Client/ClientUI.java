@@ -119,10 +119,23 @@ public class ClientUI extends Application {
 			public void run() {
 				try {
 					FXMLLoader loader = new FXMLLoader(ClientUI.class.getResource(fxmlPath));
-					Scene scene = new Scene(loader.load());
+					
+					// Load the new content as a Parent instead of creating a new Scene
+					javafx.scene.Parent root = loader.load(); 
 
 					mainStage.setTitle(title);
-					mainStage.setScene(scene);
+
+					// If this is the first time the app loads and there is no Scene yet
+					if (mainStage.getScene() == null) {
+						mainStage.setScene(new Scene(root));
+					} else {
+						// If a Scene already exists, smoothly swap its internal content (Root)
+						mainStage.getScene().setRoot(root);
+					}
+
+					// Ensure the window remains maximized across all screen changes
+					mainStage.setMaximized(true);
+					mainStage.show();
 
 				} catch (Exception e) {
 					System.out.println("Error loading screen: " + fxmlPath);

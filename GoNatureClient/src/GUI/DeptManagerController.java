@@ -20,9 +20,6 @@ public class DeptManagerController {
     private Label welcomeLabel;
 
     @FXML
-    private Label departmentLabel;
-
-    @FXML
     private StackPane contentArea;
 
     @FXML
@@ -32,10 +29,9 @@ public class DeptManagerController {
                     + GoNatureClient.currentEmployee.getLastName();
 
             welcomeLabel.setText("Welcome " + fullName + "!");
-            departmentLabel.setText("Department: " + GoNatureClient.currentEmployee.getAffiliation());
+    
         } else {
             welcomeLabel.setText("Welcome!");
-            departmentLabel.setText("Department: Unknown");
         }
         
         Platform.runLater(() -> {
@@ -45,6 +41,8 @@ public class DeptManagerController {
                 stage.setMaximized(true);
             }
         });
+        
+        loadPanel("/GUI/DeptManagerParkDashboard.fxml");
     }
 
     @FXML
@@ -60,6 +58,11 @@ public class DeptManagerController {
     @FXML
     void showCancellationReport(ActionEvent event) {
     	loadPanel("/GUI/DeptManagerCancellationReportPanel.fxml");
+    }
+    
+    @FXML
+    void showParkDashboard(ActionEvent event) {
+    	loadPanel("/GUI/DeptManagerParkDashboard.fxml");
     }
     
     @FXML

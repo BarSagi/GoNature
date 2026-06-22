@@ -123,14 +123,21 @@ public class ParkWorkerCreateOrderController {
 	// =========================
 	public void handleVisitorTypeResult(String type) {
 
-		if (type == null) {
-			cachedVisitorType = "Individual";
-		} else if (type.equals("Individual") || type.equals("SmallGroup")) {
-			cachedVisitorType = "SmallGroup";
-		} else {
-			cachedVisitorType = "OrganizedGroup";
-		}
+		if (type.equals("Guide")) {
+            cachedVisitorType = "OrganizedGroup";
 
+			if (Integer.parseInt(pendingVisitorCount)<2 || Integer.parseInt(pendingVisitorCount)>16) {
+				Platform.runLater(() -> statusLabel.setText("Invalid visitor count for guide. "));
+				return;
+			}
+		}
+        else {
+            cachedVisitorType = "Individual";
+            if (Integer.parseInt(pendingVisitorCount)>100 || Integer.parseInt(pendingVisitorCount)<1) {
+            	Platform.runLater(() ->statusLabel.setText("Invalid visitor count. "));
+				return;
+			}
+        }
 		Platform.runLater(() -> statusLabel.setText("Fetching email..."));
 
 		try {
@@ -165,8 +172,8 @@ public class ParkWorkerCreateOrderController {
 		orderData.add(pendingDate);
 		orderData.add(pendingTime);
 		orderData.add(pendingVisitorCount);
-		orderData.add(pendingEmail);
 		orderData.add(cachedVisitorType);
+		orderData.add(pendingEmail);
 		orderData.add(pendingPayment);
 
 		try {

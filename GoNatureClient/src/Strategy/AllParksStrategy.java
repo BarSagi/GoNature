@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import Common.Message;
 import GUI.CreateOrderController;
 import GUI.DeptManagerCancellationReportPanelController;
+import GUI.DeptManagerParkDashboardController;
 import GUI.DeptManagerVisitDurationReportController;
 import GUI.ParkWorkerCreateOrderController;
 import GUI_Visitor.NewVisitorOrderController;
@@ -21,6 +22,9 @@ public class AllParksStrategy implements MessageStrategy {
 		Platform.runLater(() -> {
 			if (DeptManagerVisitDurationReportController.instance != null) {
 				DeptManagerVisitDurationReportController.instance.loadParks(parks);
+			}
+			if (DeptManagerParkDashboardController.instance != null) {
+				DeptManagerParkDashboardController.instance.loadParks(parks);
 			}
 			if (DeptManagerCancellationReportPanelController.instance != null) {
 				DeptManagerCancellationReportPanelController.instance.loadParks(parks);

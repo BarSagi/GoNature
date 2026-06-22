@@ -19,7 +19,7 @@
 
 	<Label
 		style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"
-		text="Register Casual Visit" />
+		text="Create Casual Visit" />
 
 	<Label fx:id="parkLabel"
 		style="-fx-font-size: 14px; -fx-text-fill: #7f8c8d; -fx-font-style: italic;"

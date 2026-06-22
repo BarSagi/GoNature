@@ -31,8 +31,6 @@
                   style="-fx-background-color: #113f5c; -fx-background-radius: 8; -fx-padding: 10;">
                 <Label fx:id="welcomeLabel" text="Welcome!"
                        style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;" />
-                <Label fx:id="departmentLabel" text="Department: Loading..."
-                       style="-fx-font-size: 12px; -fx-text-fill: #bdc3c7;" />
                 <VBox.margin>
                     <Insets bottom="20.0" />
                 </VBox.margin>
@@ -49,7 +47,10 @@
             <Button text="View Cancellation Report" onAction="#showCancellationReport"
                     prefHeight="45.0" prefWidth="230.0"
                     style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
-                    
+             <Button text="View Park Dashboard" onAction="#showParkDashboard"
+                    prefHeight="45.0" prefWidth="230.0"
+                    style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
+                          
                     
             <VBox alignment="BOTTOM_CENTER" VBox.vgrow="ALWAYS">
                 <Button text="Logout" onAction="#handleLogout"

@@ -25,23 +25,46 @@ public class ParkDashboardController {
     @FXML
     private Label statusLabel;
 
+    // Variable to store the park currently displayed on the screen
+    private String currentDisplayedPark;
+
     @FXML
     public void initialize() {
         instance = this;
-        // Request data when the screen is loaded
-        Platform.runLater(() -> refreshDashboard(null));
+        
+        Platform.runLater(() -> {
+            // Fetch the role of the currently logged-in employee
+            String role = GoNatureClient.currentEmployee.getRole();
+            
+            // Check if the user is NOT a Department Manager (using both possible DB strings to be safe)
+            if (role != null && !role.equals("DeptManager")) {
+                // For Park Managers and Workers, automatically load their affiliated park
+                currentDisplayedPark = GoNatureClient.currentEmployee.getAffiliation();
+                refreshDashboard(null);
+            } else {
+                // For Department Managers, wait until a park is selected from the ComboBox.
+                // Clear the default labels so the screen doesn't show "Headquarters" or empty dashes.
+                parkNameLabel.setText("Please select a park");
+                statusLabel.setText("");
+            }
+        });
     }
 
     @FXML
     void refreshDashboard(ActionEvent event) {
         try {
+            // If no park is selected or set yet, abort the refresh attempt
+            if (currentDisplayedPark == null || currentDisplayedPark.isEmpty()) {
+                return;
+            }
+
+            // Update UI to show data is being fetched
             statusLabel.setStyle("-fx-text-fill: #2980b9;");
             statusLabel.setText("Fetching park data...");
+            parkNameLabel.setText("Park: " + currentDisplayedPark);
             
-            // Assuming currentEmployee knows which park they belong to
-            String parkName = GoNatureClient.currentEmployee.getAffiliation();
-            parkNameLabel.setText("Park: " + parkName);
-            Message msg = new Message("GET_PARK_DASHBOARD", parkName);
+            // Send a request to the server to get dashboard data for the selected park
+            Message msg = new Message("GET_PARK_DASHBOARD", currentDisplayedPark);
             ClientUI.client.sendToServer(msg);
             
         } catch (Exception e) {
@@ -51,25 +74,36 @@ public class ParkDashboardController {
         }
     }
 
+    // ==========================================
+    // External method called by the Department Manager screen
+    // ==========================================
+    public void loadDashboardForPark(String parkName) {
+        // Update the current park variable to the one selected in the ComboBox
+        this.currentDisplayedPark = parkName;
+        // Trigger the refresh method to pull the relevant data from the server
+        refreshDashboard(null);
+    }
+
     /**
-     * This method should be called by the client when it receives the Park details from the server.
-     * Ensure you pass the data dynamically. For now, it takes strings for simplicity.
+     * This method is called by the client when it receives the requested park details from the server.
      */
     public void updateDashboardData(String parkName, int maxCapacity, int casualGap, int avgStay, int currentVisitors) {
-		Platform.runLater(() -> {
-			parkNameLabel.setText("Park: " + parkName);
-			maxCapacityLabel.setText(String.valueOf(maxCapacity));
-			casualGapLabel.setText(String.valueOf(casualGap));
-			avgStayDurationLabel.setText(String.valueOf(avgStay));
-			currentVisitorsLabel.setText(String.valueOf(currentVisitors));
-			
-			statusLabel.setStyle("-fx-text-fill: #27ae60;");
-			statusLabel.setText("Data is up to date.");
-			
-			// Clear the success message after 3 seconds
-			javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(3));
-			pause.setOnFinished(e -> statusLabel.setText(""));
-			pause.play();
-		});
-}
+        Platform.runLater(() -> {
+            // Update all the labels with the fresh data from the DB
+            parkNameLabel.setText("Park: " + parkName);
+            maxCapacityLabel.setText(String.valueOf(maxCapacity));
+            casualGapLabel.setText(String.valueOf(casualGap));
+            avgStayDurationLabel.setText(String.valueOf(avgStay));
+            currentVisitorsLabel.setText(String.valueOf(currentVisitors));
+            
+            // Show a success message
+            statusLabel.setStyle("-fx-text-fill: #27ae60;");
+            statusLabel.setText("Data is up to date.");
+            
+            // Automatically clear the success message after 3 seconds for a cleaner UI
+            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(3));
+            pause.setOnFinished(e -> statusLabel.setText(""));
+            pause.play();
+        });
+    }
 }

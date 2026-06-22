@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: #f4f7f6;" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GUI.DeptManagerParkDashboardController">
+   <children>
+      
+      <AnchorPane fx:id="selectionPane" prefHeight="600.0" prefWidth="800.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <AnchorPane layoutX="200.0" layoutY="140.0" prefHeight="280.0" prefWidth="400.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 5);">
+               <children>
+                  
+                  <Label alignment="CENTER" layoutX="0.0" layoutY="40.0" prefWidth="400.0" text="Select Park Dashboard" textFill="#2c3e50">
+                     <font>
+                        <Font name="System Bold" size="24.0" />
+                     </font>
+                  </Label>
+                  
+                  <Label alignment="CENTER" layoutX="0.0" layoutY="80.0" prefWidth="400.0" text="Choose a park to view its real-time data" textFill="#7f8c8d">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Label>
+                  
+                  <ComboBox fx:id="parkCombo" layoutX="75.0" layoutY="130.0" prefHeight="40.0" prefWidth="250.0" promptText="Choose a park..." style="-fx-font-size: 14px; -fx-background-color: #ffffff; -fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-background-radius: 5;" />
+                  
+                  <Button layoutX="110.0" layoutY="200.0" mnemonicParsing="false" onAction="#onShowDashboardClick" prefHeight="40.0" prefWidth="180.0" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-size: 15px; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" text="Show Dashboard" />
+                  
+               </children>
+            </AnchorPane>
+         </children>
+      </AnchorPane>
+
+      <AnchorPane fx:id="dashboardWrapperPane" prefHeight="600.0" prefWidth="800.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <Button layoutX="20.0" layoutY="15.0" mnemonicParsing="false" onAction="#onBackButtonClick" prefHeight="35.0" prefWidth="140.0" style="-fx-background-color: white; -fx-text-fill: #2c3e50; -fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-background-radius: 5; -fx-font-weight: bold; -fx-cursor: hand;" text="&lt; Back to Selection" />
+            
+            <AnchorPane fx:id="dashboardContentArea" layoutX="20.0" layoutY="65.0" prefHeight="515.0" prefWidth="760.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="65.0" />
+         </children>
+      </AnchorPane>
+
+   </children>
+</AnchorPane>
