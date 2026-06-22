@@ -8,7 +8,6 @@ import OCSFUtils.ConnectionToClient;
 import Strategy.MessageStrategy;
 import Strategy.StrategyFactory;
 import javafx.application.Platform;
-import Reports.ReportService;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,7 +18,6 @@ public class EchoServer extends AbstractServer {
 
 	public static EchoServer instance;
 	private DBController database;
-	private ReportService reportService;
 	
 	private final Map<ConnectionToClient, Long> lastActivityMap = new ConcurrentHashMap<>();
 	
@@ -113,7 +111,6 @@ public class EchoServer extends AbstractServer {
 		log("[SYSTEM] Server listening for connections on port " + getPort());
 		startIdleChecker();
 		database = new DBController(this);
-		reportService = new ReportService(database);
 	}
 
 	protected void serverStopped() {
@@ -214,9 +211,5 @@ public class EchoServer extends AbstractServer {
 
 	    t.setDaemon(true);
 	    t.start();
-	}
-	
-	public ReportService getReportService() {
-	    return reportService;
 	}
 }

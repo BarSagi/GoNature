@@ -56,9 +56,9 @@ public class ParkManagerVisitReportsPanelController {
 
 			pieChart.getData().clear();
 
-			PieChart.Data individual = new PieChart.Data("Individual", report.getIndividualVisitors());
+			PieChart.Data individual = new PieChart.Data("Regular Groups", report.getIndividualVisitors());
 
-			PieChart.Data group = new PieChart.Data("Group", report.getGroupVisitors());
+			PieChart.Data group = new PieChart.Data("Organized Groups", report.getGroupVisitors());
 
 			pieChart.getData().addAll(individual, group);
 
@@ -70,7 +70,7 @@ public class ParkManagerVisitReportsPanelController {
 			int total = individualCount + groupCount;
 
 			totalLabel.setText(
-					"Total visitors: " + total + " | Individual: " + individualCount + " | Group: " + groupCount);
+					"Total visitors: " + total + " | Regular Groups: " + individualCount + " | Organized Groups: " + groupCount);
 
 			individual.nodeProperty().addListener((obs, oldNode, newNode) -> {
 				if (newNode != null) {

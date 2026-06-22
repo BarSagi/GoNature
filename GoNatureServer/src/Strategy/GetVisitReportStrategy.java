@@ -12,31 +12,34 @@ public class GetVisitReportStrategy implements MessageStrategy {
 	@Override
 	public void execute(Message message, ConnectionToClient client, EchoServer server) {
 
-	    try {
+		try {
+			@SuppressWarnings("unchecked")
+			ArrayList<Object> data = (ArrayList<Object>) message.getData();
 
-	        @SuppressWarnings("unchecked")
-	        ArrayList<Object> data = (ArrayList<Object>) message.getData();
+			String parkName = (String) data.get(0);
+			int month = (Integer) data.get(1);
+			int year = (Integer) data.get(2);
 
-	        String parkName = (String) data.get(0);
-	        int month = (Integer) data.get(1);
-	        int year = (Integer) data.get(2);
+			int parkId = server.getDatabase().getParkIdByName(parkName);
 
-	        int parkId = server.getDatabase().getParkIdByName(parkName);
+			if (parkId == -1) {
+				System.out.println("ERROR: parkId not found!");
+				client.sendToClient(new Message("VISIT_REPORT_RESULT", null));
+				return;
+			}
 
-	        if (parkId == -1) {
-	            System.out.println("ERROR: parkId not found!");
-	            client.sendToClient(new Message("VISIT_REPORT_RESULT", null));
-	            return;
-	        }
+			VisitReportData report = server.getDatabase().getVisitReport(parkId, month, year);
 
-	        VisitReportData report =
-	                server.getReportService().generateVisitReport(parkId, month, year);
+			client.sendToClient(new Message("VISIT_REPORT_RESULT", report));
 
-	        client.sendToClient(new Message("VISIT_REPORT_RESULT", report));
-
-	    } catch (Exception e) {
-	        System.out.println("EXCEPTION IN VISIT REPORT:");
-	        e.printStackTrace();
-	    }
+		} catch (Exception e) {
+			System.out.println("EXCEPTION IN VISIT REPORT:");
+			e.printStackTrace();
+			try {
+				client.sendToClient(new Message("VISIT_REPORT_RESULT", new VisitReportData(0, 0)));
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
 	}
 }

@@ -20,6 +20,7 @@ import Common.Order;
 import Common.UsageReportData;
 import Common.Visit;
 import Common.VisitRecord;
+import Common.VisitReportData;
 import PricingService.PricingService;
 import Server.EchoServer;
 
@@ -471,42 +472,42 @@ public class DBController {
 	// =========================================================
 	// REPORTS - VISIT REPORT
 	// =========================================================
-	public ArrayList<Visit> getVisitReport(int parkId, int month, int year) {
+	public VisitReportData getVisitReport(int parkId, int month, int year) {
+	    String query = "SELECT "
+	            + "SUM(CASE WHEN visitType = 'RegularGroup' THEN actualVisitorCount ELSE 0 END) as individualTotal, "
+	            + "SUM(CASE WHEN visitType = 'OrganizedGroup' THEN actualVisitorCount ELSE 0 END) as groupTotal "
+	            + "FROM Visits "
+	            + "WHERE parkId = ? AND YEAR(entryTime) = ? AND MONTH(entryTime) = ?";
 
-		ArrayList<Visit> result = new ArrayList<>();
+	    Connection conn = null;
+	    PreparedStatement ps = null;
+	    ResultSet rs = null;
 
-		String query = "SELECT v.* " + "FROM Visits v " + "WHERE v.parkId = ? " + "AND YEAR(v.entryTime) = ? "
-				+ "AND MONTH(v.entryTime) = ?";
+	    try {
+	        conn = pool.getConnection();
+	        ps = conn.prepareStatement(query);
+	        ps.setInt(1, parkId);
+	        ps.setInt(2, year);
+	        ps.setInt(3, month);
 
-		Connection conn = null;
+	        rs = ps.executeQuery();
 
-		try {
-			conn = pool.getConnection();
+	        if (rs.next()) {
+	            int individualVisitors = rs.getInt("individualTotal");
+	            int groupVisitors = rs.getInt("groupTotal");
+	            
+	            return new VisitReportData(individualVisitors, groupVisitors);
+	        }
 
-			PreparedStatement ps = conn.prepareStatement(query);
-			ps.setInt(1, parkId);
-			ps.setInt(2, year);
-			ps.setInt(3, month);
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        if (rs != null) try { rs.close(); } catch (SQLException e) {}
+	        if (ps != null) try { ps.close(); } catch (SQLException e) {}
+	        if (conn != null) pool.releaseConnection(conn);
+	    }
 
-			ResultSet rs = ps.executeQuery();
-
-			while (rs.next()) {
-
-				result.add(new Visit(rs.getInt("visitId"), rs.getInt("parkId"), rs.getInt("orderId"),
-						rs.getString("visitorId"), rs.getInt("actualVisitorCount"), rs.getTimestamp("entryTime"),
-						rs.getTimestamp("exitTime"), rs.getString("visitType")));
-			}
-
-			rs.close();
-			ps.close();
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			pool.releaseConnection(conn);
-		}
-
-		return result;
+	    return new VisitReportData(0, 0);
 	}
 
 	// =========================================================

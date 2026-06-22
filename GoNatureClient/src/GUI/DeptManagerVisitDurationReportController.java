@@ -101,7 +101,7 @@ public class DeptManagerVisitDurationReportController {
 			barChart.getData().clear();
 
 			XYChart.Series<String, Number> regularSeries = new XYChart.Series<>();
-			regularSeries.setName("Family Visitors");
+			regularSeries.setName("Regular Groups");
 
 			XYChart.Series<String, Number> organizedSeries = new XYChart.Series<>();
 			organizedSeries.setName("Organized Groups");
