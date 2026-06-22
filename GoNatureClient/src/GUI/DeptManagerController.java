@@ -29,11 +29,10 @@ public class DeptManagerController {
                     + GoNatureClient.currentEmployee.getLastName();
 
             welcomeLabel.setText("Welcome " + fullName + "!");
-    
+
         } else {
             welcomeLabel.setText("Welcome!");
         }
-        
         Platform.runLater(() -> {
             // Get the current window (Stage) using one of the nodes (contentArea)
             Stage stage = (Stage) contentArea.getScene().getWindow();

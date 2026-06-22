@@ -105,6 +105,8 @@ public class StrategyFactory {
 		case "GET_VISITOR_EMAIL":
 			return new GetVisitorEmailStrategy();
 		    
+		case "UPDATE_ORDER_PAID":
+			return new UpdateOrderPaidStrategy();
 		default:
 			return null;
 		}
