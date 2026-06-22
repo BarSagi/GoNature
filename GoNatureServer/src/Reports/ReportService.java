@@ -42,7 +42,7 @@ public class ReportService {
 
             if (type == null) continue;
 
-            if (type.equals("Individual") || type.equals("SmallGroup")) {
+            if (type.equals("RegularGroup")) {
                 individualVisitors += v.getActualVisitorCount();
             }
 

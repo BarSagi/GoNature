@@ -4,6 +4,7 @@ import Client.ClientUI;
 import Common.Message;
 import Common.Visit;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -56,7 +57,7 @@ public class DeptManagerVisitDurationReportController {
 			yearCombo.getItems().add(y);
 		}
 
-		xAxis.setCategories(javafx.collections.FXCollections.observableArrayList(timeSlots));
+		xAxis.setCategories(FXCollections.observableArrayList(timeSlots));
 
 		Message msg = new Message("GET_ALL_PARKS", null);
 		try {
@@ -101,7 +102,7 @@ public class DeptManagerVisitDurationReportController {
 			barChart.getData().clear();
 
 			XYChart.Series<String, Number> regularSeries = new XYChart.Series<>();
-			regularSeries.setName("Regular Visitors");
+			regularSeries.setName("Family Visitors");
 
 			XYChart.Series<String, Number> organizedSeries = new XYChart.Series<>();
 			organizedSeries.setName("Organized Groups");

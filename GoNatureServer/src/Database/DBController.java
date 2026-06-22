@@ -493,7 +493,7 @@ public class DBController {
 
 				result.add(new Visit(rs.getInt("visitId"), rs.getInt("parkId"), rs.getInt("orderId"),
 						rs.getString("visitorId"), rs.getInt("actualVisitorCount"), rs.getTimestamp("entryTime"),
-						rs.getTimestamp("exitTime"), rs.getString("orderType")));
+						rs.getTimestamp("exitTime"), rs.getString("visitType")));
 			}
 
 			rs.close();
@@ -1161,7 +1161,7 @@ public class DBController {
 
 				Visit visit = new Visit(rs.getInt("visitId"), rs.getInt("parkId"), rs.getInt("orderId"),
 						rs.getString("visitorId"), rs.getInt("actualVisitorCount"), rs.getTimestamp("entryTime"),
-						rs.getTimestamp("exitTime"), rs.getString("orderType"));
+						rs.getTimestamp("exitTime"), rs.getString("visitTType"));
 
 				result.add(visit);
 			}

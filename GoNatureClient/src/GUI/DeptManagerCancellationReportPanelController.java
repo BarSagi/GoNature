@@ -98,6 +98,17 @@ public class DeptManagerCancellationReportPanelController {
             heatMapGrid.getChildren().clear();
 
             if (report == null || report.isEmpty()) {
+                heatMapGrid.getChildren().clear();
+
+                Label emptyLabel = new Label("No data for selected month");
+                emptyLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
+                emptyLabel.setTextFill(Color.web("#e74c3c"));
+
+                StackPane container = new StackPane(emptyLabel);
+                container.setAlignment(Pos.CENTER);
+
+                heatMapGrid.add(container, 0, 1, 7, 1);
+
                 drawLegend(0.0);
                 return;
             }

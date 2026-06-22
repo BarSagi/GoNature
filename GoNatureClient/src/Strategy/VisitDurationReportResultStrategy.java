@@ -13,13 +13,10 @@ public class VisitDurationReportResultStrategy implements MessageStrategy {
         @SuppressWarnings("unchecked")
         List<Visit> visits = (List<Visit>) msg.getData();
 
-        System.out.println("Visit duration report received successfully. Records: " + visits.size());
 
         Platform.runLater(() -> {
             if (DeptManagerVisitDurationReportController.instance != null) {
                 DeptManagerVisitDurationReportController.instance.showReport(visits);
-            } else {
-                System.out.println("Error: DeptManagerVisitDurationReportController.instance is null!");
             }
         });
     }
