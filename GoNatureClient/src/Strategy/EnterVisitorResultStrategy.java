@@ -12,7 +12,8 @@ public class EnterVisitorResultStrategy implements MessageStrategy {
 
 		Platform.runLater(() -> {
 			if (ParkWorkerEnterVisitorController.instance != null) {
-				if (resultStatus.equals("Success") || resultStatus.startsWith("Success_Pay_") || resultStatus.equals("PaymentUpdated")) {
+				if (resultStatus.equals("Success") || resultStatus.startsWith("Success_Pay_")
+						|| resultStatus.equals("PaymentUpdated")) {
 					ParkWorkerEnterVisitorController.instance.showStatus(resultStatus);
 				} else {
 					ParkWorkerEnterVisitorController.instance.showStatus(

@@ -3,14 +3,13 @@ package GUI;
 import Client.ClientUI;
 import Client.GoNatureClient;
 import Common.Message;
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-
+import javafx.application.Platform;
 import java.util.ArrayList;
+import javafx.scene.control.Alert;
 
 public class ParkWorkerEnterVisitorController {
 
@@ -70,8 +69,8 @@ public class ParkWorkerEnterVisitorController {
 				identifierField.clear();
 
 				String[] parts = text.split("_");
-				String priceStr=parts[2];
-				String orderIdStr= parts[3];
+				String priceStr = parts[2];
+				String orderIdStr = parts[3];
 
 				Alert alert = new Alert(Alert.AlertType.WARNING);
 				alert.setTitle("Collection Required");
