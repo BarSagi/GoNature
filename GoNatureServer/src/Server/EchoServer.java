@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class EchoServer extends AbstractServer {
 
+	public static EchoServer instance;
 	private DBController database;
 	private ReportService reportService;
 	
@@ -29,6 +30,7 @@ public class EchoServer extends AbstractServer {
 
 	public EchoServer(int port) {
 		super(port);
+		instance = this;
 	}
 
 	// ADDED: Helper method to handle user login

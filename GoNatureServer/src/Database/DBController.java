@@ -20,6 +20,7 @@ import Common.Order;
 import Common.UsageReportData;
 import Common.Visit;
 import Common.VisitRecord;
+import PricingService.PricingService;
 import Server.EchoServer;
 
 public class DBController {
@@ -511,27 +512,20 @@ public class DBController {
 	// =========================================================
 	// ENTER VISITOR (RESERVED)
 	// =========================================================
-	public boolean enterVisitor(String identifier) {
-		// Attempt to parse the input as an integer to search by orderId
+	public String enterVisitor(String identifier) {
 		int searchOrderId = -1;
 		try {
 			searchOrderId = Integer.parseInt(identifier);
 		} catch (NumberFormatException e) {
-			// Input is not a valid integer (it's a Visitor ID or QR code), so we leave it
-			// as -1
+			// Not an integer
 		}
-
-		// The query checks all 3 options and also retrieves the actual visitorId
-		String selectQuery = "SELECT parkId, orderId, visitorCount, visitorId FROM Orders "
+		String selectQuery = "SELECT parkId, orderId, visitorCount, visitorId, paid, orderType FROM Orders "
 				+ "WHERE (orderId = ? OR visitorId = ? OR QRCode = ?) AND status = 'Approved' "
 				+ "AND visitDate = CURDATE() "
 				+ "AND visitTime BETWEEN SUBTIME(CURTIME(), '00:30:00') AND ADDTIME(CURTIME(), '00:30:00') "
 				+ "ORDER BY orderId DESC LIMIT 1";
-
-		String insertQuery = "INSERT INTO Visits (parkId, orderId, visitorId, actualVisitorCount, entryTime, exitTime, currentlyIn) "
-				+ "VALUES (?, ?, ?, ?, NOW(), NULL, ?)";
-
-		// Update the status to 'Entered' as per the business logic
+		String insertQuery = "INSERT INTO Visits (parkId, orderId, visitorId, actualVisitorCount, entryTime, exitTime, currentlyIn, visitType) "
+				+ "VALUES (?, ?, ?, ?, NOW(), NULL, ?, ?)";
 		String updateOrderQuery = "UPDATE Orders SET status = 'Entered' WHERE orderId = ?";
 
 		Connection conn = null;
@@ -542,7 +536,6 @@ public class DBController {
 
 		try {
 			conn = pool.getConnection();
-
 			psSelect = conn.prepareStatement(selectQuery);
 			psSelect.setInt(1, searchOrderId);
 			psSelect.setString(2, identifier);
@@ -553,10 +546,9 @@ public class DBController {
 				int parkId = rs.getInt("parkId");
 				int orderId = rs.getInt("orderId");
 				int visitorCount = rs.getInt("visitorCount");
-
-				// Extract the actual visitor ID from the order, ensuring we don't insert a QR
-				// code into the Visits table
 				String actualVisitorId = rs.getString("visitorId");
+				int paid = rs.getInt("paid");
+				String orderType = rs.getString("orderType");
 
 				psInsert = conn.prepareStatement(insertQuery);
 				psInsert.setInt(1, parkId);
@@ -565,40 +557,48 @@ public class DBController {
 				psInsert.setInt(4, visitorCount);
 				psInsert.setInt(5, visitorCount);
 
+				if ("OrganizedGroup".equals(orderType)) {
+					psInsert.setString(6, "OrganizedGroup");
+				} else {
+					psInsert.setString(6, "RegularGroup");
+				}
 				int rows = psInsert.executeUpdate();
 
 				if (rows > 0) {
-					// Update the order status so it cannot be reused
 					psUpdateOrder = conn.prepareStatement(updateOrderQuery);
 					psUpdateOrder.setInt(1, orderId);
 					psUpdateOrder.executeUpdate();
 
-					boolean isCountUpdated = updateVisitorCount(parkId, visitorCount);
-					return isCountUpdated;
-				}
-			}
+					updateVisitorCount(parkId, visitorCount);
 
-			return false;
+					if (paid == 0) {
+						String visitorType = getVisitorTypeById(actualVisitorId);
+						String visitType = "REGULAR_PREORDER";
+						boolean subscriber = false;
+
+						if ("Guide".equals(visitorType)) {
+							visitType = "GUIDE_PREORDER";
+						} else if ("Subscriber".equals(visitorType)) {
+							visitType = "REGULAR_PREORDER";
+							subscriber = true;
+						}
+
+						PricingService pricingService = new PricingService();
+						double price = pricingService.calculatePrice(visitType, visitorCount, false, subscriber, parkId,
+								LocalDate.now(), EchoServer.instance);
+
+						return "Success_Pay_" + price + "_" + orderId;
+					}
+					return "Success";
+				}
+				
+			}
+			return "Order not found or invalid time window.";
 
 		} catch (SQLException e) {
 			e.printStackTrace();
-			return false;
-
+			return "Database error.";
 		} finally {
-			try {
-				if (rs != null)
-					rs.close();
-				if (psSelect != null)
-					psSelect.close();
-				if (psInsert != null)
-					psInsert.close();
-				if (psUpdateOrder != null)
-					psUpdateOrder.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-			if (conn != null)
-				pool.releaseConnection(conn);
 		}
 	}
 
@@ -2620,6 +2620,27 @@ public class DBController {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public boolean updateOrderPaidStatus(int orderId) {
+	    String query = "UPDATE Orders SET paid = 1 WHERE orderId = ?";
+	    Connection conn = null;
+	    PreparedStatement ps = null;
+
+	    try {
+	        conn = pool.getConnection();
+	        ps = conn.prepareStatement(query);
+	        ps.setInt(1, orderId);
+
+	        int rows = ps.executeUpdate();
+	        return rows > 0;
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false;
+	    } finally {
+	        if (ps != null) try { ps.close(); } catch (SQLException e) {}
+	        if (conn != null) pool.releaseConnection(conn);
+	    }
 	}
 
 }

@@ -16,14 +16,14 @@ public class EnterVisitorStrategy implements MessageStrategy {
 
             String visitorId = data.get(0);
             
-            boolean success = server.getDatabase().enterVisitor(visitorId);
+            String resultStatus = server.getDatabase().enterVisitor(visitorId);
 
-            client.sendToClient(new Message("ENTER_VISITOR_RESULT", success));
+            client.sendToClient(new Message("ENTER_VISITOR_RESULT", resultStatus));
 
         } catch (Exception e) {
             e.printStackTrace();
             try {
-                client.sendToClient(new Message("ENTER_VISITOR_RESULT", false));
+                client.sendToClient(new Message("ENTER_VISITOR_RESULT", "Server error occurred."));
             } catch (Exception ex) {
                 ex.printStackTrace();
             }

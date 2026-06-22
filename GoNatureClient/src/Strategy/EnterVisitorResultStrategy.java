@@ -8,20 +8,18 @@ public class EnterVisitorResultStrategy implements MessageStrategy {
 
 	@Override
 	public void execute(Message message) {
-		boolean success = (boolean) message.getData();
+		String resultStatus = (String) message.getData();
 
 		Platform.runLater(() -> {
 			if (ParkWorkerEnterVisitorController.instance != null) {
-				if (success) {
-					ParkWorkerEnterVisitorController.instance.showStatus("Visitor entered successfully.");
+				if (resultStatus.equals("Success") || resultStatus.startsWith("Success_Pay_") || resultStatus.equals("PaymentUpdated")) {
+					ParkWorkerEnterVisitorController.instance.showStatus(resultStatus);
 				} else {
 					ParkWorkerEnterVisitorController.instance.showStatus(
-									"Entry Denied!\n\n"
-									+ "Please verify the following:\n"
-									+ "• The ID number was entered correctly.\n"
+							"Entry Denied!\nReason: " + resultStatus + "\n\n" + "Please verify the following:\n"
+									+ "• The ID/Order number was entered correctly.\n"
 									+ "• The order status is set to 'Approved'.\n"
 									+ "• The current time is within 30 minutes of the scheduled visit.");
-									
 				}
 			}
 		});

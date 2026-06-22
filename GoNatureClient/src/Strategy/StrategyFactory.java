@@ -119,6 +119,7 @@ public class StrategyFactory {
 		    
 		case "VISITOR_EMAIL_RESULT":
 			return new VisitorEmailResult();
+			
 		    
 		default:
 			return null;
