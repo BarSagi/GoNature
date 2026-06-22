@@ -112,6 +112,11 @@
 								<ComboBox fx:id="timeComboBox" prefHeight="35.0"
 									maxWidth="Infinity" promptText="Select Time"
 									GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+								<ComboBox fx:id="paymentComboBox" prefHeight="35.0"
+									maxWidth="Infinity" promptText="Choose Payment Method"
+									GridPane.columnIndex="0" GridPane.rowIndex="2"
+									GridPane.columnSpan="2" />
 							</children>
 						</GridPane>
 					</children>
