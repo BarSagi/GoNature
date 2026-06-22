@@ -19,10 +19,11 @@ public class RegisterAndOrderStrategy implements MessageStrategy {
 		// Index 0 = ArrayList<String> (Visitor Info)
 		// Index 1 = Order (Order Object)
 		// Index 2 = String (Payment Method)
-		// =========================================================
+		// =========================================================	
 		@SuppressWarnings("unchecked")
 		ArrayList<String> visitorData = (ArrayList<String>) fullData.get(0);
 		Order receivedOrder = (Order) fullData.get(1);
+		System.out.println(receivedOrder);
 		String paymentMethod = (String) fullData.get(2); // חילוץ שיטת התשלום מהלקוח
 
 		String visitorId = visitorData.get(0);
@@ -35,7 +36,7 @@ public class RegisterAndOrderStrategy implements MessageStrategy {
 
 		String parkName = "Unknown";
 		if (receivedOrder.getParkId() == 1)
-			parkName = "Karmel";
+			parkName = "Carmel";
 		else if (receivedOrder.getParkId() == 2)
 			parkName = "Banias";
 		else if (receivedOrder.getParkId() == 3)
@@ -60,7 +61,6 @@ public class RegisterAndOrderStrategy implements MessageStrategy {
 		} else {
 
 			String orderResult = server.getDatabase().createNewOrder(orderData);
-
 			if (orderResult != null && orderResult.startsWith("Approved")) {
 				server.log("[STRATEGY] Successfully registered visitor and created new order.");
 				response = new Message("REGISTER_AND_ORDER_SUCCESS", visitorData);
@@ -68,12 +68,14 @@ public class RegisterAndOrderStrategy implements MessageStrategy {
 			} else if (orderResult != null && orderResult.startsWith("Full")) {
 				server.log("[STRATEGY] Time slot is full! Rolling back visitor registration...");
 
-				server.getDatabase().deleteVisitor(visitorId);
-
 				String[] parts = orderResult.split("\\|");
 				String alternatives = parts.length > 1 ? parts[1] : "";
 
-				response = new Message("TIME_SLOT_FULL", alternatives);
+				ArrayList<Object> timeSlotFullData = new ArrayList<>();
+				timeSlotFullData.add(alternatives); // 0: available alternative times
+				timeSlotFullData.add(orderData);    // 1: original order data for waiting list
+
+				response = new Message("TIME_SLOT_FULL", timeSlotFullData);
 
 			} else {
 				server.log("[STRATEGY] Order creation failed! Rolling back visitor registration...");

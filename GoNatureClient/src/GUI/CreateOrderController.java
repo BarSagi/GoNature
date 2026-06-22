@@ -139,8 +139,8 @@ public class CreateOrderController implements Initializable {
 		newOrder.add(selectedDate);
 		newOrder.add(selectedTime);
 		newOrder.add(visitorsAmount);
-		newOrder.add(GoNatureClient.currentVisitor.getEmail());
 		newOrder.add(cachedVisitorType);
+		newOrder.add(GoNatureClient.currentVisitor.getEmail());
 		newOrder.add(paymentMethod);
 
 		try {

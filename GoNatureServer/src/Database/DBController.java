@@ -246,8 +246,8 @@ public class DBController {
 		String visitDate = orderData.get(2);
 		String visitTime = orderData.get(3);
 		int visitorCount = Integer.parseInt(orderData.get(4));
-		String email = orderData.get(5);
-		String orderType = orderData.get(6);
+		String orderType = orderData.get(5);
+		String email = orderData.get(6);
 		String QR = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
 		boolean paid = orderData.get(7).equals("Pay Now");
 		Connection conn = null;
@@ -490,215 +490,227 @@ public class DBController {
 	// ENTER VISITOR (RESERVED)
 	// =========================================================
 	public boolean enterVisitor(String identifier) {
-	    // Attempt to parse the input as an integer to search by orderId
-	    int searchOrderId = -1;
-	    try {
-	        searchOrderId = Integer.parseInt(identifier);
-	    } catch (NumberFormatException e) {
-	        // Input is not a valid integer (it's a Visitor ID or QR code), so we leave it as -1
-	    }
+		// Attempt to parse the input as an integer to search by orderId
+		int searchOrderId = -1;
+		try {
+			searchOrderId = Integer.parseInt(identifier);
+		} catch (NumberFormatException e) {
+			// Input is not a valid integer (it's a Visitor ID or QR code), so we leave it
+			// as -1
+		}
 
-	    // The query checks all 3 options and also retrieves the actual visitorId
-	    String selectQuery = "SELECT parkId, orderId, visitorCount, visitorId FROM Orders "
-	            + "WHERE (orderId = ? OR visitorId = ? OR QRCode = ?) AND status = 'Approved' " 
-	            + "AND visitDate = CURDATE() "
-	            + "AND visitTime BETWEEN SUBTIME(CURTIME(), '00:30:00') AND ADDTIME(CURTIME(), '00:30:00') "
-	            + "ORDER BY orderId DESC LIMIT 1";
+		// The query checks all 3 options and also retrieves the actual visitorId
+		String selectQuery = "SELECT parkId, orderId, visitorCount, visitorId FROM Orders "
+				+ "WHERE (orderId = ? OR visitorId = ? OR QRCode = ?) AND status = 'Approved' "
+				+ "AND visitDate = CURDATE() "
+				+ "AND visitTime BETWEEN SUBTIME(CURTIME(), '00:30:00') AND ADDTIME(CURTIME(), '00:30:00') "
+				+ "ORDER BY orderId DESC LIMIT 1";
 
-	    String insertQuery = "INSERT INTO Visits (parkId, orderId, visitorId, actualVisitorCount, entryTime, exitTime, currentlyIn) "
-	            + "VALUES (?, ?, ?, ?, NOW(), NULL, ?)";
+		String insertQuery = "INSERT INTO Visits (parkId, orderId, visitorId, actualVisitorCount, entryTime, exitTime, currentlyIn) "
+				+ "VALUES (?, ?, ?, ?, NOW(), NULL, ?)";
 
-	    // Update the status to 'Entered' as per the business logic
-	    String updateOrderQuery = "UPDATE Orders SET status = 'Entered' WHERE orderId = ?";
+		// Update the status to 'Entered' as per the business logic
+		String updateOrderQuery = "UPDATE Orders SET status = 'Entered' WHERE orderId = ?";
 
-	    Connection conn = null;
-	    PreparedStatement psSelect = null;
-	    PreparedStatement psInsert = null;
-	    PreparedStatement psUpdateOrder = null;
-	    ResultSet rs = null;
+		Connection conn = null;
+		PreparedStatement psSelect = null;
+		PreparedStatement psInsert = null;
+		PreparedStatement psUpdateOrder = null;
+		ResultSet rs = null;
 
-	    try {
-	        conn = pool.getConnection();
+		try {
+			conn = pool.getConnection();
 
-	        psSelect = conn.prepareStatement(selectQuery);
-	        psSelect.setInt(1, searchOrderId);
-	        psSelect.setString(2, identifier);
-	        psSelect.setString(3, identifier);
-	        rs = psSelect.executeQuery();
+			psSelect = conn.prepareStatement(selectQuery);
+			psSelect.setInt(1, searchOrderId);
+			psSelect.setString(2, identifier);
+			psSelect.setString(3, identifier);
+			rs = psSelect.executeQuery();
 
-	        if (rs.next()) {
-	            int parkId = rs.getInt("parkId");
-	            int orderId = rs.getInt("orderId");
-	            int visitorCount = rs.getInt("visitorCount");
-	            
-	            // Extract the actual visitor ID from the order, ensuring we don't insert a QR code into the Visits table
-	            String actualVisitorId = rs.getString("visitorId"); 
+			if (rs.next()) {
+				int parkId = rs.getInt("parkId");
+				int orderId = rs.getInt("orderId");
+				int visitorCount = rs.getInt("visitorCount");
 
-	            psInsert = conn.prepareStatement(insertQuery);
-	            psInsert.setInt(1, parkId);
-	            psInsert.setInt(2, orderId);
-	            psInsert.setString(3, actualVisitorId); 
-	            psInsert.setInt(4, visitorCount);
-	            psInsert.setInt(5, visitorCount);
+				// Extract the actual visitor ID from the order, ensuring we don't insert a QR
+				// code into the Visits table
+				String actualVisitorId = rs.getString("visitorId");
 
-	            int rows = psInsert.executeUpdate();
+				psInsert = conn.prepareStatement(insertQuery);
+				psInsert.setInt(1, parkId);
+				psInsert.setInt(2, orderId);
+				psInsert.setString(3, actualVisitorId);
+				psInsert.setInt(4, visitorCount);
+				psInsert.setInt(5, visitorCount);
 
-	            if (rows > 0) {
-	                // Update the order status so it cannot be reused
-	                psUpdateOrder = conn.prepareStatement(updateOrderQuery);
-	                psUpdateOrder.setInt(1, orderId);
-	                psUpdateOrder.executeUpdate();
+				int rows = psInsert.executeUpdate();
 
-	                boolean isCountUpdated = updateReservedVisitorCount(parkId, visitorCount);
-	                return isCountUpdated;
-	            }
-	        }
+				if (rows > 0) {
+					// Update the order status so it cannot be reused
+					psUpdateOrder = conn.prepareStatement(updateOrderQuery);
+					psUpdateOrder.setInt(1, orderId);
+					psUpdateOrder.executeUpdate();
 
-	        return false;
+					boolean isCountUpdated = updateReservedVisitorCount(parkId, visitorCount);
+					return isCountUpdated;
+				}
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        return false;
+			return false;
 
-	    } finally {
-	        try {
-	            if (rs != null) rs.close();
-	            if (psSelect != null) psSelect.close();
-	            if (psInsert != null) psInsert.close();
-	            if (psUpdateOrder != null) psUpdateOrder.close();
-	        } catch (SQLException e) {
-	            e.printStackTrace();
-	        }
-	        if (conn != null) pool.releaseConnection(conn);
-	    }
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			try {
+				if (rs != null)
+					rs.close();
+				if (psSelect != null)
+					psSelect.close();
+				if (psInsert != null)
+					psInsert.close();
+				if (psUpdateOrder != null)
+					psUpdateOrder.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			if (conn != null)
+				pool.releaseConnection(conn);
+		}
 	}
+
 	// =========================================================
 	// EXIT VISITOR
 	// =========================================================
 	public String exitVisitor(String identifier, int parkId, int exitingAmount) {
-	    // Attempt to parse the input as an integer for orderId
-	    int searchOrderId = -1;
-	    try {
-	        searchOrderId = Integer.parseInt(identifier);
-	    } catch (NumberFormatException e) {
-	        // Not a valid integer, meaning it's likely a Visitor ID or QR code
-	    }
+		// Attempt to parse the input as an integer for orderId
+		int searchOrderId = -1;
+		try {
+			searchOrderId = Integer.parseInt(identifier);
+		} catch (NumberFormatException e) {
+			// Not a valid integer, meaning it's likely a Visitor ID or QR code
+		}
 
-	    // SELECT query using LEFT JOIN to support searching by QR code in the Orders table
-	    String selectQuery = "SELECT V.visitId, V.currentlyIn, V.orderId, V.visitorId "
-	            + "FROM Visits V LEFT JOIN Orders O ON V.orderId = O.orderId "
-	            + "WHERE V.parkId = ? AND V.currentlyIn > 0 AND V.exitTime IS NULL "
-	            + "AND (V.orderId = ? OR V.visitorId = ? OR O.QRCode = ?) "
-	            + "ORDER BY V.visitId DESC LIMIT 1";
+		// SELECT query using LEFT JOIN to support searching by QR code in the Orders
+		// table
+		String selectQuery = "SELECT V.visitId, V.currentlyIn, V.orderId, V.visitorId "
+				+ "FROM Visits V LEFT JOIN Orders O ON V.orderId = O.orderId "
+				+ "WHERE V.parkId = ? AND V.currentlyIn > 0 AND V.exitTime IS NULL "
+				+ "AND (V.orderId = ? OR V.visitorId = ? OR O.QRCode = ?) " + "ORDER BY V.visitId DESC LIMIT 1";
 
-	    Connection conn = null;
-	    PreparedStatement psSelect = null;
-	    PreparedStatement psUpdateVisit = null;
-	    PreparedStatement psUpdateOrder = null;
-	    ResultSet rs = null;
+		Connection conn = null;
+		PreparedStatement psSelect = null;
+		PreparedStatement psUpdateVisit = null;
+		PreparedStatement psUpdateOrder = null;
+		ResultSet rs = null;
 
-	    try {
-	        conn = pool.getConnection();
-	        // Start transaction
-	        conn.setAutoCommit(false); 
+		try {
+			conn = pool.getConnection();
+			// Start transaction
+			conn.setAutoCommit(false);
 
-	        psSelect = conn.prepareStatement(selectQuery);
-	        psSelect.setInt(1, parkId);
-	        psSelect.setInt(2, searchOrderId);
-	        psSelect.setString(3, identifier);
-	        psSelect.setString(4, identifier);
-	        rs = psSelect.executeQuery();
+			psSelect = conn.prepareStatement(selectQuery);
+			psSelect.setInt(1, parkId);
+			psSelect.setInt(2, searchOrderId);
+			psSelect.setString(3, identifier);
+			psSelect.setString(4, identifier);
+			rs = psSelect.executeQuery();
 
-	        if (rs.next()) {
-	            int visitId = rs.getInt("visitId");
-	            int currentlyIn = rs.getInt("currentlyIn");
-	            
-	            // rs.getInt returns 0 if the value in DB was NULL (casual visitor)
-	            int orderId = rs.getInt("orderId");
-	            boolean isCasual = rs.wasNull();
+			if (rs.next()) {
+				int visitId = rs.getInt("visitId");
+				int currentlyIn = rs.getInt("currentlyIn");
 
-	            // Validation: Cannot exit more people than currently inside
-	            if (exitingAmount > currentlyIn) {
-	                return "Error: Cannot exit " + exitingAmount + " people. Only " + currentlyIn + " are inside.";
-	            }
+				// rs.getInt returns 0 if the value in DB was NULL (casual visitor)
+				int orderId = rs.getInt("orderId");
+				boolean isCasual = rs.wasNull();
 
-	            int remainingIn = currentlyIn - exitingAmount;
-	            boolean isFullExit = (remainingIn == 0);
+				// Validation: Cannot exit more people than currently inside
+				if (exitingAmount > currentlyIn) {
+					return "Error: Cannot exit " + exitingAmount + " people. Only " + currentlyIn + " are inside.";
+				}
 
-	            // UPDATE Visits table based on whether it's a full or partial exit
-	            String updateVisitQuery;
-	            if (isFullExit) {
-	                // Last visitor of the group: set exitTime
-	                updateVisitQuery = "UPDATE Visits SET currentlyIn = 0, exitTime = NOW() WHERE visitId = ?";
-	                psUpdateVisit = conn.prepareStatement(updateVisitQuery);
-	                psUpdateVisit.setInt(1, visitId);
-	            } else {
-	                // Partial exit: just decrement the currentlyIn count
-	                updateVisitQuery = "UPDATE Visits SET currentlyIn = ? WHERE visitId = ?";
-	                psUpdateVisit = conn.prepareStatement(updateVisitQuery);
-	                psUpdateVisit.setInt(1, remainingIn);
-	                psUpdateVisit.setInt(2, visitId);
-	            }
-	            int visitRows = psUpdateVisit.executeUpdate();
+				int remainingIn = currentlyIn - exitingAmount;
+				boolean isFullExit = (remainingIn == 0);
 
-	            // UPDATE Orders table (Only if it's a full exit and they had an order)
-	            if (isFullExit && !isCasual) {
-	                String updateOrderQuery = "UPDATE Orders SET status = 'Fulfilled' WHERE orderId = ?";
-	                psUpdateOrder = conn.prepareStatement(updateOrderQuery);
-	                psUpdateOrder.setInt(1, orderId);
-	                psUpdateOrder.executeUpdate();
-	            }
+				// UPDATE Visits table based on whether it's a full or partial exit
+				String updateVisitQuery;
+				if (isFullExit) {
+					// Last visitor of the group: set exitTime
+					updateVisitQuery = "UPDATE Visits SET currentlyIn = 0, exitTime = NOW() WHERE visitId = ?";
+					psUpdateVisit = conn.prepareStatement(updateVisitQuery);
+					psUpdateVisit.setInt(1, visitId);
+				} else {
+					// Partial exit: just decrement the currentlyIn count
+					updateVisitQuery = "UPDATE Visits SET currentlyIn = ? WHERE visitId = ?";
+					psUpdateVisit = conn.prepareStatement(updateVisitQuery);
+					psUpdateVisit.setInt(1, remainingIn);
+					psUpdateVisit.setInt(2, visitId);
+				}
+				int visitRows = psUpdateVisit.executeUpdate();
 
-	            // Update overall park capacity using your existing methods
-	            boolean isCountUpdated = false;
-	            if (isCasual) {
-	                // Pass negative value to decrement the count
-	                isCountUpdated = updateCasualVisitorCount(parkId, -exitingAmount);
-	            } else {
-	                isCountUpdated = updateReservedVisitorCount(parkId, -exitingAmount);
-	            }
+				// UPDATE Orders table (Only if it's a full exit and they had an order)
+				if (isFullExit && !isCasual) {
+					String updateOrderQuery = "UPDATE Orders SET status = 'Fulfilled' WHERE orderId = ?";
+					psUpdateOrder = conn.prepareStatement(updateOrderQuery);
+					psUpdateOrder.setInt(1, orderId);
+					psUpdateOrder.executeUpdate();
+				}
 
-	            // Commit or Rollback transaction
-	            if (visitRows > 0 && isCountUpdated) {
-	                conn.commit();
-	                if (isFullExit) {
-	                    return "Success: Group exited completely. Order Fulfilled.";
-	                } else {
-	                    return "Success: " + exitingAmount + " exited. " + remainingIn + " remaining in park.";
-	                }
-	            } else {
-	                conn.rollback();
-	                return "Error: Failed to safely update park counts.";
-	            }
-	        }
+				// Update overall park capacity using your existing methods
+				boolean isCountUpdated = false;
+				if (isCasual) {
+					// Pass negative value to decrement the count
+					isCountUpdated = updateCasualVisitorCount(parkId, -exitingAmount);
+				} else {
+					isCountUpdated = updateReservedVisitorCount(parkId, -exitingAmount);
+				}
 
-	        return "Error: No active visit found for this identifier in this park.";
+				// Commit or Rollback transaction
+				if (visitRows > 0 && isCountUpdated) {
+					conn.commit();
+					if (isFullExit) {
+						return "Success: Group exited completely. Order Fulfilled.";
+					} else {
+						return "Success: " + exitingAmount + " exited. " + remainingIn + " remaining in park.";
+					}
+				} else {
+					conn.rollback();
+					return "Error: Failed to safely update park counts.";
+				}
+			}
 
-	    } catch (SQLException e) {
-	        System.err.println("[DB ERROR] Exception during visitor exit process.");
-	        e.printStackTrace();
-	        if (conn != null) {
-	            try {
-	                conn.rollback();
-	            } catch (SQLException ex) {
-	                ex.printStackTrace();
-	            }
-	        }
-	        return "Error: Database exception occurred.";
-	    } finally {
-	        try {
-	            if (rs != null) rs.close();
-	            if (psSelect != null) psSelect.close();
-	            if (psUpdateVisit != null) psUpdateVisit.close();
-	            if (psUpdateOrder != null) psUpdateOrder.close();
-	            if (conn != null) {
-	                conn.setAutoCommit(true); // Return to default auto-commit
-	                pool.releaseConnection(conn);
-	            }
-	        } catch (SQLException e) {
-	            e.printStackTrace();
-	        }
-	    }
+			return "Error: No active visit found for this identifier in this park.";
+
+		} catch (SQLException e) {
+			System.err.println("[DB ERROR] Exception during visitor exit process.");
+			e.printStackTrace();
+			if (conn != null) {
+				try {
+					conn.rollback();
+				} catch (SQLException ex) {
+					ex.printStackTrace();
+				}
+			}
+			return "Error: Database exception occurred.";
+		} finally {
+			try {
+				if (rs != null)
+					rs.close();
+				if (psSelect != null)
+					psSelect.close();
+				if (psUpdateVisit != null)
+					psUpdateVisit.close();
+				if (psUpdateOrder != null)
+					psUpdateOrder.close();
+				if (conn != null) {
+					conn.setAutoCommit(true); // Return to default auto-commit
+					pool.releaseConnection(conn);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	// =========================================================
@@ -890,12 +902,13 @@ public class DBController {
 	public String getParkCurrentValue(String parkName, String requestType) {
 
 		Connection conn = null;
-		
+
 		// 1. Fix hidden spaces issues!
 		parkName = parkName.trim();
 		requestType = requestType.trim();
 
-		System.out.println("[DEBUG] getParkCurrentValue called! Park: [" + parkName + "], Request: [" + requestType + "]");
+		System.out.println(
+				"[DEBUG] getParkCurrentValue called! Park: [" + parkName + "], Request: [" + requestType + "]");
 
 		try {
 			conn = pool.getConnection();
@@ -956,7 +969,7 @@ public class DBController {
 
 		return null;
 	}
-	
+
 	// =========================================================
 	// GET PARK ID BY NAME
 	// =========================================================
@@ -1643,33 +1656,35 @@ public class DBController {
 	// UPDATE COUNT FOR CASUAL VISITORS ONLY
 	// =========================================================
 	public boolean updateCasualVisitorCount(int parkId, int visitorCountToAdd) {
-	    Connection conn = null;
-	    PreparedStatement ps = null;
-	   
-	    String query = "UPDATE Parks SET CurrentVisitorCount = CurrentVisitorCount + ? WHERE parkId = ?";
+		Connection conn = null;
+		PreparedStatement ps = null;
 
-	    try {
-	        conn = pool.getConnection();
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, visitorCountToAdd);
-	        ps.setInt(2, parkId);
+		String query = "UPDATE Parks SET CurrentVisitorCount = CurrentVisitorCount + ? WHERE parkId = ?";
 
-	        int rowsAffected = ps.executeUpdate();
-	        return rowsAffected > 0;
+		try {
+			conn = pool.getConnection();
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, visitorCountToAdd);
+			ps.setInt(2, parkId);
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        return false;
-	    } finally {
-	        try {
-	            if (ps != null) ps.close();
-	            if (conn != null) pool.releaseConnection(conn);
-	        } catch (SQLException ex) {
-	            ex.printStackTrace();
-	        }
-	    }
+			int rowsAffected = ps.executeUpdate();
+			return rowsAffected > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		} finally {
+			try {
+				if (ps != null)
+					ps.close();
+				if (conn != null)
+					pool.releaseConnection(conn);
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+		}
 	}
-	
+
 	// =========================================================
 	// GET ALTERNATIVE SLOTS
 	// =========================================================
@@ -1699,8 +1714,9 @@ public class DBController {
 		String visitDate = orderData.get(2);
 		String visitTime = orderData.get(3);
 		int visitorCount = Integer.parseInt(orderData.get(4));
-		String email = orderData.get(5);
-		String orderType = orderData.get(6);
+		String orderType = orderData.get(5);
+		String email = orderData.get(6);
+		String QR = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
 
 		Connection conn = null;
 		PreparedStatement find = null;
@@ -1724,18 +1740,20 @@ public class DBController {
 			}
 
 			String insert = "INSERT INTO Orders "
-					+ "(parkId, visitorId, visitDate, visitTime, visitorCount, email, orderType, status) "
-					+ "VALUES (?, ?, ?, ?, ?, ?, ?, 'WaitingList')";
+                    + "(parkId, visitorId, visitDate, visitTime, visitorCount, email, orderType, status, QRCode, paid) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, 'WaitingList', ?, ?)";
 
-			ps = conn.prepareStatement(insert);
+            ps = conn.prepareStatement(insert);
 
-			ps.setInt(1, parkId);
-			ps.setString(2, visitorId);
-			ps.setString(3, visitDate);
-			ps.setString(4, visitTime);
-			ps.setInt(5, visitorCount);
-			ps.setString(6, email);
-			ps.setString(7, orderType);
+            ps.setInt(1, parkId);
+            ps.setString(2, visitorId);
+            ps.setString(3, visitDate);
+            ps.setString(4, visitTime);
+            ps.setInt(5, visitorCount);
+            ps.setString(6, email);
+            ps.setString(7, orderType);
+            ps.setString(8, QR);
+            ps.setBoolean(9, false);
 
 			int rows = ps.executeUpdate();
 
