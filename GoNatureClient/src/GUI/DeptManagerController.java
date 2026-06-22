@@ -11,66 +11,63 @@ import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-
 import java.io.IOException;
 
 public class DeptManagerController {
+	@FXML
+	private Label welcomeLabel;
 
-    @FXML
-    private Label welcomeLabel;
+	@FXML
+	private StackPane contentArea;
 
-    @FXML
-    private StackPane contentArea;
+	@FXML
+	public void initialize() {
+		if (GoNatureClient.currentEmployee != null) {
+			String fullName = GoNatureClient.currentEmployee.getFirstName() + " "
+					+ GoNatureClient.currentEmployee.getLastName();
 
-    @FXML
-    public void initialize() {
-        if (GoNatureClient.currentEmployee != null) {
-            String fullName = GoNatureClient.currentEmployee.getFirstName() + " "
-                    + GoNatureClient.currentEmployee.getLastName();
+			welcomeLabel.setText("Welcome " + fullName + "!");
 
-            welcomeLabel.setText("Welcome " + fullName + "!");
+		} else {
+			welcomeLabel.setText("Welcome!");
+		}
+		Platform.runLater(() -> {
+			// Get the current window (Stage) using one of the nodes (contentArea)
+			Stage stage = (Stage) contentArea.getScene().getWindow();
+			if (stage != null) {
+				stage.setMaximized(true);
+			}
+		});
 
-        } else {
-            welcomeLabel.setText("Welcome!");
-        }
-        Platform.runLater(() -> {
-            // Get the current window (Stage) using one of the nodes (contentArea)
-            Stage stage = (Stage) contentArea.getScene().getWindow();
-            if (stage != null) {
-                stage.setMaximized(true);
-            }
-        });
-        
-        loadPanel("/GUI/DeptManagerParkDashboard.fxml");
-    }
+		loadPanel("/GUI/DeptManagerParkDashboard.fxml");
+	}
 
-    @FXML
-    void showApproveReject(ActionEvent event) {
-        loadPanel("/GUI/DeptManagerApproveRejectPanel.fxml");
-    }
+	@FXML
+	void showApproveReject(ActionEvent event) {
+		loadPanel("/GUI/DeptManagerApproveRejectPanel.fxml");
+	}
 
-    @FXML
-    void showVisitDurationReport(ActionEvent event) {
-    	loadPanel("/GUI/DeptManagerVisitDurationReportPanel.fxml");
-    }
+	@FXML
+	void showVisitDurationReport(ActionEvent event) {
+		loadPanel("/GUI/DeptManagerVisitDurationReportPanel.fxml");
+	}
 
-    @FXML
-    void showCancellationReport(ActionEvent event) {
-    	loadPanel("/GUI/DeptManagerCancellationReportPanel.fxml");
-    }
-    
-    @FXML
-    void showParkDashboard(ActionEvent event) {
-    	loadPanel("/GUI/DeptManagerParkDashboard.fxml");
-    }
-    
-    @FXML
-    void handleLogout(ActionEvent event) {
-    	try {
+	@FXML
+	void showCancellationReport(ActionEvent event) {
+		loadPanel("/GUI/DeptManagerCancellationReportPanel.fxml");
+	}
+
+	@FXML
+	void showParkDashboard(ActionEvent event) {
+		loadPanel("/GUI/DeptManagerParkDashboard.fxml");
+	}
+
+	@FXML
+	void handleLogout(ActionEvent event) {
+		try {
 			String userID = GoNatureClient.currentEmployee.getEmployeeId();
 			GoNatureClient.currentEmployee = null;
 			Message msg = new Message("CLIENT_LOGOUT", userID);
-
 			try {
 				ClientUI.send(msg);
 			} catch (Exception e) {
@@ -81,20 +78,18 @@ public class DeptManagerController {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-    }
+	}
 
-    private void loadPanel(String fxmlPath) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
-            Parent subPanel = loader.load();
-
-            contentArea.getChildren().clear();
-            contentArea.getChildren().add(subPanel);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            contentArea.getChildren().clear();
-            contentArea.getChildren().add(new Label("Error: Could not load the requested form."));
-        }
-    }
+	private void loadPanel(String fxmlPath) {
+		try {
+			FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+			Parent subPanel = loader.load();
+			contentArea.getChildren().clear();
+			contentArea.getChildren().add(subPanel);
+		} catch (IOException e) {
+			e.printStackTrace();
+			contentArea.getChildren().clear();
+			contentArea.getChildren().add(new Label("Error: Could not load the requested form."));
+		}
+	}
 }

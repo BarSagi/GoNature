@@ -118,13 +118,10 @@ public class CreateOrderController implements Initializable {
 
 	public void handleVisitorTypeResult(String type) {
 
-		if (type.equals("Guide")) {
+		if (type.equals("Guide"))
 			cachedVisitorType = "OrganizedGroup";
-		} else if (type.equals("SmallGroup")) {
-			cachedVisitorType = "SmallGroup";
-		} else {
+		else
 			cachedVisitorType = "Individual";
-		}
 
 		Platform.runLater(() -> errorLabel.setText("Creating order..."));
 

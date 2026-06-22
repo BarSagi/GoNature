@@ -27,9 +27,6 @@ public class VisitorOrdersScreenController {
 
 	public static VisitorOrdersScreenController instance;
 
-	private boolean pendingPopupShown = false;
-	private boolean reminderPopupShown = false;
-
 	private ArrayList<String> dbParksList = new ArrayList<>();
 
 	@FXML
@@ -118,6 +115,16 @@ public class VisitorOrdersScreenController {
 				showTicket(null);
 			}
 		});
+
+		// Check the Notifications table properly via the server!
+		try {
+			if (GoNatureClient.currentVisitor != null) {
+				String visitorEmail = GoNatureClient.currentVisitor.getEmail();
+				ClientUI.send(new Message("CHECK_NOTIFICATIONS", visitorEmail));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void loadParks(ArrayList<String> parks) {
@@ -127,50 +134,14 @@ public class VisitorOrdersScreenController {
 		}
 	}
 
+	// FIXED: Removed the manual pop-ups. Now it only handles table data!
 	public void loadOrders(ArrayList<Order> rawOrders) {
 		tableData.clear();
-		pendingPopupShown = false;
-		reminderPopupShown = false;
 
 		for (Order order : rawOrders) {
-			try {
-				tableData.add(order);
-
-				if (!pendingPopupShown && "PendingConfirmation".equalsIgnoreCase(order.getOrderStatus())) {
-					pendingPopupShown = true;
-
-					java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter
-							.ofPattern("dd/MM/yyyy HH:mm");
-					String receivedTime = java.time.LocalDateTime.now().format(formatter);
-
-					Alert alert = new Alert(AlertType.INFORMATION);
-					alert.setTitle("New SMS Notification");
-					alert.setHeaderText("A place has become available for your waiting list order.");
-					alert.setContentText("You received this notification at: " + receivedTime
-							+ "\n\nYou have one hour to confirm your order.");
-					alert.showAndWait();
-				}
-
-				if (!reminderPopupShown && "PendingVisitReminder".equalsIgnoreCase(order.getOrderStatus())) {
-					reminderPopupShown = true;
-
-					java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter
-							.ofPattern("dd/MM/yyyy HH:mm");
-					String receivedTime = java.time.LocalDateTime.now().format(formatter);
-
-					Alert alert = new Alert(AlertType.INFORMATION);
-					alert.setTitle("Visit Reminder SMS");
-					alert.setHeaderText("Reminder: your visit is tomorrow.");
-					alert.setContentText("You received this reminder at: " + receivedTime
-							+ "\n\nPlease confirm or cancel your visit within 2 hours.");
-					alert.showAndWait();
-				}
-
-			} catch (Exception e) {
-				System.out.println("Error displaying order in table: " + e.getMessage());
-				e.printStackTrace();
-			}
+			tableData.add(order);
 		}
+
 		System.out.println("Controller: Finished loading. tableData size is now: " + tableData.size());
 	}
 
@@ -304,8 +275,10 @@ public class VisitorOrdersScreenController {
 			return;
 		}
 
-		if (!"PendingConfirmation".equalsIgnoreCase(selectedOrder.getOrderStatus())) {
-			showErrorAlert("Only orders waiting for confirmation can be confirmed.");
+		String status = selectedOrder.getOrderStatus();
+
+		if (!"PendingConfirmation".equalsIgnoreCase(status) && !"PendingVisitReminder".equalsIgnoreCase(status)) {
+			showErrorAlert("Only orders waiting for confirmation or visit reminders can be confirmed.");
 			return;
 		}
 

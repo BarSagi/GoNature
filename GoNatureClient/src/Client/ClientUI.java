@@ -2,7 +2,7 @@ package Client;
 
 import java.util.Timer;
 import java.util.TimerTask;
-
+import javafx.scene.Parent;
 import Common.Message;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -119,12 +119,9 @@ public class ClientUI extends Application {
 			public void run() {
 				try {
 					FXMLLoader loader = new FXMLLoader(ClientUI.class.getResource(fxmlPath));
-					
-					// Load the new content as a Parent instead of creating a new Scene
-					javafx.scene.Parent root = loader.load(); 
+					Parent root = loader.load();
 
 					mainStage.setTitle(title);
-
 					// If this is the first time the app loads and there is no Scene yet
 					if (mainStage.getScene() == null) {
 						mainStage.setScene(new Scene(root));
@@ -136,7 +133,6 @@ public class ClientUI extends Application {
 					// Ensure the window remains maximized across all screen changes
 					mainStage.setMaximized(true);
 					mainStage.show();
-
 				} catch (Exception e) {
 					System.out.println("Error loading screen: " + fxmlPath);
 					e.printStackTrace();
