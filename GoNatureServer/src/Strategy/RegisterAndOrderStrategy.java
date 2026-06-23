@@ -23,7 +23,6 @@ public class RegisterAndOrderStrategy implements MessageStrategy {
 		@SuppressWarnings("unchecked")
 		ArrayList<String> visitorData = (ArrayList<String>) fullData.get(0);
 		Order receivedOrder = (Order) fullData.get(1);
-		System.out.println(receivedOrder);
 		String paymentMethod = (String) fullData.get(2);
 
 		String visitorId = visitorData.get(0);
@@ -34,13 +33,11 @@ public class RegisterAndOrderStrategy implements MessageStrategy {
 		ArrayList<String> orderData = new ArrayList<>();
 		orderData.add(visitorId); // 0: visitorId
 
-		String parkName = "Unknown";
-		if (receivedOrder.getParkId() == 1)
-			parkName = "Carmel";
-		else if (receivedOrder.getParkId() == 2)
-			parkName = "Banias";
-		else if (receivedOrder.getParkId() == 3)
-			parkName = "Yarkon";
+		String parkName = server.getDatabase().getParkNameById(receivedOrder.getParkId());
+
+		if (parkName == null) {
+			parkName = "Unknown";
+		}
 		orderData.add(parkName); // 1: parkName
 
 		orderData.add(receivedOrder.getVisitDate().toString()); // 2: visitDate
@@ -48,7 +45,7 @@ public class RegisterAndOrderStrategy implements MessageStrategy {
 		orderData.add(String.valueOf(receivedOrder.getVisitorCount())); // 4: visitorCount
 		orderData.add(receivedOrder.getOrderType());
 		orderData.add(email);
-		orderData.add(paymentMethod); // 7: paymentMethod (נדרש ב-DBController)
+		orderData.add(paymentMethod); // 7: paymentMethod
 
 		Message response = null;
 

@@ -1372,122 +1372,114 @@ public class DBController {
 	}
 
 	// =========================================================
-	// GET PARK MAX CAPACITY
+	// GET APPROVED VISITOR COUNT FOR SLOT (Handles Empty Tables safely!)
 	// =========================================================
-	public int getParkMaxCapacity(int parkId) {
-
-		String query = "SELECT maxCapacity FROM Parks WHERE parkId = ?";
+	private int getApprovedVisitorCountForSlot(int parkId, String visitDate, String visitTime, int excludeOrderId) {
 		Connection conn = null;
-
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			conn = pool.getConnection();
+			String query = "SELECT SUM(visitorCount) AS total FROM Orders "
+					+ "WHERE parkId = ? AND visitDate = ? AND visitTime = ? AND status = 'Approved'";
 
-			PreparedStatement ps = conn.prepareStatement(query);
-			ps.setInt(1, parkId);
-
-			ResultSet rs = ps.executeQuery();
-
-			if (rs.next()) {
-				int capacity = rs.getInt("maxCapacity");
-				rs.close();
-				ps.close();
-				return capacity;
+			if (excludeOrderId != -1) {
+				query += " AND orderId != ?";
 			}
 
-			rs.close();
-			ps.close();
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, parkId);
+			ps.setString(2, visitDate);
+			ps.setString(3, visitTime);
 
+			if (excludeOrderId != -1) {
+				ps.setInt(4, excludeOrderId);
+			}
+
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				// rs.getInt() is brilliant: if the SUM is NULL, it automatically returns 0!
+				return rs.getInt("total");
+			}
+		} catch (SQLException e) {
+			System.out.println("Error fetching approved visitors.");
+			e.printStackTrace();
+		} finally {
+			try {
+				if (rs != null)
+					rs.close();
+				if (ps != null)
+					ps.close();
+			} catch (SQLException e) {
+			}
+			if (conn != null)
+				pool.releaseConnection(conn);
+		}
+		return 0; // If something goes wrong, assume 0 so we don't accidentally block the UI
+	}
+
+	// =========================================================
+	// GET PARK MAX CAPACITY
+	// =========================================================
+	private int getParkMaxCapacity(int parkId) {
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			conn = pool.getConnection();
+			// Ensure it matches your column name perfectly
+			ps = conn.prepareStatement("SELECT maxCapacity FROM Parks WHERE parkId = ?");
+			ps.setInt(1, parkId);
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				return rs.getInt("maxCapacity");
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
-
 		} finally {
-			if (conn != null) {
-				pool.releaseConnection(conn);
+			try {
+				if (rs != null)
+					rs.close();
+				if (ps != null)
+					ps.close();
+			} catch (SQLException e) {
 			}
+			if (conn != null)
+				pool.releaseConnection(conn);
 		}
-
 		return -1;
 	}
 
 	// =========================================================
 	// GET PARK CASUAL GAP
 	// =========================================================
-	public int getParkCasualGap(int parkId) {
-
-		String query = "SELECT casualGap FROM Parks WHERE parkId = ?";
+	private int getParkCasualGap(int parkId) {
 		Connection conn = null;
-
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			conn = pool.getConnection();
-
-			PreparedStatement ps = conn.prepareStatement(query);
+			// Ensure it matches your column name perfectly
+			ps = conn.prepareStatement("SELECT casualGap FROM Parks WHERE parkId = ?");
 			ps.setInt(1, parkId);
-
-			ResultSet rs = ps.executeQuery();
-
+			rs = ps.executeQuery();
 			if (rs.next()) {
-				int gap = rs.getInt("casualGap");
-				rs.close();
-				ps.close();
-				return gap;
+				return rs.getInt("casualGap");
 			}
-
-			rs.close();
-			ps.close();
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-
-		} finally {
-			if (conn != null) {
-				pool.releaseConnection(conn);
-			}
-		}
-
-		return -1;
-	}
-
-	// =========================================================
-	// GET APPROVED VISITOR COUNT FOR SLOT (Supports Exclusions)
-	// =========================================================
-	public int getApprovedVisitorCountForSlot(int parkId, String visitDate, String visitTime, int excludeOrderId) {
-		String query = "SELECT IFNULL(SUM(visitorCount), 0) AS totalVisitors FROM Orders "
-				+ "WHERE parkId = ? AND visitDate = ? AND visitTime = ? AND status = 'Approved'";
-
-		// THE FIX: If an excludeOrderId is provided, ignore it so we don't double-count
-		// during updates!
-		if (excludeOrderId > 0) {
-			query += " AND orderId != ?";
-		}
-
-		Connection conn = null;
-		try {
-			conn = pool.getConnection();
-			PreparedStatement ps = conn.prepareStatement(query);
-			ps.setInt(1, parkId);
-			ps.setString(2, visitDate);
-			ps.setString(3, visitTime);
-
-			if (excludeOrderId > 0) {
-				ps.setInt(4, excludeOrderId);
-			}
-
-			ResultSet rs = ps.executeQuery();
-			if (rs.next()) {
-				int total = rs.getInt("totalVisitors");
-				rs.close();
-				ps.close();
-				return total;
-			}
-			rs.close();
-			ps.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
+			try {
+				if (rs != null)
+					rs.close();
+				if (ps != null)
+					ps.close();
+			} catch (SQLException e) {
+			}
 			if (conn != null)
 				pool.releaseConnection(conn);
 		}
-		return 0;
+		return -1;
 	}
 
 	// OVERLOAD: For new orders (Doesn't exclude any IDs)
@@ -2786,5 +2778,32 @@ public class DBController {
 		} finally {
 			pool.releaseConnection(conn);
 		}
+	}
+
+	public String getParkNameById(int parkId) {
+
+		String query = "SELECT parkName FROM parks WHERE parkId = ?";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement stmt = conn.prepareStatement(query);
+			stmt.setInt(1, parkId);
+
+			ResultSet rs = stmt.executeQuery();
+
+			if (rs.next()) {
+				return rs.getString("parkName");
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			pool.releaseConnection(conn);
+		}
+
+		return null;
 	}
 }
