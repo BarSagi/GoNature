@@ -61,6 +61,11 @@ public class DeptManagerController {
 	void showParkDashboard(ActionEvent event) {
 		loadPanel("/GUI/DeptManagerParkDashboard.fxml");
 	}
+	
+	@FXML
+	void showSavedReports(ActionEvent event) {
+	    loadPanel("/GUI/DeptManagerSavedReportsPanel.fxml");
+	}
 
 	@FXML
 	void handleLogout(ActionEvent event) {

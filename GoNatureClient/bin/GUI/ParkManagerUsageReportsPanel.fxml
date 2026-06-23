@@ -4,29 +4,27 @@
 <?import javafx.scene.layout.*?>
 
 <VBox alignment="CENTER" spacing="15.0"
-      xmlns="http://javafx.com/javafx/19"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="GUI.ParkManagerUsageReportsPanelController"
-      style="-fx-background-color: white; -fx-padding: 30;">
+	xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="GUI.ParkManagerUsageReportsPanelController"
+	style="-fx-background-color: white; -fx-padding: 30;">
+	<Label text="Usage Heatmap - Days of Month"
+		style="-fx-font-size: 22px; -fx-font-weight: bold;" />
 
-    <Label text="Usage Heatmap - Days of Month"
-           style="-fx-font-size: 22px; -fx-font-weight: bold;" />
+	<HBox spacing="10" alignment="CENTER">
 
-    <HBox spacing="10" alignment="CENTER">
+		<Label text="Month:" />
+		<ComboBox fx:id="monthCombo" />
 
-        <Label text="Month:" />
-        <ComboBox fx:id="monthCombo"/>
+		<Label text="Year:" />
+		<ComboBox fx:id="yearCombo" />
 
-        <Label text="Year:" />
-        <ComboBox fx:id="yearCombo"/>
+		<Button text="Generate" onAction="#generateReport" />
+		<Button text="Save Report" onAction="#saveReport"
+			style="-fx-background-color: #27ae60; -fx-text-fill: white;" />
 
-        <Button text="Generate" onAction="#generateReport"/>
-    </HBox>
-
-    <VBox fx:id="legendBox" alignment="CENTER"/>
-
-    <GridPane fx:id="heatmapGrid"
-              hgap="5" vgap="5"
-              alignment="CENTER"/>
+	</HBox>
+	<VBox fx:id="legendBox" alignment="CENTER" />
+	<GridPane fx:id="heatmapGrid" hgap="5" vgap="5"
+		alignment="CENTER" />
 
 </VBox>

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import Client.ClientUI;
 import Client.GoNatureClient;
 import Common.Message;
+import Common.ReportImage;
 import Common.VisitReportData;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -14,10 +15,22 @@ import javafx.scene.control.Label;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.PieChart;
+import javafx.scene.layout.VBox;
+
+import javafx.scene.SnapshotParameters;
+import javafx.scene.image.WritableImage;
+import javafx.embed.swing.SwingFXUtils;
+
+import javax.imageio.ImageIO;
+import java.io.ByteArrayOutputStream;
+import java.awt.image.BufferedImage;
 
 public class ParkManagerVisitReportsPanelController {
 
 	public static ParkManagerVisitReportsPanelController instance;
+	
+	@FXML
+	private VBox reportContainer;
 
 	@FXML
 	private Label totalLabel;
@@ -37,9 +50,12 @@ public class ParkManagerVisitReportsPanelController {
 	@FXML
 	private NumberAxis yAxis;
 
+	private VisitReportData currentReport;
+
 	@FXML
 	public void initialize() {
 		instance = this;
+
 		monthCombo.getItems().addAll(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
 
 		for (int y = 2020; y <= 2030; y++) {
@@ -51,6 +67,8 @@ public class ParkManagerVisitReportsPanelController {
 
 		if (report == null)
 			return;
+
+		currentReport = report;
 
 		Platform.runLater(() -> {
 
@@ -69,8 +87,8 @@ public class ParkManagerVisitReportsPanelController {
 			int groupCount = report.getGroupVisitors();
 			int total = individualCount + groupCount;
 
-			totalLabel.setText(
-					"Total visitors: " + total + " | Regular Groups: " + individualCount + " | Organized Groups: " + groupCount);
+			totalLabel.setText("Total visitors: " + total + " | Regular Groups: " + individualCount
+					+ " | Organized Groups: " + groupCount);
 
 			individual.nodeProperty().addListener((obs, oldNode, newNode) -> {
 				if (newNode != null) {
@@ -108,4 +126,47 @@ public class ParkManagerVisitReportsPanelController {
 		}
 	}
 
+	private byte[] captureReportImage() {
+		try {
+			WritableImage snapshot = reportContainer.snapshot(new SnapshotParameters(), null);
+
+			BufferedImage bufferedImage = SwingFXUtils.fromFXImage(snapshot, null);
+
+			ByteArrayOutputStream output = new ByteArrayOutputStream();
+			ImageIO.write(bufferedImage, "png", output);
+
+			return output.toByteArray();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	@FXML
+	void saveReport(ActionEvent event) {
+
+		if (currentReport == null) {
+			System.out.println("No report to save");
+			return;
+		}
+
+		byte[] imageBytes = captureReportImage();
+
+		if (imageBytes == null) {
+			System.out.println("Failed to capture report");
+			return;
+		}
+
+		ReportImage report = new ReportImage("VISIT_REPORT", GoNatureClient.currentEmployee.getAffiliation(),
+				monthCombo.getValue(), yearCombo.getValue(), imageBytes);
+
+		Message msg = new Message("SAVE_REPORT", report);
+
+		try {
+			ClientUI.client.sendToServer(msg);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 }

@@ -119,7 +119,13 @@ public class StrategyFactory {
 
 		case "RETURN_NOTIFICATIONS":
 			return new ReturnNotificationsStrategy();
-
+			
+		case "GET_ALL_REPORTS_RESULT":
+			return new GetAllReportsResultStrategy();
+			
+		case "SAVE_REPORT_RESULT":
+			return new SaveReportResultStrategy();
+				
 		default:
 			return null;
 		}

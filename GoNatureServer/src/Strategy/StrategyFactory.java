@@ -107,6 +107,13 @@ public class StrategyFactory {
 		    
 		case "UPDATE_ORDER_PAID":
 			return new UpdateOrderPaidStrategy();
+			
+		case "SAVE_REPORT":
+			return new SaveReportStrategy();
+			
+		case "GET_ALL_REPORTS":
+			return new GetAllReportsStrategy();
+			
 		default:
 			return null;
 		}

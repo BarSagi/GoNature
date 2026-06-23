@@ -17,6 +17,7 @@ import java.util.UUID;
 
 import Common.CancellationReportData;
 import Common.Order;
+import Common.ReportImage;
 import Common.UsageReportData;
 import Common.Visit;
 import Common.VisitRecord;
@@ -473,41 +474,49 @@ public class DBController {
 	// REPORTS - VISIT REPORT
 	// =========================================================
 	public VisitReportData getVisitReport(int parkId, int month, int year) {
-	    String query = "SELECT "
-	            + "SUM(CASE WHEN visitType = 'RegularGroup' THEN actualVisitorCount ELSE 0 END) as individualTotal, "
-	            + "SUM(CASE WHEN visitType = 'OrganizedGroup' THEN actualVisitorCount ELSE 0 END) as groupTotal "
-	            + "FROM Visits "
-	            + "WHERE parkId = ? AND YEAR(entryTime) = ? AND MONTH(entryTime) = ?";
+		String query = "SELECT "
+				+ "SUM(CASE WHEN visitType = 'RegularGroup' THEN actualVisitorCount ELSE 0 END) as individualTotal, "
+				+ "SUM(CASE WHEN visitType = 'OrganizedGroup' THEN actualVisitorCount ELSE 0 END) as groupTotal "
+				+ "FROM Visits " + "WHERE parkId = ? AND YEAR(entryTime) = ? AND MONTH(entryTime) = ?";
 
-	    Connection conn = null;
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    try {
-	        conn = pool.getConnection();
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, parkId);
-	        ps.setInt(2, year);
-	        ps.setInt(3, month);
+		try {
+			conn = pool.getConnection();
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, parkId);
+			ps.setInt(2, year);
+			ps.setInt(3, month);
 
-	        rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
-	        if (rs.next()) {
-	            int individualVisitors = rs.getInt("individualTotal");
-	            int groupVisitors = rs.getInt("groupTotal");
-	            
-	            return new VisitReportData(individualVisitors, groupVisitors);
-	        }
+			if (rs.next()) {
+				int individualVisitors = rs.getInt("individualTotal");
+				int groupVisitors = rs.getInt("groupTotal");
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        if (rs != null) try { rs.close(); } catch (SQLException e) {}
-	        if (ps != null) try { ps.close(); } catch (SQLException e) {}
-	        if (conn != null) pool.releaseConnection(conn);
-	    }
+				return new VisitReportData(individualVisitors, groupVisitors);
+			}
 
-	    return new VisitReportData(0, 0);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			if (rs != null)
+				try {
+					rs.close();
+				} catch (SQLException e) {
+				}
+			if (ps != null)
+				try {
+					ps.close();
+				} catch (SQLException e) {
+				}
+			if (conn != null)
+				pool.releaseConnection(conn);
+		}
+
+		return new VisitReportData(0, 0);
 	}
 
 	// =========================================================
@@ -592,7 +601,7 @@ public class DBController {
 					}
 					return "Success";
 				}
-				
+
 			}
 			return "Order not found or invalid time window.";
 
@@ -2622,26 +2631,82 @@ public class DBController {
 			}
 		}
 	}
-	
+
 	public boolean updateOrderPaidStatus(int orderId) {
-	    String query = "UPDATE Orders SET paid = 1 WHERE orderId = ?";
-	    Connection conn = null;
-	    PreparedStatement ps = null;
+		String query = "UPDATE Orders SET paid = 1 WHERE orderId = ?";
+		Connection conn = null;
+		PreparedStatement ps = null;
 
-	    try {
-	        conn = pool.getConnection();
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, orderId);
+		try {
+			conn = pool.getConnection();
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, orderId);
 
-	        int rows = ps.executeUpdate();
-	        return rows > 0;
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        return false;
-	    } finally {
-	        if (ps != null) try { ps.close(); } catch (SQLException e) {}
-	        if (conn != null) pool.releaseConnection(conn);
-	    }
+			int rows = ps.executeUpdate();
+			return rows > 0;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		} finally {
+			if (ps != null)
+				try {
+					ps.close();
+				} catch (SQLException e) {
+				}
+			if (conn != null)
+				pool.releaseConnection(conn);
+		}
+	}
+
+	public boolean saveReport(ReportImage report) {
+
+		String sql = """
+				    INSERT INTO reports
+				    (reportType, parkName, month, year, createdAt, image)
+				    VALUES (?, ?, ?, ?, NOW(), ?)
+				""";
+
+		try (Connection conn = pool.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setString(1, report.getReportType());
+			stmt.setString(2, report.getParkName());
+			stmt.setInt(3, report.getMonth());
+			stmt.setInt(4, report.getYear());
+			stmt.setBytes(5, report.getImage());
+
+			return stmt.executeUpdate() > 0;
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+
+	public List<ReportImage> getAllReports() {
+
+		List<ReportImage> reports = new ArrayList<>();
+
+		String sql = "SELECT reportId, reportType, parkName, month, year, createdAt, image FROM reports";
+
+		try (Connection conn = pool.getConnection();
+				PreparedStatement stmt = conn.prepareStatement(sql);
+				ResultSet rs = stmt.executeQuery()) {
+
+			while (rs.next()) {
+
+				ReportImage report = new ReportImage(rs.getInt("reportId"), rs.getString("reportType"),
+						rs.getString("parkName"), rs.getInt("month"), rs.getInt("year"), rs.getString("createdAt"),
+						rs.getBytes("image"));
+
+				reports.add(report);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return reports;
 	}
 
 }

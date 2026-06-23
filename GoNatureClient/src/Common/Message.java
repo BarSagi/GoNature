@@ -6,24 +6,25 @@ import java.io.Serializable;
 @SuppressWarnings("serial")
 public class Message implements Serializable {
 
-    private String command;
-    private Object data;
+	private String command;
+	private Object data;
 
-    public Message(String command, Object data) {
+	public Message(String command, Object data) {
 
-        this.command = command;
-        this.data = data;
-    }
+		this.command = command;
+		this.data = data;
+	}
 
-    public String getCommand() {
-        return command;
-    }
+	public String getCommand() {
+		return command;
+	}
 
-    public Object getData() {
-        return data;
-    }
-    @Override
-    public String toString() {
-        return "command=" + command + " data=" + data;
-    }
+	public Object getData() {
+		return data;
+	}
+
+	@Override
+	public String toString() {
+		return "command=" + command + " data=" + data;
+	}
 }
