@@ -8,55 +8,66 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox alignment="TOP_CENTER" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30;"
-      xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="GUI.ServiceRepRegisterSubscriberPanelController">
+<VBox alignment="TOP_CENTER" spacing="15.0"
+	style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30;"
+	xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="GUI.ServiceRepRegisterSubscriberPanelController">
 
-    <Label text="Register Family Subscriber"
-           style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
+	<Label text="Register Family Subscriber"
+		style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
 
-    <Label text="Please fill in the subscriber details"
-           style="-fx-font-size: 14px; -fx-text-fill: #7f8c8d;" />
+	<Label text="Please fill in the subscriber details"
+		style="-fx-font-size: 14px; -fx-text-fill: #7f8c8d;" />
 
-    <GridPane hgap="15.0" vgap="15.0">
-        <Label text="First Name:" GridPane.rowIndex="0" GridPane.columnIndex="0" />
-        <TextField fx:id="firstNameField" promptText="First Name"
-                   prefWidth="220.0" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+	<GridPane hgap="15.0" vgap="15.0">
+		<Label text="First Name:" GridPane.rowIndex="0"
+			GridPane.columnIndex="0" />
+		<TextField fx:id="firstNameField" promptText="First Name"
+			prefWidth="220.0" GridPane.rowIndex="0" GridPane.columnIndex="1" />
 
-        <Label text="Last Name:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
-        <TextField fx:id="lastNameField" promptText="Last Name"
-                   prefWidth="220.0" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+		<Label text="Last Name:" GridPane.rowIndex="1"
+			GridPane.columnIndex="0" />
+		<TextField fx:id="lastNameField" promptText="Last Name"
+			prefWidth="220.0" GridPane.rowIndex="1" GridPane.columnIndex="1" />
 
-        <Label text="ID Number:" GridPane.rowIndex="2" GridPane.columnIndex="0" />
-        <TextField fx:id="idField" promptText="ID Number"
-                   prefWidth="220.0" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+		<Label text="ID Number:" GridPane.rowIndex="2"
+			GridPane.columnIndex="0" />
+		<TextField fx:id="idField" promptText="ID Number"
+			prefWidth="220.0" GridPane.rowIndex="2" GridPane.columnIndex="1" />
 
-        <Label text="Mobile Phone:" GridPane.rowIndex="3" GridPane.columnIndex="0" />
-        <TextField fx:id="phoneField" promptText="Mobile Phone"
-                   prefWidth="220.0" GridPane.rowIndex="3" GridPane.columnIndex="1" />
+		<Label text="Mobile Phone:" GridPane.rowIndex="3"
+			GridPane.columnIndex="0" />
+		<TextField fx:id="phoneField" promptText="Mobile Phone"
+			prefWidth="220.0" GridPane.rowIndex="3" GridPane.columnIndex="1" />
 
-        <Label text="Email:" GridPane.rowIndex="4" GridPane.columnIndex="0" />
-        <TextField fx:id="emailField" promptText="Email"
-                   prefWidth="220.0" GridPane.rowIndex="4" GridPane.columnIndex="1" />
+		<Label text="Email:" GridPane.rowIndex="4"
+			GridPane.columnIndex="0" />
+		<TextField fx:id="emailField" promptText="Email"
+			prefWidth="220.0" GridPane.rowIndex="4" GridPane.columnIndex="1" />
 
-        <Label text="Family Members:" GridPane.rowIndex="5" GridPane.columnIndex="0" />
-        <TextField fx:id="familyMembersField" promptText="Number of Family Members"
-                   prefWidth="220.0" GridPane.rowIndex="5" GridPane.columnIndex="1" />
+		<Label text="Family Members:" GridPane.rowIndex="5"
+			GridPane.columnIndex="0" />
+		<TextField fx:id="familyMembersField"
+			promptText="Number of Family Members" prefWidth="220.0"
+			GridPane.rowIndex="5" GridPane.columnIndex="1" />
 
-        <Label text="Payment Method:" GridPane.rowIndex="6" GridPane.columnIndex="0" />
-        <ComboBox fx:id="paymentMethodComboBox"
-                  prefWidth="220.0" GridPane.rowIndex="6" GridPane.columnIndex="1" />
+		<Label text="Add Credit Card?" GridPane.rowIndex="6"
+			GridPane.columnIndex="0" />
+		<ComboBox fx:id="paymentMethodComboBox" prefWidth="220.0"
+			GridPane.rowIndex="6" GridPane.columnIndex="1" />
 
-        <Label text="Credit Card:" GridPane.rowIndex="7" GridPane.columnIndex="0" />
-        <TextField fx:id="creditCardField" promptText="Credit Card Number"
-                   prefWidth="220.0" GridPane.rowIndex="7" GridPane.columnIndex="1" />
-    </GridPane>
+		<Label text="Credit Card:" GridPane.rowIndex="7"
+			GridPane.columnIndex="0" />
+		<TextField fx:id="creditCardField"
+			promptText="Credit Card Number" prefWidth="220.0"
+			GridPane.rowIndex="7" GridPane.columnIndex="1" />
+	</GridPane>
 
-    <Button text="Register Subscriber" onAction="#registerSubscriber"
-            prefHeight="40.0" prefWidth="180.0"
-            style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5;" />
+	<Button text="Register Subscriber"
+		onAction="#registerSubscriber" prefHeight="40.0" prefWidth="180.0"
+		style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5;" />
 
-    <Label fx:id="statusLabel"
-           style="-fx-text-fill: #e74c3c; -fx-font-size: 14px; -fx-font-weight: bold;" />
+	<Label fx:id="statusLabel"
+		style="-fx-text-fill: #e74c3c; -fx-font-size: 14px; -fx-font-weight: bold;" />
 
 </VBox>

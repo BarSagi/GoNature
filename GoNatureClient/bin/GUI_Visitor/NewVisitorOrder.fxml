@@ -91,6 +91,7 @@
 								<Font name="System Bold" size="16.0" />
 							</font>
 						</Label>
+
 						<GridPane hgap="15.0" vgap="15.0">
 							<columnConstraints>
 								<ColumnConstraints hgrow="SOMETIMES"
@@ -99,24 +100,47 @@
 									minWidth="10.0" percentWidth="50.0" />
 							</columnConstraints>
 							<children>
-								<ComboBox fx:id="parkComboBox" prefHeight="35.0"
-									maxWidth="Infinity" promptText="Select Park"
-									GridPane.columnIndex="0" GridPane.rowIndex="0" />
-								<Spinner fx:id="visitorsSpinner" prefHeight="35.0"
-									maxWidth="Infinity" GridPane.columnIndex="1"
-									GridPane.rowIndex="0" />
 
-								<DatePicker fx:id="datePicker" prefHeight="35.0"
-									maxWidth="Infinity" promptText="Select Date"
-									GridPane.columnIndex="0" GridPane.rowIndex="1" />
-								<ComboBox fx:id="timeComboBox" prefHeight="35.0"
-									maxWidth="Infinity" promptText="Select Time"
-									GridPane.columnIndex="1" GridPane.rowIndex="1" />
+								<VBox spacing="5.0" GridPane.columnIndex="0"
+									GridPane.rowIndex="0">
+									<Label text="Select Park:"
+										style="-fx-text-fill: #7f8c8d; -fx-font-size: 12px;" />
+									<ComboBox fx:id="parkComboBox" prefHeight="35.0"
+										maxWidth="Infinity" />
+								</VBox>
 
-								<ComboBox fx:id="paymentComboBox" prefHeight="35.0"
-									maxWidth="Infinity" promptText="Choose Payment Method"
-									GridPane.columnIndex="0" GridPane.rowIndex="2"
-									GridPane.columnSpan="2" />
+								<VBox spacing="5.0" GridPane.columnIndex="1"
+									GridPane.rowIndex="0">
+									<Label text="Number of Visitors:"
+										style="-fx-text-fill: #7f8c8d; -fx-font-size: 12px;" />
+									<Spinner fx:id="visitorsSpinner" prefHeight="35.0"
+										maxWidth="Infinity" />
+								</VBox>
+
+								<VBox spacing="5.0" GridPane.columnIndex="0"
+									GridPane.rowIndex="1">
+									<Label text="Select Date:"
+										style="-fx-text-fill: #7f8c8d; -fx-font-size: 12px;" />
+									<DatePicker fx:id="datePicker" prefHeight="35.0"
+										maxWidth="Infinity" />
+								</VBox>
+
+								<VBox spacing="5.0" GridPane.columnIndex="1"
+									GridPane.rowIndex="1">
+									<Label text="Select Time:"
+										style="-fx-text-fill: #7f8c8d; -fx-font-size: 12px;" />
+									<ComboBox fx:id="timeComboBox" prefHeight="35.0"
+										maxWidth="Infinity" />
+								</VBox>
+
+								<VBox spacing="5.0" GridPane.columnIndex="0"
+									GridPane.rowIndex="2" GridPane.columnSpan="2">
+									<Label text="Payment Method:"
+										style="-fx-text-fill: #7f8c8d; -fx-font-size: 12px;" />
+									<ComboBox fx:id="paymentComboBox" prefHeight="35.0"
+										maxWidth="Infinity" />
+								</VBox>
+
 							</children>
 						</GridPane>
 					</children>
