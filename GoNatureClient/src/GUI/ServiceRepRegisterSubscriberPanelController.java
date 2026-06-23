@@ -49,7 +49,7 @@ public class ServiceRepRegisterSubscriberPanelController {
 
 		paymentMethodComboBox.setOnAction(e -> {
 			String paymentMethod = paymentMethodComboBox.getValue();
-			boolean isCash = "Cash".equals(paymentMethod);
+			boolean isCash = "No".equals(paymentMethod);
 			creditCardField.setDisable(isCash);
 			if (isCash) {
 				creditCardField.clear();
