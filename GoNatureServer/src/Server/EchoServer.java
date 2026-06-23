@@ -8,7 +8,6 @@ import OCSFUtils.ConnectionToClient;
 import Strategy.MessageStrategy;
 import Strategy.StrategyFactory;
 import javafx.application.Platform;
-import Reports.ReportService;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,10 +18,9 @@ public class EchoServer extends AbstractServer {
 
 	public static EchoServer instance;
 	private DBController database;
-	private ReportService reportService;
-	
+
 	private final Map<ConnectionToClient, Long> lastActivityMap = new ConcurrentHashMap<>();
-	
+
 	// ADDED: Map to keep track of logged in users to prevent double logins
 	private final Map<String, ConnectionToClient> loggedInUsers = new ConcurrentHashMap<>();
 
@@ -73,7 +71,7 @@ public class EchoServer extends AbstractServer {
 					compName = "Unknown";
 
 				log("[CLIENT DISCONNECTED] Host: " + compName + " | IP: " + client.getInetAddress().getHostAddress());
-				
+
 				logoutUser(client); // ADDED: Remove user from logged-in map
 				lastActivityMap.remove(client); // clean this user's activity map
 				return;
@@ -113,7 +111,6 @@ public class EchoServer extends AbstractServer {
 		log("[SYSTEM] Server listening for connections on port " + getPort());
 		startIdleChecker();
 		database = new DBController(this);
-		reportService = new ReportService(database);
 	}
 
 	protected void serverStopped() {
@@ -181,42 +178,38 @@ public class EchoServer extends AbstractServer {
 	public DBController getDatabase() {
 		return database;
 	}
-	
+
 	private void startIdleChecker() {
-	    Thread t = new Thread(() -> {
-	        while (true) {
-	            try {
-	                Thread.sleep(5000); // check every 5 seconds
-	                long now = System.currentTimeMillis();
+		Thread t = new Thread(() -> {
+			while (true) {
+				try {
+					Thread.sleep(5000); // check every 5 seconds
+					long now = System.currentTimeMillis();
 
-	                for (ConnectionToClient client : lastActivityMap.keySet()) {
-	                    long last = lastActivityMap.get(client);
+					for (ConnectionToClient client : lastActivityMap.keySet()) {
+						long last = lastActivityMap.get(client);
 
-	                    if (now - last > 200000_000) { // if the client is idle for more than 20 seconds
-	                        String clientIp = "Unknown";
-	                        if (client != null && client.getInetAddress() != null) {
-	                            clientIp = client.getInetAddress().getHostAddress();
-	                        }
+						if (now - last > 200000_000) { // if the client is idle for more than 20 seconds
+							String clientIp = "Unknown";
+							if (client != null && client.getInetAddress() != null) {
+								clientIp = client.getInetAddress().getHostAddress();
+							}
 
-	                        log("[IDLE TIMEOUT] Disconnecting client: " + clientIp);
+							log("[IDLE TIMEOUT] Disconnecting client: " + clientIp);
 
-	                        logoutUser(client); // ADDED: Remove user from logged-in map
-	                        client.close(); // close the connection
-	                        lastActivityMap.remove(client);
-	                    }
-	                }
+							logoutUser(client); // ADDED: Remove user from logged-in map
+							client.close(); // close the connection
+							lastActivityMap.remove(client);
+						}
+					}
 
-	            } catch (Exception e) {
-	                e.printStackTrace();
-	            }
-	        }
-	    });
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
 
-	    t.setDaemon(true);
-	    t.start();
-	}
-	
-	public ReportService getReportService() {
-	    return reportService;
+		t.setDaemon(true);
+		t.start();
 	}
 }

@@ -76,37 +76,47 @@ public class StrategyFactory {
 			return new GetCancellationReportStrategy();
 
 		case "GET_PENDING_REQUESTS":
-		    return new GetPendingRequestsStrategy();
+			return new GetPendingRequestsStrategy();
 
 		case "APPROVE_REQUEST":
-		    return new ApproveRequestStrategy();
+			return new ApproveRequestStrategy();
 
 		case "REJECT_REQUEST":
-		    return new RejectRequestStrategy();
-		    
+			return new RejectRequestStrategy();
+
 		case "CALCULATE_PRICE_PREORDER":
 			return new CalculatePricePreorderStrategy();
-			
+
 		case "CALCULATE_PRICE_CASUAL":
-		    return new CalculatePriceCasualStrategy();
-		    
+			return new CalculatePriceCasualStrategy();
+
 		case "GET_VISITOR_TYPE":
 			return new GetVisitorTypeStrategy();
-			
+
 		case "GET_PARK_DASHBOARD":
 			return new GetParkDashboardStrategy();
-		
+
 		case "QUICK_SEARCH_RECORD":
 			return new QuickSearchStrategy();
-			
+
 		case "CONFIRM_ORDER":
-		    return new ConfirmOrderStrategy();
-		    
+			return new ConfirmOrderStrategy();
+
 		case "GET_VISITOR_EMAIL":
 			return new GetVisitorEmailStrategy();
-		    
+
+		case "CHECK_NOTIFICATIONS":
+			return new CheckNotificationsStrategy();
+
 		case "UPDATE_ORDER_PAID":
 			return new UpdateOrderPaidStrategy();
+
+		case "SAVE_REPORT":
+			return new SaveReportStrategy();
+
+		case "GET_ALL_REPORTS":
+			return new GetAllReportsStrategy();
+
 		default:
 			return null;
 		}

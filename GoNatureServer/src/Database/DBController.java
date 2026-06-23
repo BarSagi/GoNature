@@ -14,13 +14,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
+import PricingService.PricingService;
 import Common.CancellationReportData;
 import Common.Order;
+import Common.ReportImage;
 import Common.UsageReportData;
 import Common.Visit;
+import Common.VisitReportData;
 import Common.VisitRecord;
-import PricingService.PricingService;
 import Server.EchoServer;
 
 public class DBController {
@@ -249,7 +250,6 @@ public class DBController {
 		int visitorCount = Integer.parseInt(orderData.get(4));
 		String orderType = orderData.get(5);
 		String email = orderData.get(6);
-		String QR = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
 		boolean paid = orderData.get(7).equals("Pay Now");
 		Connection conn = null;
 
@@ -276,29 +276,47 @@ public class DBController {
 
 			if (hasRoomInSlot(parkId, visitDate, visitTime, visitorCount)) {
 
-				String insert = "INSERT INTO Orders "
-						+ "(parkId, visitorId, visitDate, visitTime, visitorCount, email, orderType, status, QRCode, paid) "
-						+ "VALUES (?, ?, ?, ?, ?, ?, ?, 'Approved', ?, ?)";
+				int attempts = 0;
 
-				PreparedStatement ps = conn.prepareStatement(insert);
+				// Try up to 3 times in case we get a highly unlucky QR collision
+				while (attempts < 3) {
+					try {
+						// Generate a fresh QR code on every attempt!
+						String QR = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
 
-				ps.setInt(1, parkId);
-				ps.setString(2, visitorId);
-				ps.setString(3, visitDate);
-				ps.setString(4, visitTime);
-				ps.setInt(5, visitorCount);
-				ps.setString(6, email);
-				ps.setString(7, orderType);
-				ps.setString(8, QR);
-				ps.setBoolean(9, paid);
+						String insert = "INSERT INTO Orders "
+								+ "(parkId, visitorId, visitDate, visitTime, visitorCount, email, orderType, status, QRCode, paid) "
+								+ "VALUES (?, ?, ?, ?, ?, ?, ?, 'Approved', ?, ?)";
 
-				int rows = ps.executeUpdate();
-				ps.close();
+						PreparedStatement ps = conn.prepareStatement(insert);
 
-				if (rows > 0) {
-					return "Approved";
+						ps.setInt(1, parkId);
+						ps.setString(2, visitorId);
+						ps.setString(3, visitDate);
+						ps.setString(4, visitTime);
+						ps.setInt(5, visitorCount);
+						ps.setString(6, email);
+						ps.setString(7, orderType);
+						ps.setString(8, QR);
+						ps.setBoolean(9, paid);
+
+						int rows = ps.executeUpdate();
+						ps.close();
+
+						if (rows > 0) {
+							return "Approved";
+						}
+
+						break; // If no error was thrown but 0 rows updated, break to avoid infinite loop
+
+					} catch (java.sql.SQLIntegrityConstraintViolationException e) {
+						// This exception specifically catches UNIQUE constraint violations!
+						attempts++;
+						System.out.println("SERVER: QR collision detected. Retrying... Attempt: " + attempts);
+					}
 				}
 
+				// If we fail 3 times, or if something else goes wrong
 				return "Failed";
 			}
 
@@ -471,42 +489,50 @@ public class DBController {
 	// =========================================================
 	// REPORTS - VISIT REPORT
 	// =========================================================
-	public ArrayList<Visit> getVisitReport(int parkId, int month, int year) {
-
-		ArrayList<Visit> result = new ArrayList<>();
-
-		String query = "SELECT v.* " + "FROM Visits v " + "WHERE v.parkId = ? " + "AND YEAR(v.entryTime) = ? "
-				+ "AND MONTH(v.entryTime) = ?";
+	public VisitReportData getVisitReport(int parkId, int month, int year) {
+		String query = "SELECT "
+				+ "SUM(CASE WHEN visitType = 'RegularGroup' THEN actualVisitorCount ELSE 0 END) as individualTotal, "
+				+ "SUM(CASE WHEN visitType = 'OrganizedGroup' THEN actualVisitorCount ELSE 0 END) as groupTotal "
+				+ "FROM Visits " + "WHERE parkId = ? AND YEAR(entryTime) = ? AND MONTH(entryTime) = ?";
 
 		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
 		try {
 			conn = pool.getConnection();
-
-			PreparedStatement ps = conn.prepareStatement(query);
+			ps = conn.prepareStatement(query);
 			ps.setInt(1, parkId);
 			ps.setInt(2, year);
 			ps.setInt(3, month);
 
-			ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
-			while (rs.next()) {
+			if (rs.next()) {
+				int individualVisitors = rs.getInt("individualTotal");
+				int groupVisitors = rs.getInt("groupTotal");
 
-				result.add(new Visit(rs.getInt("visitId"), rs.getInt("parkId"), rs.getInt("orderId"),
-						rs.getString("visitorId"), rs.getInt("actualVisitorCount"), rs.getTimestamp("entryTime"),
-						rs.getTimestamp("exitTime"), rs.getString("visitType")));
+				return new VisitReportData(individualVisitors, groupVisitors);
 			}
-
-			rs.close();
-			ps.close();
 
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
-			pool.releaseConnection(conn);
+			if (rs != null)
+				try {
+					rs.close();
+				} catch (SQLException e) {
+				}
+			if (ps != null)
+				try {
+					ps.close();
+				} catch (SQLException e) {
+				}
+			if (conn != null)
+				pool.releaseConnection(conn);
 		}
 
-		return result;
+		return new VisitReportData(0, 0);
 	}
 
 	// =========================================================
@@ -517,15 +543,18 @@ public class DBController {
 		try {
 			searchOrderId = Integer.parseInt(identifier);
 		} catch (NumberFormatException e) {
-			// Not an integer
+			// not an integer
 		}
+
 		String selectQuery = "SELECT parkId, orderId, visitorCount, visitorId, paid, orderType FROM Orders "
 				+ "WHERE (orderId = ? OR visitorId = ? OR QRCode = ?) AND status = 'Approved' "
 				+ "AND visitDate = CURDATE() "
 				+ "AND visitTime BETWEEN SUBTIME(CURTIME(), '00:30:00') AND ADDTIME(CURTIME(), '00:30:00') "
 				+ "ORDER BY orderId DESC LIMIT 1";
+
 		String insertQuery = "INSERT INTO Visits (parkId, orderId, visitorId, actualVisitorCount, entryTime, exitTime, currentlyIn, visitType) "
 				+ "VALUES (?, ?, ?, ?, NOW(), NULL, ?, ?)";
+
 		String updateOrderQuery = "UPDATE Orders SET status = 'Entered' WHERE orderId = ?";
 
 		Connection conn = null;
@@ -536,6 +565,7 @@ public class DBController {
 
 		try {
 			conn = pool.getConnection();
+
 			psSelect = conn.prepareStatement(selectQuery);
 			psSelect.setInt(1, searchOrderId);
 			psSelect.setString(2, identifier);
@@ -546,6 +576,7 @@ public class DBController {
 				int parkId = rs.getInt("parkId");
 				int orderId = rs.getInt("orderId");
 				int visitorCount = rs.getInt("visitorCount");
+
 				String actualVisitorId = rs.getString("visitorId");
 				int paid = rs.getInt("paid");
 				String orderType = rs.getString("orderType");
@@ -562,6 +593,7 @@ public class DBController {
 				} else {
 					psInsert.setString(6, "RegularGroup");
 				}
+
 				int rows = psInsert.executeUpdate();
 
 				if (rows > 0) {
@@ -591,14 +623,13 @@ public class DBController {
 					}
 					return "Success";
 				}
-				
 			}
+
 			return "Order not found or invalid time window.";
 
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return "Database error.";
-		} finally {
 		}
 	}
 
@@ -2339,14 +2370,18 @@ public class DBController {
 		try {
 			conn = pool.getConnection();
 
-			ps = conn.prepareStatement("UPDATE Orders SET status = 'Approved', holdUntil = NULL, reminderUntil = NULL "
-					+ "WHERE orderId = ? " + "AND (" + "(status = 'PendingConfirmation' AND holdUntil >= NOW()) "
-					+ "OR " + "(status = 'PendingVisitReminder' AND reminderUntil >= NOW())" + ")");
+			// Cleanly formatted SQL query with your excellent timestamp validation!
+			String query = "UPDATE Orders " + "SET status = 'Approved', holdUntil = NULL, reminderUntil = NULL "
+					+ "WHERE orderId = ? " + "AND ( " + "  (status = 'PendingConfirmation' AND holdUntil >= NOW()) OR "
+					+ "  (status = 'PendingVisitReminder' AND reminderUntil >= NOW()) " + ")";
 
+			ps = conn.prepareStatement(query);
 			ps.setInt(1, orderId);
 
 			int rows = ps.executeUpdate();
 
+			// If rows > 0, the order was successfully confirmed in time!
+			// If rows == 0, either the order doesn't exist, or their time expired.
 			return rows > 0;
 
 		} catch (SQLException e) {
@@ -2442,8 +2477,10 @@ public class DBController {
 		try {
 			conn = pool.getConnection();
 
+			// Check for orders that need a reminder tomorrow
 			String query = "SELECT orderId, email FROM Orders " + "WHERE status = 'Approved' "
-					+ "AND visitDate = DATE_ADD(CURDATE(), INTERVAL 1 DAY)";
+					+ "AND visitDate = DATE_ADD(CURDATE(), INTERVAL 1 DAY) "
+					+ "AND orderId NOT IN (SELECT orderId FROM Notifications WHERE notificationType = 'Reminder')";
 
 			ps = conn.prepareStatement(query);
 			rs = ps.executeQuery();
@@ -2460,6 +2497,7 @@ public class DBController {
 			ps.close();
 
 			for (int i = 0; i < orderIds.size(); i++) {
+				// 1. Update the order status and set the 2-hour timer
 				PreparedStatement updatePs = conn.prepareStatement(
 						"UPDATE Orders SET status = 'PendingVisitReminder', reminderUntil = DATE_ADD(NOW(), INTERVAL 2 HOUR) "
 								+ "WHERE orderId = ?");
@@ -2467,21 +2505,22 @@ public class DBController {
 				updatePs.executeUpdate();
 				updatePs.close();
 
+				// 2. Insert Email Notification with DYNAMIC TIME using SQL CONCAT and
+				// DATE_FORMAT
 				PreparedStatement notifEmailPs = conn.prepareStatement(
 						"INSERT INTO Notifications (orderId, notificationType, contactMethod, destinationAddress, messageContent, scheduledTime, isSent) "
-								+ "VALUES (?, 'VisitReminder', 'Email', ?, ?, NOW(), false)");
+								+ "VALUES (?, 'Reminder', 'Email', ?, CONCAT('Reminder: your visit is tomorrow. Please confirm before ', DATE_FORMAT(DATE_ADD(NOW(), INTERVAL 2 HOUR), '%H:%i on %d/%m/%Y'), '.'), NOW(), false)");
 				notifEmailPs.setInt(1, orderIds.get(i));
 				notifEmailPs.setString(2, emails.get(i));
-				notifEmailPs.setString(3, "Reminder: your visit is tomorrow. Please confirm or cancel within 2 hours.");
 				notifEmailPs.executeUpdate();
 				notifEmailPs.close();
 
+				// 3. Insert SMS Notification with DYNAMIC TIME using SQL CONCAT and DATE_FORMAT
 				PreparedStatement notifSmsPs = conn.prepareStatement(
 						"INSERT INTO Notifications (orderId, notificationType, contactMethod, destinationAddress, messageContent, scheduledTime, isSent) "
-								+ "VALUES (?, 'VisitReminder', 'SMS', ?, ?, NOW(), false)");
+								+ "VALUES (?, 'Reminder', 'SMS', ?, CONCAT('Reminder: your visit is tomorrow. Please confirm before ', DATE_FORMAT(DATE_ADD(NOW(), INTERVAL 2 HOUR), '%H:%i on %d/%m/%Y'), '.'), NOW(), false)");
 				notifSmsPs.setInt(1, orderIds.get(i));
 				notifSmsPs.setString(2, emails.get(i));
-				notifSmsPs.setString(3, "Reminder: your visit is tomorrow. Please confirm or cancel within 2 hours.");
 				notifSmsPs.executeUpdate();
 				notifSmsPs.close();
 			}
@@ -2498,10 +2537,8 @@ public class DBController {
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
-
-			if (conn != null) {
+			if (conn != null)
 				pool.releaseConnection(conn);
-			}
 		}
 	}
 
@@ -2621,26 +2658,132 @@ public class DBController {
 			}
 		}
 	}
-	
+
 	public boolean updateOrderPaidStatus(int orderId) {
-	    String query = "UPDATE Orders SET paid = 1 WHERE orderId = ?";
-	    Connection conn = null;
-	    PreparedStatement ps = null;
+		String query = "UPDATE Orders SET paid = 1 WHERE orderId = ?";
+		Connection conn = null;
+		PreparedStatement ps = null;
 
-	    try {
-	        conn = pool.getConnection();
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, orderId);
+		try {
+			conn = pool.getConnection();
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, orderId);
 
-	        int rows = ps.executeUpdate();
-	        return rows > 0;
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        return false;
-	    } finally {
-	        if (ps != null) try { ps.close(); } catch (SQLException e) {}
-	        if (conn != null) pool.releaseConnection(conn);
-	    }
+			int rows = ps.executeUpdate();
+			return rows > 0;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		} finally {
+			if (ps != null)
+				try {
+					ps.close();
+				} catch (SQLException e) {
+				}
+			if (conn != null)
+				pool.releaseConnection(conn);
+		}
 	}
 
+	public boolean saveReport(ReportImage report) {
+
+		String sql = """
+				    INSERT INTO reports
+				    (reportType, parkName, month, year, createdAt, image)
+				    VALUES (?, ?, ?, ?, NOW(), ?)
+				""";
+
+		try (Connection conn = pool.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setString(1, report.getReportType());
+			stmt.setString(2, report.getParkName());
+			stmt.setInt(3, report.getMonth());
+			stmt.setInt(4, report.getYear());
+			stmt.setBytes(5, report.getImage());
+
+			return stmt.executeUpdate() > 0;
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+
+	public List<ReportImage> getAllReports() {
+
+		List<ReportImage> reports = new ArrayList<>();
+
+		String sql = "SELECT reportId, reportType, parkName, month, year, createdAt, image FROM reports";
+
+		try (Connection conn = pool.getConnection();
+				PreparedStatement stmt = conn.prepareStatement(sql);
+				ResultSet rs = stmt.executeQuery()) {
+
+			while (rs.next()) {
+
+				ReportImage report = new ReportImage(rs.getInt("reportId"), rs.getString("reportType"),
+						rs.getString("parkName"), rs.getInt("month"), rs.getInt("year"), rs.getString("createdAt"),
+						rs.getBytes("image"));
+
+				reports.add(report);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return reports;
+	}
+
+	// =========================================================
+	// GET UNREAD NOTIFICATIONS
+	// =========================================================
+	public ArrayList<String> getUnreadNotifications(String email) {
+		ArrayList<String> notifications = new ArrayList<>();
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+			// We select BOTH contactMethod and messageContent
+			PreparedStatement ps = conn.prepareStatement(
+					"SELECT contactMethod, messageContent FROM Notifications WHERE destinationAddress = ? AND isSent = false");
+			ps.setString(1, email);
+
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				// We glue them together with a "|" symbol (e.g. "SMS|Reminder: your visit is
+				// tomorrow")
+				String combined = rs.getString("contactMethod") + "|" + rs.getString("messageContent");
+				notifications.add(combined);
+			}
+
+			rs.close();
+			ps.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			pool.releaseConnection(conn);
+		}
+		return notifications;
+	}
+
+	// =========================================================
+	// MARK NOTIFICATIONS AS READ
+	// =========================================================
+	public void markNotificationsAsRead(String email) {
+		Connection conn = null;
+		try {
+			conn = pool.getConnection();
+			PreparedStatement ps = conn.prepareStatement(
+					"UPDATE Notifications SET isSent = true WHERE destinationAddress = ? AND isSent = false");
+			ps.setString(1, email);
+			ps.executeUpdate();
+			ps.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			pool.releaseConnection(conn);
+		}
+	}
 }

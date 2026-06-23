@@ -1,124 +1,144 @@
 package GUI;
 
 import Common.Message;
+import Common.ReportImage;
 import Common.UsageReportData;
 import Client.ClientUI;
 import Client.GoNatureClient;
 import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import javax.imageio.ImageIO;
 
 public class ParkManagerUsageReportsPanelController {
 
-    public static ParkManagerUsageReportsPanelController instance;
+	public static ParkManagerUsageReportsPanelController instance;
 
-    @FXML
-    private ComboBox<Integer> monthCombo;
+	@FXML
+	private ComboBox<Integer> monthCombo;
 
-    @FXML
-    private ComboBox<Integer> yearCombo;
+	@FXML
+	private ComboBox<Integer> yearCombo;
 
-    @FXML
-    private GridPane heatmapGrid;
+	@FXML
+	private GridPane heatmapGrid;
 
-    @FXML
-    private VBox legendBox;
+	@FXML
+	private VBox legendBox;
 
-    public void initialize() {
+	public void initialize() {
 
-        instance = this;
+		instance = this;
 
-        for (int m = 1; m <= 12; m++) {
-            monthCombo.getItems().add(m);
-        }
+		for (int m = 1; m <= 12; m++) {
+			monthCombo.getItems().add(m);
+		}
 
-        for (int y = 2020; y <= 2030; y++) {
-            yearCombo.getItems().add(y);
-        }
+		for (int y = 2020; y <= 2030; y++) {
+			yearCombo.getItems().add(y);
+		}
 
-        initLegend();
-    }
+		initLegend();
+	}
 
-    private void initLegend() {
+	private void initLegend() {
+		legendBox.getChildren().clear();
 
-        legendBox.getChildren().clear();
+		HBox legend = new HBox(15);
+		legend.setAlignment(Pos.CENTER);
 
-        HBox legend = new HBox(15);
-        legend.setAlignment(Pos.CENTER);
+		Label greenBox = new Label("  ");
+		greenBox.setStyle("-fx-background-color: #2ecc71; -fx-min-width: 20; -fx-min-height: 20;");
 
-        Label greenBox = new Label("  ");
-        greenBox.setStyle("-fx-background-color: #2ecc71; -fx-min-width: 20; -fx-min-height: 20;");
+		Label greenText = new Label("Not Full");
+		Label redBox = new Label("  ");
+		redBox.setStyle("-fx-background-color: #e74c3c; -fx-min-width: 20; -fx-min-height: 20;");
 
-        Label greenText = new Label("Not Full");
+		Label redText = new Label("Full");
+		legend.getChildren().addAll(greenBox, greenText, redBox, redText);
 
-        Label redBox = new Label("  ");
-        redBox.setStyle("-fx-background-color: #e74c3c; -fx-min-width: 20; -fx-min-height: 20;");
+		legendBox.getChildren().add(legend);
+	}
 
-        Label redText = new Label("Full");
+	@FXML
+	void generateReport(ActionEvent event) {
+		String park = GoNatureClient.currentEmployee.getAffiliation();
 
-        legend.getChildren().addAll(
-                greenBox, greenText,
-                redBox, redText
-        );
+		Integer month = monthCombo.getValue();
+		Integer year = yearCombo.getValue();
 
-        legendBox.getChildren().add(legend);
-    }
+		ArrayList<Object> data = new ArrayList<>();
+		data.add(park);
+		data.add(month);
+		data.add(year);
 
-    @FXML
-    void generateReport(ActionEvent event) {
+		Message msg = new Message("GET_USAGE_REPORT", data);
 
-        String park = GoNatureClient.currentEmployee.getAffiliation();
+		try {
+			ClientUI.client.sendToServer(msg);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
-        Integer month = monthCombo.getValue();
-        Integer year = yearCombo.getValue();
+	public void showReport(ArrayList<UsageReportData> report) {
+		Platform.runLater(() -> {
+			heatmapGrid.getChildren().clear();
+			for (UsageReportData d : report) {
+				Label cell = new Label(String.valueOf(d.getDay()));
+				cell.setMinSize(40, 40);
+				cell.setAlignment(Pos.CENTER);
+				if (d.isFull()) {
+					cell.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white;");
+				} else {
+					cell.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white;");
+				}
+				int col = (d.getDay() - 1) % 7;
+				int row = (d.getDay() - 1) / 7;
+				heatmapGrid.add(cell, col, row);
+			}
+		});
+	}
 
-        ArrayList<Object> data = new ArrayList<>();
-        data.add(park);
-        data.add(month);
-        data.add(year);
+	public byte[] captureUsageReportImage() {
+		WritableImage snapshot = heatmapGrid.snapshot(null, null);
+		BufferedImage bufferedImage = SwingFXUtils.fromFXImage(snapshot, null);
 
-        Message msg = new Message("GET_USAGE_REPORT", data);
+		try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+			ImageIO.write(bufferedImage, "png", out);
+			return out.toByteArray();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 
-        try {
-            ClientUI.client.sendToServer(msg);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+	@FXML
+	void saveReport(ActionEvent event) {
+		byte[] image = captureUsageReportImage();
+		String park = GoNatureClient.currentEmployee.getAffiliation();
+		int month = monthCombo.getValue();
+		int year = yearCombo.getValue();
 
-    public void showReport(ArrayList<UsageReportData> report) {
+		ReportImage report = new ReportImage("USAGE_REPORT", park, month, year, image);
 
-        Platform.runLater(() -> {
+		Message msg = new Message("SAVE_REPORT", report);
 
-            heatmapGrid.getChildren().clear();
-
-            for (UsageReportData d : report) {
-
-                Label cell = new Label(String.valueOf(d.getDay()));
-
-                cell.setMinSize(40, 40);
-                cell.setAlignment(Pos.CENTER);
-
-                if (d.isFull()) {
-                    cell.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white;");
-                }
-                else {
-                    cell.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white;");
-                }
-
-                int col = (d.getDay() - 1) % 7;
-                int row = (d.getDay() - 1) / 7;
-
-                heatmapGrid.add(cell, col, row);
-            }
-        });
-    }
+		try {
+			ClientUI.client.sendToServer(msg);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="10" alignment="CENTER"
+	xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="GUI.ReportPreviewController">
+
+	<ImageView fx:id="imageView" fitWidth="900" fitHeight="700"
+		preserveRatio="true" />
+
+	<Button text="Close" onAction="#closeWindow" />
+</VBox>

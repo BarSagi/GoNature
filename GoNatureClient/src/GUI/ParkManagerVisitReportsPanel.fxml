@@ -3,9 +3,6 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.chart.PieChart?>
-<?import javafx.scene.chart.CategoryAxis?>
-<?import javafx.scene.chart.NumberAxis?>
-<?import javafx.scene.chart.XYChart?>
 
 <VBox alignment="CENTER" spacing="15.0"
 	style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30;"
@@ -24,9 +21,15 @@
 		<Button text="Generate" onAction="#generateReport" />
 	</HBox>
 
-	<Label fx:id="totalLabel" text="Total visitors: -"
-		style="-fx-font-size: 14px; -fx-font-weight: bold;" />
+	<VBox fx:id="reportContainer" alignment="CENTER" spacing="10">
 
-	<PieChart fx:id="pieChart" prefHeight="300" prefWidth="400" />
+		<Label fx:id="totalLabel" text="Total visitors: -"
+			style="-fx-font-size: 14px; -fx-font-weight: bold;" />
+
+		<PieChart fx:id="pieChart" prefHeight="300" prefWidth="400" />
+
+	</VBox>
+
+	<Button text="Save Report" onAction="#saveReport" />
 
 </VBox>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns="http://javafx.com/javafx/19"
+	xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="GUI.DeptManagerSavedReportsPanelController"
+	style="-fx-background-color: #f4f7f6;">
+
+	<top>
+		<Label text="Saved Reports" BorderPane.alignment="CENTER"
+			style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-padding: 15;" />
+	</top>
+
+	<center>
+		<TableView fx:id="reportsTable">
+
+			<columns>
+
+				<TableColumn fx:id="typeColumn" text="Type"
+					prefWidth="150" />
+
+				<TableColumn fx:id="monthColumn" text="Month"
+					prefWidth="80" />
+
+				<TableColumn fx:id="yearColumn" text="Year"
+					prefWidth="80" />
+
+				<TableColumn fx:id="dateColumn" text="Created At"
+					prefWidth="180" />
+
+			</columns>
+
+		</TableView>
+	</center>
+
+</BorderPane>

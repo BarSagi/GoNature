@@ -6,10 +6,6 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-<<<<<<< HEAD
-	<classpathentry kind="lib" path="C:/Users/reutd/Documents/רעות/סמסטר 5/שיטות הנדסיות/mysql-connector-j-9.5.0.jar"/>
-=======
-	<classpathentry kind="lib" path="C:/Users/barsa/GoNature/GoNatureServer/lib/mysql-connector-j-9.5.0.jar"/>
->>>>>>> c6d29a71c29fe1d5d0c6dc07efe5a74252931772
+	<classpathentry kind="lib" path="C:/Users/rygra/GoNature/GoNatureServer/lib/mysql-connector-j-9.5.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

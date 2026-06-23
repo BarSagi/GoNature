@@ -57,9 +57,6 @@ public class StrategyFactory {
 		case "USAGE_REPORT_RESULT":
 			return new UsageReportStrategy();
 
-		case "GET_VISIT_DURATION_REPORT":
-			return new VisitDurationReportStrategy();
-
 		case "VISIT_DURATION_REPORT_RESULT":
 			return new VisitDurationReportResultStrategy();
 
@@ -123,6 +120,11 @@ public class StrategyFactory {
 		case "RETURN_NOTIFICATIONS":
 			return new ReturnNotificationsStrategy();
 
+		case "GET_ALL_REPORTS_RESULT":
+			return new GetAllReportsResultStrategy();
+
+		case "SAVE_REPORT_RESULT":
+			return new SaveReportResultStrategy();
 		default:
 			return null;
 		}

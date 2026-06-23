@@ -63,6 +63,11 @@ public class DeptManagerController {
 	}
 
 	@FXML
+	void showSavedReports(ActionEvent event) {
+		loadPanel("/GUI/DeptManagerSavedReportsPanel.fxml");
+	}
+
+	@FXML
 	void handleLogout(ActionEvent event) {
 		try {
 			String userID = GoNatureClient.currentEmployee.getEmployeeId();

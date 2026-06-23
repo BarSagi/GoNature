@@ -6,6 +6,7 @@ import Client.ClientUI;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -17,7 +18,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -56,7 +56,7 @@ public class DeptManagerCancellationReportPanelController {
 		}
 
 		loadParks();
-		drawLegend(0.0);
+		drawLegend(0.0, 0.0);
 	}
 
 	private void loadParks() {
@@ -109,16 +109,21 @@ public class DeptManagerCancellationReportPanelController {
 
 				heatMapGrid.add(container, 0, 1, 7, 1);
 
-				drawLegend(0.0);
+				drawLegend(0.0, 0.0);
 				return;
 			}
 
 			Map<Integer, Double> dayMap = new HashMap<>();
 			double totalCancellations = 0;
+			double maxCancellations = 0;
 
 			for (CancellationReportData r : report) {
 				dayMap.put(r.getDayOfMonth(), r.getValue());
 				totalCancellations += r.getValue();
+
+				if (r.getValue() > maxCancellations) {
+					maxCancellations = r.getValue();
+				}
 			}
 
 			String[] weekDays = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
@@ -132,12 +137,12 @@ public class DeptManagerCancellationReportPanelController {
 			}
 
 			int selectedMonth = monthCombo.getValue() != null ? monthCombo.getValue() : 1;
-			int selectedYear = yearCombo.getValue() != null ? yearCombo.getValue() : 2025;
+			int selectedYear = yearCombo.getValue() != null ? yearCombo.getValue() : 2026;
 			YearMonth yearMonthObject = YearMonth.of(selectedYear, selectedMonth);
 			int daysInMonth = yearMonthObject.lengthOfMonth();
 
 			double monthlyAverage = totalCancellations / daysInMonth;
-			drawLegend(monthlyAverage);
+			drawLegend(monthlyAverage, maxCancellations);
 
 			double cellSize = 60.0;
 
@@ -145,7 +150,7 @@ public class DeptManagerCancellationReportPanelController {
 				double value = dayMap.getOrDefault(day, 0.0);
 
 				Rectangle cell = new Rectangle(cellSize, cellSize);
-				cell.setFill(getColor(value));
+				cell.setFill(getColor(value, maxCancellations));
 				cell.setArcWidth(10);
 				cell.setArcHeight(10);
 
@@ -165,19 +170,25 @@ public class DeptManagerCancellationReportPanelController {
 		});
 	}
 
-	private Color getColor(double v) {
-		if (v == 0)
+	private Color getColor(double value, double max) {
+		if (value == 0 || max == 0)
 			return Color.LIGHTGREEN;
-		if (v < 2)
+
+		double percentage = value / max;
+
+		if (percentage <= 0.25)
 			return Color.YELLOWGREEN;
-		if (v < 5)
+
+		if (percentage <= 0.50)
 			return Color.YELLOW;
-		if (v < 10)
+
+		if (percentage <= 0.75)
 			return Color.ORANGE;
+
 		return Color.RED;
 	}
 
-	private void drawLegend(double average) {
+	private void drawLegend(double average, double max) {
 		if (legendContainer == null)
 			return;
 
@@ -185,8 +196,15 @@ public class DeptManagerCancellationReportPanelController {
 		legendContainer.setSpacing(15);
 		legendContainer.setAlignment(Pos.CENTER);
 
-		String[] labels = { "0 Cancellations", "1 Cancellation", "2-4 Cancellations", "5-9 Cancellations",
-				"10+ Cancellations" };
+		String[] labels;
+		if (max <= 4) {
+			labels = new String[] { "0", "1", "2", "3", "4+" };
+		} else {
+			labels = new String[] { "0", String.format("1 - %.0f", max * 0.25),
+					String.format("%.0f - %.0f", (max * 0.25) + 1, max * 0.50),
+					String.format("%.0f - %.0f", (max * 0.50) + 1, max * 0.75),
+					String.format("%.0f+", (max * 0.75) + 1) };
+		}
 		Color[] colors = { Color.LIGHTGREEN, Color.YELLOWGREEN, Color.YELLOW, Color.ORANGE, Color.RED };
 
 		for (int i = 0; i < colors.length; i++) {
@@ -206,11 +224,11 @@ public class DeptManagerCancellationReportPanelController {
 		}
 
 		Separator separator = new Separator();
-		separator.setOrientation(javafx.geometry.Orientation.VERTICAL);
+		separator.setOrientation(Orientation.VERTICAL);
 		separator.setPrefHeight(20);
 		legendContainer.getChildren().add(separator);
 
-		Label avgLabel = new Label(String.format("Monthly Daily Avg: %.2f", average));
+		Label avgLabel = new Label(String.format("Monthly Daily Avg: %.2f | Max: %.0f", average, max));
 		avgLabel.setFont(Font.font("System", FontWeight.BOLD, 13));
 		avgLabel.setTextFill(Color.web("#2c3e50"));
 
