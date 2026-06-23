@@ -24,7 +24,7 @@ public class RegisterAndOrderStrategy implements MessageStrategy {
 		ArrayList<String> visitorData = (ArrayList<String>) fullData.get(0);
 		Order receivedOrder = (Order) fullData.get(1);
 		System.out.println(receivedOrder);
-		String paymentMethod = (String) fullData.get(2); // חילוץ שיטת התשלום מהלקוח
+		String paymentMethod = (String) fullData.get(2);
 
 		String visitorId = visitorData.get(0);
 		String email = visitorData.get(3);
@@ -46,8 +46,8 @@ public class RegisterAndOrderStrategy implements MessageStrategy {
 		orderData.add(receivedOrder.getVisitDate().toString()); // 2: visitDate
 		orderData.add(receivedOrder.getVisitTime().toString()); // 3: visitTime
 		orderData.add(String.valueOf(receivedOrder.getVisitorCount())); // 4: visitorCount
-		orderData.add(email); // 5: email
-		orderData.add(receivedOrder.getOrderType()); // 6: orderType
+		orderData.add(receivedOrder.getOrderType());
+		orderData.add(email);
 		orderData.add(paymentMethod); // 7: paymentMethod (נדרש ב-DBController)
 
 		Message response = null;

@@ -8,6 +8,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -15,7 +16,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
-
 import java.util.List;
 
 public class DeptManagerSavedReportsPanelController {
@@ -45,11 +45,8 @@ public class DeptManagerSavedReportsPanelController {
 		instance = this;
 
 		typeColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getReportType()));
-
 		monthColumn.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getMonth()).asObject());
-
 		yearColumn.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getYear()).asObject());
-
 		dateColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCreatedAt()));
 
 		reportsTable.setItems(reportsList);
@@ -61,6 +58,20 @@ public class DeptManagerSavedReportsPanelController {
 			}
 		});
 
+		loadReports();
+	}
+
+	// ==========================================
+	// NEW: Refresh Button Action
+	// ==========================================
+	@FXML
+	void refreshReports(ActionEvent event) {
+		System.out.println("Refreshing reports table...");
+
+		// Clear the current selection so it doesn't try to open an image by mistake
+		reportsTable.getSelectionModel().clearSelection();
+
+		// Re-use your existing fetch method!
 		loadReports();
 	}
 

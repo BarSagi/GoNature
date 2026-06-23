@@ -1526,6 +1526,7 @@ public class DBController {
 	// =========================================================
 	public boolean promoteWaitingOrderIfPossible(int parkId, String visitDate, String visitTime) {
 
+		// Selects the FIRST order in the waiting list for this specific time slot
 		String query = "SELECT * FROM Orders "
 				+ "WHERE parkId = ? AND visitDate = ? AND visitTime = ? AND status = 'WaitingList' "
 				+ "ORDER BY orderId ASC";
@@ -1549,7 +1550,10 @@ public class DBController {
 				int visitorCount = rs.getInt("visitorCount");
 				String email = rs.getString("email");
 
+				// Check if this specific waiting order fits in the newly opened space
 				if (hasRoomInSlot(parkId, visitDate, visitTime, visitorCount)) {
+
+					// Change status to PendingConfirmation and start the 1-hour clock!
 					PreparedStatement updatePs = conn.prepareStatement(
 							"UPDATE Orders SET status = 'PendingConfirmation', holdUntil = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE orderId = ?");
 					updatePs.setInt(1, orderId);
@@ -1558,27 +1562,26 @@ public class DBController {
 					updatePs.close();
 
 					if (rows > 0) {
+
+						// Insert Email Notification with DYNAMIC 1-HOUR TIME
 						PreparedStatement notifEmailPs = conn.prepareStatement(
 								"INSERT INTO Notifications (orderId, notificationType, contactMethod, destinationAddress, messageContent, scheduledTime, isSent) "
-										+ "VALUES (?, 'WaitingListTurn', 'Email', ?, ?, NOW(), false)");
+										+ "VALUES (?, 'WaitingListTurn', 'Email', ?, CONCAT('A place has become available from the waiting list! Please confirm before ', DATE_FORMAT(DATE_ADD(NOW(), INTERVAL 1 HOUR), '%H:%i on %d/%m/%Y'), ' or your spot will be given to the next person.'), NOW(), false)");
 						notifEmailPs.setInt(1, orderId);
 						notifEmailPs.setString(2, email);
-						notifEmailPs.setString(3,
-								"A place has become available. You have one hour to confirm your order.");
 						notifEmailPs.executeUpdate();
 						notifEmailPs.close();
 
+						// Insert SMS Notification with DYNAMIC 1-HOUR TIME
 						PreparedStatement notifSmsPs = conn.prepareStatement(
 								"INSERT INTO Notifications (orderId, notificationType, contactMethod, destinationAddress, messageContent, scheduledTime, isSent) "
-										+ "VALUES (?, 'WaitingListTurn', 'SMS', ?, ?, NOW(), false)");
+										+ "VALUES (?, 'WaitingListTurn', 'SMS', ?, CONCAT('A place has become available from the waiting list! Please confirm before ', DATE_FORMAT(DATE_ADD(NOW(), INTERVAL 1 HOUR), '%H:%i on %d/%m/%Y'), ' or your spot will be given to the next person.'), NOW(), false)");
 						notifSmsPs.setInt(1, orderId);
 						notifSmsPs.setString(2, email);
-						notifSmsPs.setString(3,
-								"A place has become available. You have one hour to confirm your order.");
 						notifSmsPs.executeUpdate();
 						notifSmsPs.close();
 
-						return true;
+						return true; // Successfully promoted someone!
 					}
 				}
 			}
@@ -1595,13 +1598,11 @@ public class DBController {
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
-
-			if (conn != null) {
+			if (conn != null)
 				pool.releaseConnection(conn);
-			}
 		}
 
-		return false;
+		return false; // No one in the waiting list fit the spot
 	}
 
 	// =========================================================
