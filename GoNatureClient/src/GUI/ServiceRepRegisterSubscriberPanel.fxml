@@ -43,7 +43,7 @@
         <TextField fx:id="familyMembersField" promptText="Number of Family Members"
                    prefWidth="220.0" GridPane.rowIndex="5" GridPane.columnIndex="1" />
 
-        <Label text="Payment Method:" GridPane.rowIndex="6" GridPane.columnIndex="0" />
+        <Label text="Add Credit Card?" GridPane.rowIndex="6" GridPane.columnIndex="0" />
         <ComboBox fx:id="paymentMethodComboBox"
                   prefWidth="220.0" GridPane.rowIndex="6" GridPane.columnIndex="1" />
 

@@ -44,7 +44,7 @@ public class ServiceRepRegisterSubscriberPanelController {
     @FXML
     public void initialize() {
     	instance = this;
-        paymentMethodComboBox.getItems().addAll("Credit Card", "Cash");
+        paymentMethodComboBox.getItems().addAll("Yes", "No");
         paymentMethodComboBox.setValue("Credit Card");
 
         paymentMethodComboBox.setOnAction(e -> {
@@ -100,7 +100,7 @@ public class ServiceRepRegisterSubscriberPanelController {
                 return;
             }
 
-            if ("Credit Card".equals(paymentMethod)) {
+            if ("Yes".equals(paymentMethod)) {
                 if (creditCard.isEmpty()) {
                     statusLabel.setText("Please enter credit card number.");
                     return;
@@ -119,7 +119,7 @@ public class ServiceRepRegisterSubscriberPanelController {
             data.add(phone);
             data.add(email);
             data.add(familyMembers);
-            data.add("Cash".equals(paymentMethod) ? null : creditCard);
+            data.add("No".equals(paymentMethod) ? null : creditCard);
 
             Message msg = new Message("REGISTER_FAMILY_SUBSCRIBER", data);
             ClientUI.send(msg);
