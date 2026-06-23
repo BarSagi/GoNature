@@ -15,140 +15,163 @@ import java.util.ArrayList;
 
 public class ParkManagerSubmitRequestPanelController {
 
-    public static ParkManagerSubmitRequestPanelController instance;
+	public static ParkManagerSubmitRequestPanelController instance;
 
-    @FXML
-    private ComboBox<String> requestTypeComboBox;
+	@FXML
+	private ComboBox<String> requestTypeComboBox;
 
-    @FXML
-    private TextField oldValueField;
+	@FXML
+	private TextField oldValueField;
 
-    @FXML
-    private TextField newValueField;
+	@FXML
+	private TextField newValueField;
 
-    @FXML
-    private Label startDateLabel;
+	@FXML
+	private Label startDateLabel;
 
-    @FXML
-    private DatePicker startDatePicker;
+	@FXML
+	private DatePicker startDatePicker;
 
-    @FXML
-    private Label endDateLabel;
+	@FXML
+	private Label endDateLabel;
 
-    @FXML
-    private DatePicker endDatePicker;
+	@FXML
+	private DatePicker endDatePicker;
 
-    @FXML
-    private Label statusLabel;
+	@FXML
+	private Label statusLabel;
 
-    @FXML
-    public void initialize() {
-        instance = this;
-        requestTypeComboBox.getItems().addAll("MaxCapacity", "CasualGap", "AvgStayDuration", "Promotion");
+	@FXML
+	public void initialize() {
+		instance = this;
+		requestTypeComboBox.getItems().addAll("MaxCapacity", "CasualGap", "AvgStayDuration", "Promotion");
 
-        requestTypeComboBox.setOnAction(e -> {
-            loadCurrentValue();
-            handlePromotionFieldsVisibility();
-        });
-    }
+		requestTypeComboBox.setOnAction(e -> {
+			loadCurrentValue();
+			handlePromotionFieldsVisibility();
+		});
+	}
 
+	private void handlePromotionFieldsVisibility() {
+		String selectedType = requestTypeComboBox.getValue();
+		boolean isPromotion = "Promotion".equals(selectedType);
 
-    private void handlePromotionFieldsVisibility() {
-        String selectedType = requestTypeComboBox.getValue();
-        boolean isPromotion = "Promotion".equals(selectedType);
+		startDateLabel.setVisible(isPromotion);
+		startDateLabel.setManaged(isPromotion);
+		startDatePicker.setVisible(isPromotion);
+		startDatePicker.setManaged(isPromotion);
 
-        startDateLabel.setVisible(isPromotion);
-        startDateLabel.setManaged(isPromotion);
-        startDatePicker.setVisible(isPromotion);
-        startDatePicker.setManaged(isPromotion);
+		endDateLabel.setVisible(isPromotion);
+		endDateLabel.setManaged(isPromotion);
+		endDatePicker.setVisible(isPromotion);
+		endDatePicker.setManaged(isPromotion);
 
-        endDateLabel.setVisible(isPromotion);
-        endDateLabel.setManaged(isPromotion);
-        endDatePicker.setVisible(isPromotion);
-        endDatePicker.setManaged(isPromotion);
-        
-        if (!isPromotion) {
-            startDatePicker.setValue(null);
-            endDatePicker.setValue(null);
-        }
-    }
+		if (!isPromotion) {
+			startDatePicker.setValue(null);
+			endDatePicker.setValue(null);
+		}
+	}
 
-    private void loadCurrentValue() {
-        try {
-            String requestType = requestTypeComboBox.getValue();
+	private void loadCurrentValue() {
+		try {
+			String requestType = requestTypeComboBox.getValue();
 
-            if (requestType == null || GoNatureClient.currentEmployee == null) {
-                return;
-            }
+			if (requestType == null || GoNatureClient.currentEmployee == null) {
+				return;
+			}
 
-            ArrayList<String> data = new ArrayList<>();
-            data.add(GoNatureClient.currentEmployee.getAffiliation()); // park name
-            data.add(requestType);
+			ArrayList<String> data = new ArrayList<>();
+			data.add(GoNatureClient.currentEmployee.getAffiliation()); // park name
+			data.add(requestType);
 
-            Message msg = new Message("GET_PARK_CURRENT_VALUE", data);
-            ClientUI.send(msg);
+			Message msg = new Message("GET_PARK_CURRENT_VALUE", data);
+			ClientUI.send(msg);
 
-        } catch (Exception e) {
-            statusLabel.setText("Failed to load current value.");
-            e.printStackTrace();
-        }
-    }
+		} catch (Exception e) {
+			statusLabel.setText("Failed to load current value.");
+			e.printStackTrace();
+		}
+	}
 
-    @FXML
-    void submitRequest(ActionEvent event) {
-        try {
-            String requestType = requestTypeComboBox.getValue();
-            String oldValue = oldValueField.getText().trim();
-            String newValue = newValueField.getText().trim();
+	@FXML
+	void submitRequest(ActionEvent event) {
+		try {
+			String requestType = requestTypeComboBox.getValue();
+			String oldValue = oldValueField.getText().trim();
+			String newValue = newValueField.getText().trim();
 
-            if (requestType == null || oldValue.isEmpty() || newValue.isEmpty()) {
-                statusLabel.setText("Please fill in all fields.");
-                return;
-            }
+			if (requestType.equals("AvgStayDuration") || requestType.equals("Promotion")) {
+				try {
+					if (Double.parseDouble(newValue) <= 0) {
+						statusLabel.setText("can't be less than 0 or equal to 0.");
+						return;
+					}
+				} catch (Exception e) {
+					statusLabel.setText("Must be a number.");
+					return;
+				}
+			} else {
+				try {
+					if (Integer.parseInt(newValue) <= 0) {
+						statusLabel.setText("can't be less than 0 or equal to 0.");
+						return;
+					}
+				} catch (Exception e) {
+					statusLabel.setText("Must be an integer.");
+					return;
+				}
+			}
 
-            if (GoNatureClient.currentEmployee == null) {
-                statusLabel.setText("No logged-in employee found.");
-                return;
-            }
+			if (requestType == null || oldValue.isEmpty() || newValue.isEmpty()) {
+				statusLabel.setText("Please fill in all fields.");
+				return;
+			}
 
-            ArrayList<String> data = new ArrayList<>();
-            data.add(GoNatureClient.currentEmployee.getAffiliation());
-            data.add(requestType);
-            data.add(oldValue);
-            data.add(newValue);
+			if (GoNatureClient.currentEmployee == null) {
+				statusLabel.setText("No logged-in employee found.");
+				return;
+			}
 
-            if ("Promotion".equals(requestType)) {
-                LocalDate startDate = startDatePicker.getValue();
-                LocalDate endDate = endDatePicker.getValue();
+			ArrayList<String> data = new ArrayList<>();
+			data.add(GoNatureClient.currentEmployee.getAffiliation());
+			data.add(requestType);
+			data.add(oldValue);
+			data.add(newValue);
 
-                if (startDate == null || endDate == null) {
-                    statusLabel.setText("Please select both start and end dates for Promotion.");
-                    return;
-                }
-                
-                if (endDate.isBefore(startDate)) {
-                    statusLabel.setText("End date cannot be before start date.");
-                    return;
-                }
+			if ("Promotion".equals(requestType)) {
+				LocalDate startDate = startDatePicker.getValue();
+				LocalDate endDate = endDatePicker.getValue();
 
-                data.add(startDate.toString());
-                data.add(endDate.toString());
-            }
+				if (startDate == null || endDate == null) {
+					statusLabel.setText("Please select both start and end dates for Promotion.");
+					return;
+				}
 
-            Message msg = new Message("SUBMIT_PARK_REQUEST", data);
-            ClientUI.send(msg);
+				if (endDate.isBefore(startDate)) {
+					statusLabel.setText("End date cannot be before start date.");
+					return;
+				}
 
-        } catch (Exception e) {
-            statusLabel.setText("Failed to send request.");
-            e.printStackTrace();
-        }
-    }
+				data.add(startDate.toString());
+				data.add(endDate.toString());
+			}
 
-    public void showStatus(String text) {
-        statusLabel.setText(text);
-    }
+			Message msg = new Message("SUBMIT_PARK_REQUEST", data);
+			ClientUI.send(msg);
 
-    public void setCurrentValue(String value) {
-        oldValueField.setText(value);
-    }
+		} catch (
+
+		Exception e) {
+			statusLabel.setText("Failed to send request.");
+			e.printStackTrace();
+		}
+	}
+
+	public void showStatus(String text) {
+		statusLabel.setText(text);
+	}
+
+	public void setCurrentValue(String value) {
+		oldValueField.setText(value);
+	}
 }

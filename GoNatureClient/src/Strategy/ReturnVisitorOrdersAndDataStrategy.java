@@ -23,7 +23,6 @@ public class ReturnVisitorOrdersAndDataStrategy implements MessageStrategy {
 
 		Platform.runLater(() -> {
 			if (orders == null || orders.isEmpty()) {
-				System.out.println("No existing orders found. Routing to Creation Screen.");
 				ClientUI.changeScreen("/GUI_Visitor/NewVisitorOrder.fxml", "Visitor Registration");
 			} else {
 				System.out.println("Found " + orders.size() + " orders. Routing to Orders Screen.");

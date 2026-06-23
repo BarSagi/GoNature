@@ -601,7 +601,7 @@ public class DBController {
 					psUpdateOrder.setInt(1, orderId);
 					psUpdateOrder.executeUpdate();
 
-					updateVisitorCount(parkId, visitorCount);
+					updateVisitorCount(parkId, visitorCount, conn);
 
 					if (paid == 0) {
 						String visitorType = getVisitorTypeById(actualVisitorId);
@@ -712,7 +712,7 @@ public class DBController {
 
 				// Update overall park capacity using your existing methods
 				boolean isCountUpdated = false;
-				isCountUpdated = updateVisitorCount(parkId, -exitingAmount);
+				isCountUpdated = updateVisitorCount(parkId, -exitingAmount, conn);
 
 				// Commit or Rollback transaction
 				if (visitRows > 0 && isCountUpdated) {
@@ -1341,7 +1341,7 @@ public class DBController {
 			if (rowsAffected > 0) {
 				// The visit was inserted successfully, update the current visitor count
 				// NOTE: updateCurrentVisitorCount should also DECREASE OpenCasualSpots
-				boolean isCountUpdated = updateVisitorCount(parkId, visitorCount);
+				boolean isCountUpdated = updateVisitorCount(parkId, visitorCount, conn);
 
 				if (!isCountUpdated) {
 					System.err.println(
@@ -1678,34 +1678,31 @@ public class DBController {
 	// =========================================================
 	// UPDATE COUNT FOR CASUAL VISITORS ONLY
 	// =========================================================
-	public boolean updateVisitorCount(int parkId, int visitorCountToAdd) {
-		Connection conn = null;
-		PreparedStatement ps = null;
+	public boolean updateVisitorCount(int parkId, int visitorCountToAdd, Connection conn) {
+	    PreparedStatement ps = null;
+	    String query = "UPDATE Parks SET CurrentVisitorCount = CurrentVisitorCount + ? WHERE parkId = ?";
 
-		String query = "UPDATE Parks SET CurrentVisitorCount = CurrentVisitorCount + ? WHERE parkId = ?";
+	    try {
+	        ps = conn.prepareStatement(query);
+	        ps.setInt(1, visitorCountToAdd);
+	        ps.setInt(2, parkId);
 
-		try {
-			conn = pool.getConnection();
-			ps = conn.prepareStatement(query);
-			ps.setInt(1, visitorCountToAdd);
-			ps.setInt(2, parkId);
+	        int rowsAffected = ps.executeUpdate();
+	        return rowsAffected > 0;
 
-			int rowsAffected = ps.executeUpdate();
-			return rowsAffected > 0;
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return false;
-		} finally {
-			try {
-				if (ps != null)
-					ps.close();
-				if (conn != null)
-					pool.releaseConnection(conn);
-			} catch (SQLException ex) {
-				ex.printStackTrace();
-			}
-		}
+	    } catch (SQLException e) {
+	        System.err.println("[DB ERROR] Failed to update visitor count.");
+	        e.printStackTrace();
+	        return false;
+	    } finally {
+	        // ONLY close the PreparedStatement here. 
+	        // DO NOT close the Connection, because exitVisitor() still needs it to commit!
+	        try {
+	            if (ps != null) ps.close();
+	        } catch (SQLException ex) {
+	            ex.printStackTrace();
+	        }
+	    }
 	}
 
 	// =========================================================

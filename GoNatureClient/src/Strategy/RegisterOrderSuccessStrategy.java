@@ -1,29 +1,16 @@
-package Strategy; // (Put this in your Client's Strategy package)
+package Strategy;
 
-import Client.ClientUI;
 import Common.Message;
+import GUI_Visitor.NewVisitorOrderController;
 import javafx.application.Platform;
-import javafx.scene.control.Alert;
 
 public class RegisterOrderSuccessStrategy implements MessageStrategy {
 
 	@Override
 	public void execute(Message message) {
-
-		// 3. Update the UI safely
 		Platform.runLater(() -> {
-			// Optional: Show a quick success popup
-			Alert alert = new Alert(Alert.AlertType.INFORMATION);
-			alert.setTitle("Registration Successful");
-			alert.setHeaderText(null);
-			alert.setContentText("Welcome to GoNature! Your order has been placed.");
-			alert.showAndWait();
-
-			// 4. Move to the Dashboard
-			try {
-				ClientUI.changeScreen("/GUI/LoginVisitor.fxml", "GoNature - Visitor Login");
-			} catch (Exception e) {
-				e.printStackTrace();
+			if (NewVisitorOrderController.instance != null) {
+				NewVisitorOrderController.instance.handleOrderResult(true, null);
 			}
 		});
 	}

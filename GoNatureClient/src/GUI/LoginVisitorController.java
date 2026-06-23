@@ -33,9 +33,6 @@ public class LoginVisitorController {
 			errorLabel.setVisible(true);
 			return;
 		}
-
-		System.out.println("Attempting to log in visitor with ID: " + id);
-
 		// 3. Send a message to the server asking for this visitor's orders
 		// We package the command and the ID into your Message object
 		Message msg = new Message("CHECK_VISITOR_ORDERS", id);
