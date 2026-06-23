@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import Client.ClientUI;
 import Common.Message;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -23,7 +24,7 @@ public class DeptManagerApproveRejectPanelController {
 	@FXML
 	private TableColumn<PendingRequestRow, Integer> colRequestId;
 	@FXML
-	private TableColumn<PendingRequestRow, Integer> colParkId;
+	private TableColumn<PendingRequestRow, Integer> colParkName;
 	@FXML
 	private TableColumn<PendingRequestRow, String> colType;
 	@FXML
@@ -43,7 +44,7 @@ public class DeptManagerApproveRejectPanelController {
 		instance = this;
 
 		colRequestId.setCellValueFactory(new PropertyValueFactory<>("requestId"));
-		colParkId.setCellValueFactory(new PropertyValueFactory<>("parkId"));
+		colParkName.setCellValueFactory(new PropertyValueFactory<>("parkName"));
 		colType.setCellValueFactory(new PropertyValueFactory<>("requestType"));
 		colOldValue.setCellValueFactory(new PropertyValueFactory<>("oldValue"));
 		colNewValue.setCellValueFactory(new PropertyValueFactory<>("newValue"));
@@ -51,7 +52,7 @@ public class DeptManagerApproveRejectPanelController {
 
 		requestsTable.setItems(tableData);
 
-		javafx.application.Platform.runLater(() -> {
+		Platform.runLater(() -> {
 			refreshRequests(null);
 		});
 	}
@@ -105,8 +106,31 @@ public class DeptManagerApproveRejectPanelController {
 		tableData.clear();
 
 		for (ArrayList<String> row : rawRequests) {
-			tableData.add(new PendingRequestRow(Integer.parseInt(row.get(0)), Integer.parseInt(row.get(1)), row.get(2),
-					row.get(3), row.get(4), row.get(5)));
+			String requestType;
+			String value = row.get(4);
+			switch (row.get(2)) {
+			case "CasualGap":
+				requestType = "Casual Gap Change Request";
+				break;
+
+			case "AvgStayDuration":
+				requestType = "Average Stay Duration Change Request";
+				break;
+
+			case "Promotion":
+				requestType = "New Promotion Request";
+				value += "%";
+				break;
+
+			case "MaxCapacity":
+				requestType = "Max Capacity Change Request";
+				break;
+
+			default:
+				requestType = "Uknown";
+			}
+			tableData.add(new PendingRequestRow(Integer.parseInt(row.get(0)), row.get(1), requestType, row.get(3),
+					value, row.get(5)));
 		}
 	}
 
@@ -116,16 +140,16 @@ public class DeptManagerApproveRejectPanelController {
 
 	public static class PendingRequestRow {
 		private final int requestId;
-		private final int parkId;
+		private final String parkName;
 		private final String requestType;
 		private final String oldValue;
 		private final String newValue;
 		private final String status;
 
-		public PendingRequestRow(int requestId, int parkId, String requestType, String oldValue, String newValue,
+		public PendingRequestRow(int requestId, String parkName, String requestType, String oldValue, String newValue,
 				String status) {
 			this.requestId = requestId;
-			this.parkId = parkId;
+			this.parkName = parkName;
 			this.requestType = requestType;
 			this.oldValue = oldValue;
 			this.newValue = newValue;
@@ -136,8 +160,8 @@ public class DeptManagerApproveRejectPanelController {
 			return requestId;
 		}
 
-		public int getParkId() {
-			return parkId;
+		public String getParkName() {
+			return parkName;
 		}
 
 		public String getRequestType() {

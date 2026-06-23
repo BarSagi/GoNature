@@ -2100,12 +2100,13 @@ public class DBController {
 			while (rs.next()) {
 				ArrayList<String> row = new ArrayList<>();
 				row.add(String.valueOf(rs.getInt("requestId")));
-				row.add(String.valueOf(rs.getInt("parkId")));
+				row.add(getParkNameById(Integer.valueOf(rs.getInt("parkId"))));
 				row.add(rs.getString("requestType"));
 				row.add(rs.getString("oldValue"));
 				row.add(rs.getString("newValue"));
 				row.add(rs.getString("status"));
 				result.add(row);
+
 			}
 
 			rs.close();

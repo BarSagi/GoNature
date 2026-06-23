@@ -23,8 +23,8 @@
                style="-fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-background-radius: 5;">
         <columns>
             <TableColumn fx:id="colRequestId" text="Request ID" prefWidth="90.0" />
-            <TableColumn fx:id="colParkId" text="Park ID" prefWidth="80.0" />
-            <TableColumn fx:id="colType" text="Type" prefWidth="130.0" />
+            <TableColumn fx:id="colParkName" text="Park Name" prefWidth="80.0" />
+            <TableColumn fx:id="colType" text="Request Type" prefWidth="130.0" />
             <TableColumn fx:id="colOldValue" text="Old Value" prefWidth="100.0" />
             <TableColumn fx:id="colNewValue" text="New Value" prefWidth="100.0" />
             <TableColumn fx:id="colStatus" text="Status" prefWidth="100.0" />
