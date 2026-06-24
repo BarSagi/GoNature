@@ -13,8 +13,16 @@ import javafx.scene.control.TextField;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
+/**
+ * Controller for the park manager's parameter change request panel. Handles the
+ * submission of requests to change park parameters such as maximum capacity,
+ * casual gaps, average stay duration, or new promotions.
+ */
 public class ParkManagerSubmitRequestPanelController {
 
+	/**
+	 * Static instance of this controller for external access.
+	 */
 	public static ParkManagerSubmitRequestPanelController instance;
 
 	@FXML
@@ -41,6 +49,10 @@ public class ParkManagerSubmitRequestPanelController {
 	@FXML
 	private Label statusLabel;
 
+	/**
+	 * Initializes the controller, populates the request type ComboBox, and sets up
+	 * event listeners for dynamic UI updates.
+	 */
 	@FXML
 	public void initialize() {
 		instance = this;
@@ -52,6 +64,10 @@ public class ParkManagerSubmitRequestPanelController {
 		});
 	}
 
+	/**
+	 * Toggles the visibility of promotion-specific date fields based on the
+	 * selected request type.
+	 */
 	private void handlePromotionFieldsVisibility() {
 		String selectedType = requestTypeComboBox.getValue();
 		boolean isPromotion = "Promotion".equals(selectedType);
@@ -72,6 +88,9 @@ public class ParkManagerSubmitRequestPanelController {
 		}
 	}
 
+	/**
+	 * Fetches the current value for the selected parameter type from the server.
+	 */
 	private void loadCurrentValue() {
 		try {
 			String requestType = requestTypeComboBox.getValue();
@@ -81,7 +100,7 @@ public class ParkManagerSubmitRequestPanelController {
 			}
 
 			ArrayList<String> data = new ArrayList<>();
-			data.add(GoNatureClient.currentEmployee.getAffiliation()); // park name
+			data.add(GoNatureClient.currentEmployee.getAffiliation());
 			data.add(requestType);
 
 			Message msg = new Message("GET_PARK_CURRENT_VALUE", data);
@@ -93,6 +112,12 @@ public class ParkManagerSubmitRequestPanelController {
 		}
 	}
 
+	/**
+	 * Validates the input data and submits the parameter change request to the
+	 * server.
+	 *
+	 * @param event The action event triggered by the submit button.
+	 */
 	@FXML
 	void submitRequest(ActionEvent event) {
 		try {
@@ -159,18 +184,26 @@ public class ParkManagerSubmitRequestPanelController {
 			Message msg = new Message("SUBMIT_PARK_REQUEST", data);
 			ClientUI.send(msg);
 
-		} catch (
-
-		Exception e) {
+		} catch (Exception e) {
 			statusLabel.setText("Failed to send request.");
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Displays status messages on the GUI.
+	 *
+	 * @param text The status message to display.
+	 */
 	public void showStatus(String text) {
 		statusLabel.setText(text);
 	}
 
+	/**
+	 * Sets the current value field from server-side retrieved data.
+	 *
+	 * @param value The value to display.
+	 */
 	public void setCurrentValue(String value) {
 		oldValueField.setText(value);
 	}

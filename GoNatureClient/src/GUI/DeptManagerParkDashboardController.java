@@ -9,14 +9,20 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.layout.AnchorPane;
 import java.io.IOException;
 import java.util.List;
-
 import javafx.scene.control.Alert;
-
 import Client.ClientUI;
 import Common.Message;
 
+/**
+ * Controller for the park dashboard display in the department manager panel.
+ * Manages the selection of a park and switches between the park selection view
+ * and the detailed dashboard view.
+ */
 public class DeptManagerParkDashboardController {
 
+	/**
+	 * Static instance of this controller for external access.
+	 */
 	public static DeptManagerParkDashboardController instance;
 
 	@FXML
@@ -31,13 +37,20 @@ public class DeptManagerParkDashboardController {
 	@FXML
 	private ComboBox<String> parkCombo;
 
+	/**
+	 * Controller for the nested park dashboard FXML.
+	 */
 	private ParkDashboardController dashboardController;
 
+	/**
+	 * Initializes the controller, loads the nested dashboard FXML, and fetches the
+	 * list of parks from the server.
+	 */
 	@FXML
 	public void initialize() {
 		instance = this;
 		try {
-			ClientUI.client.sendToServer(new Message("GET_ALL_PARKS", null));
+			ClientUI.send(new Message("GET_ALL_PARKS", null));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -69,6 +82,10 @@ public class DeptManagerParkDashboardController {
 	// Action Event Handlers
 	// ==========================================
 
+	/**
+	 * Handles the action of showing the dashboard for a selected park. * @param
+	 * event The action event.
+	 */
 	@FXML
 	void onShowDashboardClick(ActionEvent event) {
 		String selectedPark = parkCombo.getValue();
@@ -93,6 +110,10 @@ public class DeptManagerParkDashboardController {
 		showDashboardPane();
 	}
 
+	/**
+	 * Handles the action of going back to the park selection pane. * @param event
+	 * The action event.
+	 */
 	@FXML
 	void onBackButtonClick(ActionEvent event) {
 		// Switch back to the park selection panel
@@ -103,18 +124,28 @@ public class DeptManagerParkDashboardController {
 	// Helper Methods for UI Switching
 	// ==========================================
 
+	/**
+	 * Makes the park selection pane visible and brings it to the front.
+	 */
 	private void showSelectionPane() {
 		selectionPane.setVisible(true);
 		selectionPane.toFront();
 		dashboardWrapperPane.setVisible(false);
 	}
 
+	/**
+	 * Makes the dashboard wrapper pane visible and brings it to the front.
+	 */
 	private void showDashboardPane() {
 		dashboardWrapperPane.setVisible(true);
 		dashboardWrapperPane.toFront();
 		selectionPane.setVisible(false);
 	}
 
+	/**
+	 * Updates the park selection ComboBox with the list of parks. * @param parks
+	 * The list of available park names.
+	 */
 	public void loadParks(List<String> parks) {
 		Platform.runLater(() -> {
 			parkCombo.getItems().clear();

@@ -144,9 +144,6 @@ public class ClientUI extends Application {
 
 			Scene scene = new Scene(loader.load());
 
-			// this has to be changed later to fit somehow
-			// clientController = loader.getController();
-
 			uiReady = true;
 
 			Platform.runLater(new Runnable() {

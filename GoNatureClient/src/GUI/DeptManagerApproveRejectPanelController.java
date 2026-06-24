@@ -1,7 +1,6 @@
 package GUI;
 
 import java.util.ArrayList;
-
 import Client.ClientUI;
 import Common.Message;
 import javafx.application.Platform;
@@ -14,8 +13,16 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+/**
+ * Controller class for the Department Manager's request approval/rejection
+ * panel. Handles the display of pending park parameter change requests and
+ * allows the manager to approve or reject them.
+ */
 public class DeptManagerApproveRejectPanelController {
 
+	/**
+	 * Static instance of this controller for external access.
+	 */
 	public static DeptManagerApproveRejectPanelController instance;
 
 	@FXML
@@ -39,6 +46,10 @@ public class DeptManagerApproveRejectPanelController {
 
 	private final ObservableList<PendingRequestRow> tableData = FXCollections.observableArrayList();
 
+	/**
+	 * Initializes the controller, sets up table column factories, and loads the
+	 * initial list of pending requests.
+	 */
 	@FXML
 	public void initialize() {
 		instance = this;
@@ -57,6 +68,11 @@ public class DeptManagerApproveRejectPanelController {
 		});
 	}
 
+	/**
+	 * Refreshes the table view by fetching pending requests from the server.
+	 *
+	 * @param event The action event triggering the refresh.
+	 */
 	@FXML
 	public void refreshRequests(ActionEvent event) {
 		statusLabel.setText("");
@@ -68,6 +84,11 @@ public class DeptManagerApproveRejectPanelController {
 		}
 	}
 
+	/**
+	 * Processes the approval of the currently selected request.
+	 *
+	 * @param event The action event triggered by the approve button.
+	 */
 	@FXML
 	void approveRequest(ActionEvent event) {
 		PendingRequestRow selected = requestsTable.getSelectionModel().getSelectedItem();
@@ -85,6 +106,11 @@ public class DeptManagerApproveRejectPanelController {
 		}
 	}
 
+	/**
+	 * Processes the rejection of the currently selected request.
+	 *
+	 * @param event The action event triggered by the reject button.
+	 */
 	@FXML
 	void rejectRequest(ActionEvent event) {
 		PendingRequestRow selected = requestsTable.getSelectionModel().getSelectedItem();
@@ -102,6 +128,11 @@ public class DeptManagerApproveRejectPanelController {
 		}
 	}
 
+	/**
+	 * Maps raw data from the server into the table data format.
+	 *
+	 * @param rawRequests A list of requests received from the server.
+	 */
 	public void loadRequests(ArrayList<ArrayList<String>> rawRequests) {
 		tableData.clear();
 
@@ -134,10 +165,18 @@ public class DeptManagerApproveRejectPanelController {
 		}
 	}
 
+	/**
+	 * Updates the status label in the GUI.
+	 *
+	 * @param text The status message to display.
+	 */
 	public void showStatus(String text) {
 		statusLabel.setText(text);
 	}
 
+	/**
+	 * Inner class representing a row of data in the requests table.
+	 */
 	public static class PendingRequestRow {
 		private final int requestId;
 		private final String parkName;
@@ -146,6 +185,9 @@ public class DeptManagerApproveRejectPanelController {
 		private final String newValue;
 		private final String status;
 
+		/**
+		 * Constructs a new row for the request table.
+		 */
 		public PendingRequestRow(int requestId, String parkName, String requestType, String oldValue, String newValue,
 				String status) {
 			this.requestId = requestId;

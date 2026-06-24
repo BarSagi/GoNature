@@ -24,6 +24,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Controller for the cancellation report display in the department manager
+ * panel.
+ */
 public class DeptManagerCancellationReportPanelController {
 
 	public static DeptManagerCancellationReportPanelController instance;
@@ -43,6 +47,9 @@ public class DeptManagerCancellationReportPanelController {
 	@FXML
 	private HBox legendContainer;
 
+	/**
+	 * Initializes combo boxes and UI elements.
+	 */
 	@FXML
 	public void initialize() {
 		instance = this;
@@ -59,15 +66,22 @@ public class DeptManagerCancellationReportPanelController {
 		drawLegend(0.0, 0.0);
 	}
 
+	/**
+	 * Fetches available parks from the server.
+	 */
 	private void loadParks() {
 		try {
 			Message msg = new Message("GET_ALL_PARKS", new ArrayList<>());
-			ClientUI.client.sendToServer(msg);
+			ClientUI.send(msg);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Generates the cancellation report based on user selection. * @param event The
+	 * action event.
+	 */
 	@FXML
 	void generateReport(ActionEvent event) {
 		String park = parkCombo.getValue();
@@ -87,12 +101,16 @@ public class DeptManagerCancellationReportPanelController {
 		Message msg = new Message("GET_CANCELLATION_REPORT", data);
 
 		try {
-			ClientUI.client.sendToServer(msg);
+			ClientUI.send(msg);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Displays the report data in the heatmap grid. * @param report The report data
+	 * to display.
+	 */
 	public void showReport(ArrayList<CancellationReportData> report) {
 		Platform.runLater(() -> {
 			heatMapGrid.getChildren().clear();
@@ -170,6 +188,9 @@ public class DeptManagerCancellationReportPanelController {
 		});
 	}
 
+	/**
+	 * Returns color based on cancellation percentage.
+	 */
 	private Color getColor(double value, double max) {
 		if (value == 0 || max == 0)
 			return Color.LIGHTGREEN;
@@ -188,6 +209,9 @@ public class DeptManagerCancellationReportPanelController {
 		return Color.RED;
 	}
 
+	/**
+	 * Draws the heatmap legend.
+	 */
 	private void drawLegend(double average, double max) {
 		if (legendContainer == null)
 			return;
@@ -235,6 +259,9 @@ public class DeptManagerCancellationReportPanelController {
 		legendContainer.getChildren().add(avgLabel);
 	}
 
+	/**
+	 * Populates the park selection box.
+	 */
 	public void loadParks(List<String> parks) {
 		Platform.runLater(() -> {
 			parkCombo.getItems().clear();

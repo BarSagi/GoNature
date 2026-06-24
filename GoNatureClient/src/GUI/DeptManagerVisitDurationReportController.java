@@ -21,8 +21,16 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * Controller for the visit duration report in the department manager panel.
+ * Handles criteria selection and generates a bar chart comparing average visit
+ * durations for regular and organized groups across different time slots.
+ */
 public class DeptManagerVisitDurationReportController {
 
+	/**
+	 * Static instance of this controller for external access.
+	 */
 	public static DeptManagerVisitDurationReportController instance;
 
 	@FXML
@@ -43,9 +51,16 @@ public class DeptManagerVisitDurationReportController {
 	@FXML
 	private NumberAxis yAxis;
 
+	/**
+	 * Predefined time slots for report categorization.
+	 */
 	private final List<String> timeSlots = Arrays.asList("09:00-10:00", "10:01-11:00", "11:01-12:00", "12:01-13:00",
 			"13:01-14:00", "14:01-15:00", "15:01-16:00");
 
+	/**
+	 * Initializes the controller, populates combo boxes, sets chart axes, and
+	 * fetches the list of available parks from the server.
+	 */
 	@FXML
 	public void initialize() {
 		instance = this;
@@ -60,12 +75,17 @@ public class DeptManagerVisitDurationReportController {
 
 		Message msg = new Message("GET_ALL_PARKS", null);
 		try {
-			ClientUI.client.sendToServer(msg);
+			ClientUI.send(msg);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Triggers the generation of the visit duration report based on user criteria.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void generateReport(ActionEvent event) {
 		Integer month = monthCombo.getValue();
@@ -84,12 +104,17 @@ public class DeptManagerVisitDurationReportController {
 
 		Message msg = new Message("GET_VISIT_DURATION_REPORT", data);
 		try {
-			ClientUI.client.sendToServer(msg);
+			ClientUI.send(msg);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Processes the visit data and populates the bar chart.
+	 *
+	 * @param visits The list of visit records.
+	 */
 	@SuppressWarnings("unchecked")
 	public void showReport(List<Visit> visits) {
 		if (visits == null)
@@ -157,6 +182,11 @@ public class DeptManagerVisitDurationReportController {
 		});
 	}
 
+	/**
+	 * Adds numerical labels on top of the bars in the chart.
+	 *
+	 * @param series The data series for the bars.
+	 */
 	private void addLabelsInsideBars(XYChart.Series<String, Number> series) {
 
 		for (XYChart.Data<String, Number> data : series.getData()) {
@@ -188,6 +218,11 @@ public class DeptManagerVisitDurationReportController {
 		}
 	}
 
+	/**
+	 * Initializes a map for holding duration lists for each time slot.
+	 *
+	 * @return A linked hash map initialized with empty lists.
+	 */
 	private Map<String, List<Double>> initMap() {
 		Map<String, List<Double>> map = new LinkedHashMap<>();
 		for (String slot : timeSlots) {
@@ -196,6 +231,12 @@ public class DeptManagerVisitDurationReportController {
 		return map;
 	}
 
+	/**
+	 * Maps a specific visit time to a time slot.
+	 *
+	 * @param entry The visit entry timestamp.
+	 * @return The time slot string or null if not valid.
+	 */
 	private String getTimeSlot(LocalDateTime entry) {
 		int minutes = entry.getHour() * 60 + entry.getMinute();
 
@@ -217,12 +258,23 @@ public class DeptManagerVisitDurationReportController {
 		return null;
 	}
 
+	/**
+	 * Calculates the average of a list of doubles.
+	 *
+	 * @param list The list of values.
+	 * @return The average value.
+	 */
 	private double average(List<Double> list) {
 		if (list == null || list.isEmpty())
 			return 0;
 		return list.stream().mapToDouble(Double::doubleValue).average().orElse(0);
 	}
 
+	/**
+	 * Updates the park selection combo box with available parks.
+	 *
+	 * @param parks The list of park names.
+	 */
 	public void loadParks(List<String> parks) {
 		Platform.runLater(() -> {
 			parkCombo.getItems().clear();

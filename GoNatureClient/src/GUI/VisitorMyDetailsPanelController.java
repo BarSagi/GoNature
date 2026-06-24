@@ -1,7 +1,5 @@
 package GUI;
 
-import java.util.ArrayList;
-
 import Client.ClientUI;
 import Client.GoNatureClient;
 import Common.Message;
@@ -9,9 +7,18 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import java.util.ArrayList;
 
+/**
+ * Controller for the visitor's personal details panel. Enables visitors to view
+ * and update their profile information, including contact details and payment
+ * methods.
+ */
 public class VisitorMyDetailsPanelController {
 
+	/**
+	 * Static instance of this controller for external access.
+	 */
 	public static VisitorMyDetailsPanelController instance;
 
 	@FXML
@@ -35,6 +42,10 @@ public class VisitorMyDetailsPanelController {
 	@FXML
 	private Label statusLabel;
 
+	/**
+	 * Initializes the controller and requests the current visitor's details from
+	 * the server.
+	 */
 	@FXML
 	public void initialize() {
 		instance = this;
@@ -49,6 +60,12 @@ public class VisitorMyDetailsPanelController {
 		}
 	}
 
+	/**
+	 * Populates the UI fields with the visitor's information retrieved from the
+	 * server.
+	 *
+	 * @param visitorDetails An ArrayList containing the visitor's details.
+	 */
 	public void loadVisitorDetails(ArrayList<String> visitorDetails) {
 		if (visitorDetails == null || visitorDetails.isEmpty()) {
 			statusLabel.setText("Could not load visitor details.");
@@ -63,6 +80,12 @@ public class VisitorMyDetailsPanelController {
 		creditCardField.setText(visitorDetails.get(8));
 	}
 
+	/**
+	 * Validates the updated fields and sends a request to update the visitor's
+	 * details on the server.
+	 *
+	 * @param event The action event triggered by the save changes button.
+	 */
 	@FXML
 	void saveChanges(ActionEvent event) {
 		String firstName = firstNameField.getText().trim();
@@ -76,7 +99,7 @@ public class VisitorMyDetailsPanelController {
 			statusLabel.setText("Please fill in all fields.");
 			return;
 		}
-		
+
 		if (!firstName.matches("[a-zA-Z ]+")) {
 			statusLabel.setText("First name must contain letters only.");
 			return;
@@ -124,6 +147,12 @@ public class VisitorMyDetailsPanelController {
 		}
 	}
 
+	/**
+	 * Handles the outcome of the update request and updates the local session data
+	 * if successful.
+	 *
+	 * @param success Indicates if the update was successful.
+	 */
 	public void handleUpdateResult(boolean success) {
 		if (success) {
 			statusLabel.setStyle("-fx-text-fill: #27ae60;");

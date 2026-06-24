@@ -3,9 +3,6 @@ package GUI;
 import Client.ClientUI;
 import Client.GoNatureClient;
 import Common.Message;
-
-import java.io.IOException;
-
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -15,18 +12,29 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
+import java.io.IOException;
+
+/**
+ * Controller for the service representative's main dashboard. Manages
+ * navigation between various service functionalities, including
+ * subscriber/guide registration, search operations, and general session
+ * management.
+ */
 public class ServiceRepresentativeDashboardController {
 
 	@FXML
-
 	private Label welcomeLabel;
 
 	@FXML
 	private Label departmentLabel;
 
 	@FXML
-	private StackPane contentArea; // Container where sub-panels will be loaded
+	private StackPane contentArea;
 
+	/**
+	 * Initializes the view, sets the personalized welcome message based on the
+	 * current employee, and maximizes the window.
+	 */
 	@FXML
 	public void initialize() {
 
@@ -40,7 +48,6 @@ public class ServiceRepresentativeDashboardController {
 		}
 
 		Platform.runLater(() -> {
-			// Get the current window (Stage) using one of the nodes (contentArea)
 			Stage stage = (Stage) contentArea.getScene().getWindow();
 			if (stage != null) {
 				stage.setMaximized(true);
@@ -51,7 +58,9 @@ public class ServiceRepresentativeDashboardController {
 	}
 
 	/**
-	 * Sidebar Button Action: Loads the Family Subscriber registration panel
+	 * Navigates to the subscriber registration panel.
+	 *
+	 * @param event The action event.
 	 */
 	@FXML
 	void showRegisterSubscriberPanel(ActionEvent event) {
@@ -59,7 +68,9 @@ public class ServiceRepresentativeDashboardController {
 	}
 
 	/**
-	 * Sidebar Button Action: Loads the Group Guide registration panel
+	 * Navigates to the group guide registration panel.
+	 *
+	 * @param event The action event.
 	 */
 	@FXML
 	void showRegisterGuidePanel(ActionEvent event) {
@@ -67,35 +78,53 @@ public class ServiceRepresentativeDashboardController {
 	}
 
 	/**
-	 * Sidebar Button Action: Loads the Group Guide registration panel
+	 * Navigates to the casual visit creation panel.
+	 *
+	 * @param event The action event.
 	 */
 	@FXML
 	void showCreateCasualVisitPanel(ActionEvent event) {
 		loadPanel("/GUI/ServiceRepCreateCasualVisit.fxml");
 	}
 
+	/**
+	 * Navigates to the quick search panel.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void showQuickSearchPanel(ActionEvent event) {
 		loadPanel("/GUI/ServiceRepSearch.fxml");
 	}
 
+	/**
+	 * Navigates to the subscriber search panel.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void showSearchSubscriberPanel(ActionEvent event) {
 		loadPanel("/GUI/ServiceRepSearchSubscriber.fxml");
 	}
 
+	/**
+	 * Navigates to the employee search panel.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void showSearchEmployeePanel(ActionEvent event) {
 		loadPanel("/GUI/ServiceRepSearchEmployeePanel.fxml");
 	}
 
 	/**
-	 * Sidebar Button Action: Logs out and returns to the main login route
+	 * Handles the logout process, notifies the server, and returns to the login
+	 * route.
+	 *
+	 * @param event The action event.
 	 */
 	@FXML
 	void handleLogout(ActionEvent event) {
-		// In a real application, you might also want to clear currentEmployee session
-		// data here
 		try {
 			String userID = GoNatureClient.currentEmployee.getEmployeeId();
 			GoNatureClient.currentEmployee = null;
@@ -115,23 +144,20 @@ public class ServiceRepresentativeDashboardController {
 
 	/**
 	 * Helper method to dynamically load and switch FXML sub-panels inside the
-	 * contentArea
-	 * 
-	 * @param fxmlPath The path to the inner FXML file
+	 * content area.
+	 *
+	 * @param fxmlPath The path to the inner FXML file to load.
 	 */
 	private void loadPanel(String fxmlPath) {
 		try {
-			// Load the FXML file dynamically
 			FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
 			Parent subPanel = loader.load();
 
-			// Clear current view inside the StackPane and replace it with the new sub-panel
 			contentArea.getChildren().clear();
 			contentArea.getChildren().add(subPanel);
 
 		} catch (IOException e) {
 			e.printStackTrace();
-			// Fallback display in case the FXML failed to load
 			contentArea.getChildren().clear();
 			contentArea.getChildren().add(new Label("Error: Could not load the requested form."));
 		}

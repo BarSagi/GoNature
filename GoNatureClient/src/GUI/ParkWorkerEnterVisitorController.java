@@ -3,16 +3,24 @@ package GUI;
 import Client.ClientUI;
 import Client.GoNatureClient;
 import Common.Message;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.application.Platform;
 import java.util.ArrayList;
-import javafx.scene.control.Alert;
 
+/**
+ * Controller for the visitor entry registration screen. Allows park workers to
+ * register visitor entry by validating their identifier (Order ID, Visitor ID,
+ * or QR code) and handling payment collection.
+ */
 public class ParkWorkerEnterVisitorController {
 
+	/**
+	 * Static instance of this controller for external access.
+	 */
 	public static ParkWorkerEnterVisitorController instance;
 
 	@FXML
@@ -21,12 +29,20 @@ public class ParkWorkerEnterVisitorController {
 	@FXML
 	private Label statusLabel;
 
+	/**
+	 * Initializes the controller and clears the status label.
+	 */
 	@FXML
 	public void initialize() {
 		instance = this;
 		statusLabel.setText("");
 	}
 
+	/**
+	 * Validates the identifier input and sends an entry request to the server.
+	 *
+	 * @param event The action event triggered by the confirm button.
+	 */
 	@FXML
 	void confirmEntry(ActionEvent event) {
 		String identifier = identifierField.getText().trim();
@@ -50,7 +66,7 @@ public class ParkWorkerEnterVisitorController {
 			data.add(currentParkId);
 
 			Message msg = new Message("ENTER_VISITOR", data);
-			ClientUI.client.sendToServer(msg);
+			ClientUI.send(msg);
 
 			statusLabel.setText("Entry request sent to server...");
 			statusLabel.setStyle("-fx-text-fill: blue;");
@@ -61,6 +77,12 @@ public class ParkWorkerEnterVisitorController {
 		}
 	}
 
+	/**
+	 * Displays the status of the visitor entry request. Handles both successful
+	 * entries and cases where payment collection is required.
+	 *
+	 * @param text The status message returned from the server.
+	 */
 	public void showStatus(String text) {
 		Platform.runLater(() -> {
 			if (text.startsWith("Success_Pay_")) {
@@ -81,7 +103,7 @@ public class ParkWorkerEnterVisitorController {
 				try {
 					statusLabel.setText("Recording payment in database...");
 					Message updatePaidMsg = new Message("UPDATE_ORDER_PAID", orderIdStr);
-					ClientUI.client.sendToServer(updatePaidMsg);
+					ClientUI.send(updatePaidMsg);
 				} catch (Exception e) {
 					statusLabel.setText("Failed to send payment update to server.");
 					statusLabel.setStyle("-fx-text-fill: red;");
@@ -92,12 +114,12 @@ public class ParkWorkerEnterVisitorController {
 				statusLabel.setStyle("-fx-text-fill: green;");
 				statusLabel.setText("Visitor entered successfully! (Paid)");
 				identifierField.clear();
-				
-			    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-			    alert.setTitle("Information Dialog");
-			    alert.setHeaderText(null);
-			    alert.setContentText("Client has already paid!");
-			    alert.showAndWait();
+
+				Alert alert = new Alert(Alert.AlertType.INFORMATION);
+				alert.setTitle("Information Dialog");
+				alert.setHeaderText(null);
+				alert.setContentText("Client has already paid!");
+				alert.showAndWait();
 			} else {
 				statusLabel.setStyle("-fx-text-fill: red;");
 				statusLabel.setText(text);

@@ -1,7 +1,5 @@
 package GUI;
 
-import java.util.ArrayList;
-
 import Client.ClientUI;
 import Common.Message;
 import javafx.event.ActionEvent;
@@ -9,9 +7,18 @@ import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import java.util.ArrayList;
 
+/**
+ * Controller for the service representative's subscriber registration panel.
+ * Handles the input validation and submission of new family subscriber
+ * registrations to the server, including payment method processing.
+ */
 public class ServiceRepRegisterSubscriberPanelController {
 
+	/**
+	 * Static instance of this controller for external access.
+	 */
 	public static ServiceRepRegisterSubscriberPanelController instance;
 
 	@FXML
@@ -41,6 +48,10 @@ public class ServiceRepRegisterSubscriberPanelController {
 	@FXML
 	private Label statusLabel;
 
+	/**
+	 * Initializes the controller, populates the payment method dropdown, and
+	 * configures the listener to toggle credit card field availability.
+	 */
 	@FXML
 	public void initialize() {
 		instance = this;
@@ -57,6 +68,12 @@ public class ServiceRepRegisterSubscriberPanelController {
 		});
 	}
 
+	/**
+	 * Validates all subscriber input fields and submits the registration request to
+	 * the server.
+	 *
+	 * @param event The action event triggered by the register button.
+	 */
 	@FXML
 	void registerSubscriber(ActionEvent event) {
 		try {
@@ -130,6 +147,11 @@ public class ServiceRepRegisterSubscriberPanelController {
 		}
 	}
 
+	/**
+	 * Displays a status message on the GUI.
+	 *
+	 * @param text The message to display.
+	 */
 	public void showStatus(String text) {
 		statusLabel.setText(text);
 	}

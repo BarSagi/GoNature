@@ -1,28 +1,35 @@
 package GUI;
 
+import Client.ClientUI;
+import Client.GoNatureClient;
 import Common.Message;
 import Common.ReportImage;
 import Common.UsageReportData;
-import Client.ClientUI;
-import Client.GoNatureClient;
 import javafx.application.Platform;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.image.WritableImage;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.image.WritableImage;
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
-import javax.imageio.ImageIO;
 
+/**
+ * Controller for the park manager's usage reports panel. Handles criteria
+ * selection, report generation, and heatmap visualization of park usage data.
+ */
 public class ParkManagerUsageReportsPanelController {
 
+	/**
+	 * Static instance of this controller for external access.
+	 */
 	public static ParkManagerUsageReportsPanelController instance;
 
 	@FXML
@@ -37,6 +44,11 @@ public class ParkManagerUsageReportsPanelController {
 	@FXML
 	private VBox legendBox;
 
+	/**
+	 * Initializes the controller, populates combo boxes, and initializes the
+	 * legend.
+	 */
+	@FXML
 	public void initialize() {
 
 		instance = this;
@@ -52,6 +64,9 @@ public class ParkManagerUsageReportsPanelController {
 		initLegend();
 	}
 
+	/**
+	 * Initializes the legend view to explain the heatmap colors.
+	 */
 	private void initLegend() {
 		legendBox.getChildren().clear();
 
@@ -71,6 +86,12 @@ public class ParkManagerUsageReportsPanelController {
 		legendBox.getChildren().add(legend);
 	}
 
+	/**
+	 * Requests the usage report from the server based on the selected park, month,
+	 * and year.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void generateReport(ActionEvent event) {
 		String park = GoNatureClient.currentEmployee.getAffiliation();
@@ -86,12 +107,17 @@ public class ParkManagerUsageReportsPanelController {
 		Message msg = new Message("GET_USAGE_REPORT", data);
 
 		try {
-			ClientUI.client.sendToServer(msg);
+			ClientUI.send(msg);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Displays the usage report data in the heatmap grid.
+	 *
+	 * @param report The list of usage report data points.
+	 */
 	public void showReport(ArrayList<UsageReportData> report) {
 		Platform.runLater(() -> {
 			heatmapGrid.getChildren().clear();
@@ -111,6 +137,11 @@ public class ParkManagerUsageReportsPanelController {
 		});
 	}
 
+	/**
+	 * Captures the current heatmap grid as a PNG image byte array for saving.
+	 *
+	 * @return The image as a byte array.
+	 */
 	public byte[] captureUsageReportImage() {
 		WritableImage snapshot = heatmapGrid.snapshot(null, null);
 		BufferedImage bufferedImage = SwingFXUtils.fromFXImage(snapshot, null);
@@ -124,6 +155,11 @@ public class ParkManagerUsageReportsPanelController {
 		}
 	}
 
+	/**
+	 * Saves the generated usage report to the server.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void saveReport(ActionEvent event) {
 		byte[] image = captureUsageReportImage();
@@ -136,7 +172,7 @@ public class ParkManagerUsageReportsPanelController {
 		Message msg = new Message("SAVE_REPORT", report);
 
 		try {
-			ClientUI.client.sendToServer(msg);
+			ClientUI.send(msg);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

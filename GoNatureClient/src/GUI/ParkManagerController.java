@@ -14,6 +14,11 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
+/**
+ * Controller for the Park Manager's main dashboard. Manages navigation between
+ * park-specific reports, orders, and requests, and handles the session logout
+ * process.
+ */
 public class ParkManagerController {
 
 	@FXML
@@ -25,6 +30,10 @@ public class ParkManagerController {
 	@FXML
 	private StackPane contentArea;
 
+	/**
+	 * Initializes the view, sets the personalized welcome message, fetches initial
+	 * dashboard data, and sets the window to maximized.
+	 */
 	@FXML
 	public void initialize() {
 
@@ -35,65 +44,87 @@ public class ParkManagerController {
 
 			welcomeLabel.setText("Welcome " + fullName + "!");
 			parkLabel.setText("Park: " + GoNatureClient.currentEmployee.getAffiliation());
-			
-			// Request dashboard data from the server 
+
+			// Request dashboard data from the server
 			try {
 				Message msg = new Message("GET_PARK_DASHBOARD", GoNatureClient.currentEmployee.getAffiliation());
-				ClientUI.client.sendToServer(msg);
+				ClientUI.send(msg);
 			} catch (Exception e) {
 				System.out.println("Error requesting dashboard data.");
 				e.printStackTrace();
 			}
-						
+
 			loadPanel("/GUI/ParkDashboard.fxml");
-			
+
 		} else {
 			welcomeLabel.setText("Welcome!");
 			parkLabel.setText("Park: Unknown");
 		}
-		
+
 		Platform.runLater(() -> {
-            // Get the current window (Stage) using one of the nodes (contentArea)
-            Stage stage = (Stage) contentArea.getScene().getWindow();
-            if (stage != null) {
-                stage.setMaximized(true);
-            }
-        });
-		
-		
+			Stage stage = (Stage) contentArea.getScene().getWindow();
+			if (stage != null) {
+				stage.setMaximized(true);
+			}
+		});
 	}
 
-	// =========================
-	// NAVIGATION ONLY
-	// =========================
-
+	/**
+	 * Navigates to the visit reports panel.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void showVisitReports(ActionEvent event) {
 		loadPanel("/GUI/ParkManagerVisitReportsPanel.fxml");
 	}
 
+	/**
+	 * Navigates to the usage reports panel.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void showUsageReports(ActionEvent event) {
 		loadPanel("/GUI/ParkManagerUsageReportsPanel.fxml");
 	}
-	
+
+	/**
+	 * Navigates to the park orders panel.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void showParkOrders(ActionEvent event) {
-		// Same as park worker screen 
 		loadPanel("/GUI/ParkWorkerViewOrders.fxml");
-		// loadPanel("/GUI/ParkManagerOrdersPanel.fxml");
 	}
 
+	/**
+	 * Navigates to the parameter request submission panel.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void showSubmitRequest(ActionEvent event) {
 		loadPanel("/GUI/ParkManagerSubmitRequestPanel.fxml");
 	}
-	
+
+	/**
+	 * Navigates back to the main park dashboard.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void showParkDashboard(ActionEvent event) {
 		loadPanel("/GUI/ParkDashboard.fxml");
 	}
 
+	/**
+	 * Handles the logout process, notifies the server, and returns to the login
+	 * route.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void handleLogout(ActionEvent event) {
 		try {
@@ -113,10 +144,11 @@ public class ParkManagerController {
 		}
 	}
 
-	// =========================
-	// PANEL LOADER
-	// =========================
-
+	/**
+	 * Loads a specified FXML panel into the content area.
+	 *
+	 * @param fxmlPath The path to the FXML file to be loaded.
+	 */
 	private void loadPanel(String fxmlPath) {
 
 		try {

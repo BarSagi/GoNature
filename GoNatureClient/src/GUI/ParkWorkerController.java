@@ -11,9 +11,13 @@ import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-
 import java.io.IOException;
 
+/**
+ * Controller for the Park Worker's main dashboard. Manages navigation between
+ * park-related actions such as creating orders, registering visitor
+ * entries/exits, and viewing the park dashboard.
+ */
 public class ParkWorkerController {
 
 	@FXML
@@ -25,6 +29,10 @@ public class ParkWorkerController {
 	@FXML
 	private StackPane contentArea;
 
+	/**
+	 * Initializes the controller, sets the user's welcome information, requests
+	 * initial dashboard data, and maximizes the application window.
+	 */
 	@FXML
 	public void initialize() {
 		if (GoNatureClient.currentEmployee != null) {
@@ -37,7 +45,7 @@ public class ParkWorkerController {
 			// Request dashboard data from the server
 			try {
 				Message msg = new Message("GET_PARK_DASHBOARD", GoNatureClient.currentEmployee.getAffiliation());
-				ClientUI.client.sendToServer(msg);
+				ClientUI.send(msg);
 			} catch (Exception e) {
 				System.out.println("Error requesting dashboard data.");
 				e.printStackTrace();
@@ -51,7 +59,6 @@ public class ParkWorkerController {
 		}
 
 		Platform.runLater(() -> {
-			// Get the current window (Stage) using one of the nodes (contentArea)
 			Stage stage = (Stage) contentArea.getScene().getWindow();
 			if (stage != null) {
 				stage.setMaximized(true);
@@ -59,41 +66,82 @@ public class ParkWorkerController {
 		});
 	}
 
+	/**
+	 * Navigates to the order creation panel.
+	 * 
+	 * @param event The action event.
+	 */
 	@FXML
 	void createOrder(ActionEvent event) {
 		loadPanel("/GUI/ParkWorkerCreateOrder.fxml");
 	}
 
+	/**
+	 * Navigates to the order viewing panel.
+	 * 
+	 * @param event The action event.
+	 */
 	@FXML
 	void viewOrders(ActionEvent event) {
 		loadPanel("/GUI/ParkWorkerViewOrders.fxml");
 	}
 
+	/**
+	 * Navigates to the casual visit creation panel.
+	 * 
+	 * @param event The action event.
+	 */
 	@FXML
 	void createCasualVisit(ActionEvent event) {
 		loadPanel("/GUI/ParkWorkerCreateCasualVisit.fxml");
 	}
 
+	/**
+	 * Navigates to the visitor entry registration panel.
+	 * 
+	 * @param event The action event.
+	 */
 	@FXML
 	void enterVisitor(ActionEvent event) {
 		loadPanel("/GUI/ParkWorkerEnterVisitor.fxml");
 	}
 
+	/**
+	 * Navigates to the visitor exit registration panel.
+	 * 
+	 * @param event The action event.
+	 */
 	@FXML
 	void exitVisitor(ActionEvent event) {
 		loadPanel("/GUI/ParkWorkerExitVisitor.fxml");
 	}
 
+	/**
+	 * Navigates to the park dashboard view.
+	 * 
+	 * @param event The action event.
+	 */
 	@FXML
 	void showParkDashboard(ActionEvent event) {
 		loadPanel("/GUI/ParkDashboard.fxml");
 	}
 
+	/**
+	 * Navigates to the worker's personal details panel.
+	 * 
+	 * @param event The action event.
+	 */
 	@FXML
 	void showMyDetails(ActionEvent event) {
 		loadPanel("/GUI/ParkWorkerMyDetailsPanel.fxml");
 	}
 
+	/**
+	 * Handles the logout process, notifies the server, and returns to the login
+	 * route.
+	 * 
+	 * @param event The action event.
+	 */
 	@FXML
 	void goBack(ActionEvent event) {
 		try {
@@ -113,7 +161,13 @@ public class ParkWorkerController {
 		}
 	}
 
+	/**
+	 * Helper method to load a FXML sub-panel into the content area.
+	 * 
+	 * @param fxmlPath The resource path to the FXML file.
+	 */
 	private void loadPanel(String fxmlPath) {
+
 		try {
 			FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
 			Parent subPanel = loader.load();
@@ -123,6 +177,7 @@ public class ParkWorkerController {
 
 		} catch (IOException e) {
 			e.printStackTrace();
+
 			contentArea.getChildren().clear();
 			contentArea.getChildren().add(new Label("Error: Could not load the requested form."));
 		}

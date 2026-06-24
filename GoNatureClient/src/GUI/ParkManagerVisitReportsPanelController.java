@@ -1,30 +1,37 @@
 package GUI;
 
-import java.util.ArrayList;
-
 import Client.ClientUI;
 import Client.GoNatureClient;
 import Common.Message;
 import Common.ReportImage;
 import Common.VisitReportData;
 import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.PieChart;
-import javafx.scene.layout.VBox;
-import javafx.scene.SnapshotParameters;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.image.WritableImage;
-import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.layout.VBox;
 import javax.imageio.ImageIO;
-import java.io.ByteArrayOutputStream;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 
+/**
+ * Controller for the park manager's visit reports panel. Handles the generation
+ * of visit reports based on selected criteria and visualizes the data using a
+ * pie chart.
+ */
 public class ParkManagerVisitReportsPanelController {
 
+	/**
+	 * Static instance of this controller for external access.
+	 */
 	public static ParkManagerVisitReportsPanelController instance;
 
 	@FXML
@@ -48,8 +55,14 @@ public class ParkManagerVisitReportsPanelController {
 	@FXML
 	private NumberAxis yAxis;
 
+	/**
+	 * The currently displayed visit report data.
+	 */
 	private VisitReportData currentReport;
 
+	/**
+	 * Initializes the controller and populates the date selection combo boxes.
+	 */
 	@FXML
 	public void initialize() {
 		instance = this;
@@ -61,6 +74,11 @@ public class ParkManagerVisitReportsPanelController {
 		}
 	}
 
+	/**
+	 * Processes the visit report data and updates the pie chart view.
+	 *
+	 * @param report The visit report data to display.
+	 */
 	public void showReport(VisitReportData report) {
 
 		if (report == null)
@@ -73,7 +91,6 @@ public class ParkManagerVisitReportsPanelController {
 			pieChart.getData().clear();
 
 			PieChart.Data individual = new PieChart.Data("Regular Groups", report.getIndividualVisitors());
-
 			PieChart.Data group = new PieChart.Data("Organized Groups", report.getGroupVisitors());
 
 			pieChart.getData().addAll(individual, group);
@@ -102,13 +119,17 @@ public class ParkManagerVisitReportsPanelController {
 		});
 	}
 
+	/**
+	 * Requests the visit report from the server based on current criteria.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void generateReport(ActionEvent event) {
-
-		int month = monthCombo.getValue();
-		int year = yearCombo.getValue();
-
 		String park = GoNatureClient.currentEmployee.getAffiliation();
+
+		Integer month = monthCombo.getValue();
+		Integer year = yearCombo.getValue();
 
 		ArrayList<Object> data = new ArrayList<>();
 		data.add(park);
@@ -118,12 +139,18 @@ public class ParkManagerVisitReportsPanelController {
 		Message msg = new Message("GET_VISIT_REPORT", data);
 
 		try {
+			// NOTE: Rule #3 - Should use ClientUI.send()
 			ClientUI.client.sendToServer(msg);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Captures a snapshot of the report container as a byte array image.
+	 *
+	 * @return The image byte array, or null if capture fails.
+	 */
 	private byte[] captureReportImage() {
 		try {
 			WritableImage snapshot = reportContainer.snapshot(new SnapshotParameters(), null);
@@ -141,6 +168,11 @@ public class ParkManagerVisitReportsPanelController {
 		}
 	}
 
+	/**
+	 * Captures the current report image and saves it to the server.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void saveReport(ActionEvent event) {
 
@@ -162,7 +194,7 @@ public class ParkManagerVisitReportsPanelController {
 		Message msg = new Message("SAVE_REPORT", report);
 
 		try {
-			ClientUI.client.sendToServer(msg);
+			ClientUI.send(msg);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -8,14 +8,21 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.application.Platform;
-
 import java.sql.Date;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
+/**
+ * Controller for the new visitor order registration screen. Manages the
+ * acquisition of visitor information, order details, and communicates with the
+ * server to register the visitor and create the order.
+ */
 public class NewVisitorOrderController {
 
+	/**
+	 * Static instance of this controller for external access.
+	 */
 	public static NewVisitorOrderController instance;
 
 	@FXML
@@ -49,6 +56,10 @@ public class NewVisitorOrderController {
 	private int pendingVisitorCount;
 	private String pendingPaymentMethod;
 
+	/**
+	 * Initializes the controller, populates ComboBoxes, and configures the visitor
+	 * spinner.
+	 */
 	@FXML
 	public void initialize() {
 		instance = this;
@@ -69,6 +80,12 @@ public class NewVisitorOrderController {
 		errorLabel.setVisible(false);
 	}
 
+	/**
+	 * Validates visitor input and order data, then initiates the registration and
+	 * order process.
+	 *
+	 * @param event The action event triggered by the submit button.
+	 */
 	@FXML
 	void submitRegistrationAndOrder(ActionEvent event) {
 		errorLabel.setVisible(false);
@@ -85,9 +102,8 @@ public class NewVisitorOrderController {
 		int visitorsNum = visitorsSpinner.getValue();
 		String paymentMethod = paymentComboBox.getValue();
 
-		if (id.isEmpty() || firstName.isEmpty() || lastName.isEmpty() ||
-				email.isEmpty() || phone.isEmpty() ||
-				park == null || date == null || time == null || paymentMethod == null) {
+		if (id.isEmpty() || firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || phone.isEmpty()
+				|| park == null || date == null || time == null || paymentMethod == null) {
 			showError("Please fill in all fields.");
 			return;
 		}
@@ -149,6 +165,12 @@ public class NewVisitorOrderController {
 		}
 	}
 
+	/**
+	 * Handles the result of the registration and order creation process.
+	 *
+	 * @param success Whether the operation was successful.
+	 * @param reason  The error reason if failed.
+	 */
 	public void handleOrderResult(boolean success, String reason) {
 		if (!success) {
 			Platform.runLater(() -> showError(reason != null ? reason : "Order failed"));
@@ -160,6 +182,9 @@ public class NewVisitorOrderController {
 		new Thread(this::calculatePriceAsync).start();
 	}
 
+	/**
+	 * Calculates the order price asynchronously in a background thread.
+	 */
 	private void calculatePriceAsync() {
 		ArrayList<String> priceData = new ArrayList<>();
 		priceData.add(pendingVisitorId);
@@ -175,12 +200,17 @@ public class NewVisitorOrderController {
 		}
 	}
 
+	/**
+	 * Displays the calculated order price and navigates to the login screen.
+	 *
+	 * @param price The calculated total price.
+	 */
 	public void handlePriceResult(double price) {
 		Platform.runLater(() -> {
 			Alert alert = new Alert(Alert.AlertType.INFORMATION);
 			alert.setTitle("Order & Price Details");
 			alert.setHeaderText("Registration & Order Successful!");
-			alert.setContentText("Total price to pay: " + price + " NIS\nWelcome to GoNature!");
+			alert.setContentText("Total price: " + price + " NIS\nWelcome to GoNature!");
 			alert.showAndWait();
 
 			try {
@@ -191,10 +221,20 @@ public class NewVisitorOrderController {
 		});
 	}
 
+	/**
+	 * Loads available parks into the park selection ComboBox.
+	 *
+	 * @param parks The list of available park names.
+	 */
 	public void loadParks(ArrayList<String> parks) {
 		Platform.runLater(() -> parkComboBox.getItems().setAll(parks));
 	}
 
+	/**
+	 * Navigates back to the visitor login screen.
+	 *
+	 * @param event The action event triggered by the back button.
+	 */
 	@FXML
 	void goBack(ActionEvent event) {
 		try {
@@ -204,6 +244,11 @@ public class NewVisitorOrderController {
 		}
 	}
 
+	/**
+	 * Displays an error message on the screen.
+	 *
+	 * @param msg The error message text.
+	 */
 	private void showError(String msg) {
 		errorLabel.setText(msg);
 		errorLabel.setVisible(true);

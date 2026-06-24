@@ -4,6 +4,10 @@ import Client.GoNatureClient;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 
+/**
+ * Controller for the park worker's personal details panel. Populates and
+ * displays the logged-in employee's profile information.
+ */
 public class ParkWorkerMyDetailsPanelController {
 
 	@FXML
@@ -24,6 +28,10 @@ public class ParkWorkerMyDetailsPanelController {
 	@FXML
 	private TextField affiliationField;
 
+	/**
+	 * Initializes the view by populating the text fields with the details of the
+	 * currently logged-in employee.
+	 */
 	@FXML
 	public void initialize() {
 		if (GoNatureClient.currentEmployee != null) {

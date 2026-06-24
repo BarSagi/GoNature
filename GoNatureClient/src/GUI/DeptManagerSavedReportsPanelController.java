@@ -18,8 +18,16 @@ import javafx.scene.control.TableView;
 import javafx.stage.Stage;
 import java.util.List;
 
+/**
+ * Controller for the saved reports panel in the department manager interface.
+ * Manages the display of generated reports in a table and allows viewing
+ * reports by selecting them from the list.
+ */
 public class DeptManagerSavedReportsPanelController {
 
+	/**
+	 * Static instance of this controller for external access.
+	 */
 	public static DeptManagerSavedReportsPanelController instance;
 
 	@FXML
@@ -37,8 +45,15 @@ public class DeptManagerSavedReportsPanelController {
 	@FXML
 	private TableColumn<ReportImage, String> dateColumn;
 
+	/**
+	 * Observable list to hold the report image entities for the table view.
+	 */
 	private final ObservableList<ReportImage> reportsList = FXCollections.observableArrayList();
 
+	/**
+	 * Initializes the controller, sets up cell value factories, and configures the
+	 * selection listener to open a preview window.
+	 */
 	@FXML
 	public void initialize() {
 
@@ -51,7 +66,7 @@ public class DeptManagerSavedReportsPanelController {
 
 		reportsTable.setItems(reportsList);
 
-		// לחיצה על שורה → פתיחת חלון חדש
+		// Selection listener: opens preview window upon row selection
 		reportsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
 			if (newVal != null) {
 				openImageWindow(newVal);
@@ -61,30 +76,39 @@ public class DeptManagerSavedReportsPanelController {
 		loadReports();
 	}
 
-	// ==========================================
-	// NEW: Refresh Button Action
-	// ==========================================
+	/**
+	 * Refreshes the reports table by clearing the current selection and reloading
+	 * data from the server.
+	 *
+	 * @param event The action event triggered by the refresh button.
+	 */
 	@FXML
 	void refreshReports(ActionEvent event) {
 		System.out.println("Refreshing reports table...");
 
-		// Clear the current selection so it doesn't try to open an image by mistake
 		reportsTable.getSelectionModel().clearSelection();
 
-		// Re-use your existing fetch method!
 		loadReports();
 	}
 
+	/**
+	 * Fetches the list of saved reports from the server.
+	 */
 	private void loadReports() {
 		Message msg = new Message("GET_ALL_REPORTS", null);
 
 		try {
-			ClientUI.client.sendToServer(msg);
+			ClientUI.send(msg);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Updates the table view with the list of reports received from the server.
+	 *
+	 * @param reports The list of reports to display.
+	 */
 	public void setReports(List<ReportImage> reports) {
 		Platform.runLater(() -> {
 			reportsList.clear();
@@ -92,6 +116,11 @@ public class DeptManagerSavedReportsPanelController {
 		});
 	}
 
+	/**
+	 * Opens a new stage to preview the selected report image.
+	 *
+	 * @param report The report image entity to display.
+	 */
 	private void openImageWindow(ReportImage report) {
 
 		try {

@@ -13,13 +13,22 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import java.io.IOException;
 
+/**
+ * Controller for the Department Manager's main dashboard. Manages the
+ * navigation between different sub-panels and handles the logout process.
+ */
 public class DeptManagerController {
+
 	@FXML
 	private Label welcomeLabel;
 
 	@FXML
 	private StackPane contentArea;
 
+	/**
+	 * Initializes the view, sets the welcome message, maximizes the window, and
+	 * loads the default dashboard panel.
+	 */
 	@FXML
 	public void initialize() {
 		if (GoNatureClient.currentEmployee != null) {
@@ -32,7 +41,6 @@ public class DeptManagerController {
 			welcomeLabel.setText("Welcome!");
 		}
 		Platform.runLater(() -> {
-			// Get the current window (Stage) using one of the nodes (contentArea)
 			Stage stage = (Stage) contentArea.getScene().getWindow();
 			if (stage != null) {
 				stage.setMaximized(true);
@@ -42,31 +50,62 @@ public class DeptManagerController {
 		loadPanel("/GUI/DeptManagerParkDashboard.fxml");
 	}
 
+	/**
+	 * Loads the approval/rejection panel.
+	 * 
+	 * @param event The action event.
+	 */
 	@FXML
 	void showApproveReject(ActionEvent event) {
 		loadPanel("/GUI/DeptManagerApproveRejectPanel.fxml");
 	}
 
+	/**
+	 * Loads the visit duration report panel.
+	 * 
+	 * @param event The action event.
+	 */
 	@FXML
 	void showVisitDurationReport(ActionEvent event) {
 		loadPanel("/GUI/DeptManagerVisitDurationReportPanel.fxml");
 	}
 
+	/**
+	 * Loads the cancellation report panel.
+	 * 
+	 * @param event The action event.
+	 */
 	@FXML
 	void showCancellationReport(ActionEvent event) {
 		loadPanel("/GUI/DeptManagerCancellationReportPanel.fxml");
 	}
 
+	/**
+	 * Loads the park dashboard panel.
+	 * 
+	 * @param event The action event.
+	 */
 	@FXML
 	void showParkDashboard(ActionEvent event) {
 		loadPanel("/GUI/DeptManagerParkDashboard.fxml");
 	}
 
+	/**
+	 * Loads the saved reports panel.
+	 * 
+	 * @param event The action event.
+	 */
 	@FXML
 	void showSavedReports(ActionEvent event) {
 		loadPanel("/GUI/DeptManagerSavedReportsPanel.fxml");
 	}
 
+	/**
+	 * Handles the logout process, notifies the server, and returns to the login
+	 * screen.
+	 * 
+	 * @param event The action event.
+	 */
 	@FXML
 	void handleLogout(ActionEvent event) {
 		try {
@@ -85,6 +124,11 @@ public class DeptManagerController {
 		}
 	}
 
+	/**
+	 * Helper method to load a FXML sub-panel into the content area.
+	 * 
+	 * @param fxmlPath The resource path to the FXML file.
+	 */
 	private void loadPanel(String fxmlPath) {
 		try {
 			FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));

@@ -17,6 +17,11 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 
+/**
+ * Controller class for the order creation screen. Manages the user interface
+ * for inputting visit details, validating inputs, and communicating with the
+ * server to submit orders and calculate pricing.
+ */
 public class CreateOrderController implements Initializable {
 
 	@FXML
@@ -31,12 +36,16 @@ public class CreateOrderController implements Initializable {
 	private Label errorLabel;
 	@FXML
 	private ComboBox<String> paymentComboBox;
+	@FXML
+	private Button createOrderButton;
 
+	/**
+	 * Static instance of this controller for external access.
+	 */
 	public static CreateOrderController instance;
 
 	private boolean orderCreatedSuccessfully = false;
 
-	// state for async flow
 	private String visitorId;
 	private String selectedPark;
 	private String selectedDate;
@@ -44,15 +53,22 @@ public class CreateOrderController implements Initializable {
 	private String visitorsAmount;
 	private String paymentMethod;
 
+	/**
+	 * Cached type of the visitor (e.g., "Individual" or "OrganizedGroup").
+	 */
 	public static String cachedVisitorType = "Individual";
 
+	/**
+	 * Initializes the controller, populates ComboBoxes, and configures the visitor
+	 * spinner.
+	 */
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 
 		instance = this;
 
 		try {
-			ClientUI.client.sendToServer(new Message("GET_ALL_PARKS", null));
+			ClientUI.send(new Message("GET_ALL_PARKS", null));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -75,8 +91,14 @@ public class CreateOrderController implements Initializable {
 				new SpinnerValueFactory.IntegerSpinnerValueFactory(minVisitors, maxVisitors, minVisitors));
 	}
 
+	/**
+	 * Validates order inputs and initiates the order submission flow.
+	 *
+	 * @param event The action event triggered by the submit button.
+	 */
 	@FXML
 	void submitOrder(ActionEvent event) {
+		createOrderButton.setDisable(true);
 
 		try {
 			errorLabel.setVisible(false);
@@ -90,32 +112,40 @@ public class CreateOrderController implements Initializable {
 			if (selectedPark == null || date == null || selectedTime == null || paymentMethod == null
 					|| visitorsAmount.trim().isEmpty()) {
 				showError("Please fill in all fields.");
+				createOrderButton.setDisable(false);
 				return;
 			}
 
 			if (date.isBefore(LocalDate.now())) {
 				showError("You cannot select a past date.");
+				createOrderButton.setDisable(false);
 				return;
 			}
 
 			LocalTime chosenTime = LocalTime.parse(selectedTime);
 			if (date.equals(LocalDate.now()) && chosenTime.isBefore(LocalTime.now())) {
 				showError("You cannot select a past time.");
+				createOrderButton.setDisable(false);
 				return;
 			}
 
 			visitorId = GoNatureClient.currentVisitor.getVisitorId();
 			selectedDate = date.toString();
 
-			// STEP 1 async
-			ClientUI.client.sendToServer(new Message("GET_VISITOR_TYPE", visitorId));
+			ClientUI.send(new Message("GET_VISITOR_TYPE", visitorId));
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			showError("Connection error");
+			showError("Submit failed");
 		}
 	}
 
+	/**
+	 * Handles the result of the visitor type check and proceeds with order
+	 * creation.
+	 *
+	 * @param type The visitor type string returned by the server.
+	 */
 	public void handleVisitorTypeResult(String type) {
 
 		if (type.equals("Guide"))
@@ -128,6 +158,9 @@ public class CreateOrderController implements Initializable {
 		submitOrderToServer();
 	}
 
+	/**
+	 * Packages order data and sends it to the server.
+	 */
 	private void submitOrderToServer() {
 
 		ArrayList<String> newOrder = new ArrayList<>();
@@ -147,10 +180,17 @@ public class CreateOrderController implements Initializable {
 		}
 	}
 
+	/**
+	 * Handles the outcome of the order submission.
+	 *
+	 * @param success Whether the submission was successful.
+	 * @param reason  The error reason if submission failed.
+	 */
 	public void handleOrderResult(boolean success, String reason) {
 
 		if (!success) {
 			Platform.runLater(() -> showError(reason != null ? reason : "Order failed"));
+			createOrderButton.setDisable(false);
 			return;
 		}
 
@@ -164,6 +204,9 @@ public class CreateOrderController implements Initializable {
 		calculatePrice();
 	}
 
+	/**
+	 * Triggers the pricing calculation process.
+	 */
 	private void calculatePrice() {
 
 		ArrayList<String> paymentData = new ArrayList<>();
@@ -180,6 +223,11 @@ public class CreateOrderController implements Initializable {
 		}
 	}
 
+	/**
+	 * Displays the calculated price to the user.
+	 *
+	 * @param price The final price to display.
+	 */
 	public void handlePriceResult(double price) {
 
 		if (!orderCreatedSuccessfully)
@@ -194,6 +242,12 @@ public class CreateOrderController implements Initializable {
 		});
 	}
 
+	/**
+	 * Updates the park selection ComboBox with available parks retrieved from the
+	 * server.
+	 *
+	 * @param parks An ArrayList of available park names.
+	 */
 	public void loadParks(ArrayList<String> parks) {
 
 		Platform.runLater(() -> {
@@ -206,12 +260,22 @@ public class CreateOrderController implements Initializable {
 		});
 	}
 
+	/**
+	 * Displays an error message on the GUI.
+	 *
+	 * @param msg The error message text.
+	 */
 	private void showError(String msg) {
 		errorLabel.setStyle("-fx-text-fill: #e74c3c;");
 		errorLabel.setText(msg);
 		errorLabel.setVisible(true);
 	}
 
+	/**
+	 * Navigates the user back to the visitor orders screen.
+	 *
+	 * @param event The action event triggered by the back button.
+	 */
 	@FXML
 	void goBack(ActionEvent event) {
 		try {
