@@ -543,7 +543,7 @@ public class DBController {
 		try {
 			searchOrderId = Integer.parseInt(identifier);
 		} catch (NumberFormatException e) {
-			// not an integer
+			e.printStackTrace();
 		}
 
 		String selectQuery = "SELECT parkId, orderId, visitorCount, visitorId, paid, orderType FROM Orders "
