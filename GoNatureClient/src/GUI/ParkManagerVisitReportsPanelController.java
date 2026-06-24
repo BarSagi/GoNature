@@ -13,6 +13,8 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.PieChart;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.image.WritableImage;
@@ -55,6 +57,12 @@ public class ParkManagerVisitReportsPanelController {
 	@FXML
 	private NumberAxis yAxis;
 
+	@FXML
+	private Label noDataLabel;
+
+	@FXML
+	private Button saveReportBtn;
+
 	/**
 	 * The currently displayed visit report data.
 	 */
@@ -81,19 +89,38 @@ public class ParkManagerVisitReportsPanelController {
 	 */
 	public void showReport(VisitReportData report) {
 
-		if (report == null)
-			return;
-
-		currentReport = report;
-
 		Platform.runLater(() -> {
 
-			pieChart.getData().clear();
+			if (report == null || (report.getIndividualVisitors() == 0 && report.getGroupVisitors() == 0)) {
+				currentReport = null;
+
+				pieChart.getData().clear();
+				totalLabel.setText("");
+
+				noDataLabel.setVisible(true);
+				noDataLabel.setManaged(true);
+
+				pieChart.setVisible(false);
+				pieChart.setManaged(false);
+
+				saveReportBtn.setVisible(true);
+				saveReportBtn.setManaged(true);
+
+				return;
+			}
+
+			noDataLabel.setVisible(false);
+			noDataLabel.setManaged(false);
+
+			pieChart.setVisible(true);
+			pieChart.setManaged(true);
+
+			currentReport = report;
 
 			PieChart.Data individual = new PieChart.Data("Regular Groups", report.getIndividualVisitors());
 			PieChart.Data group = new PieChart.Data("Organized Groups", report.getGroupVisitors());
 
-			pieChart.getData().addAll(individual, group);
+			pieChart.getData().setAll(individual, group);
 
 			pieChart.setLabelsVisible(true);
 			pieChart.setLegendVisible(true);
@@ -105,16 +132,17 @@ public class ParkManagerVisitReportsPanelController {
 			totalLabel.setText("Total visitors: " + total + " | Regular Groups: " + individualCount
 					+ " | Organized Groups: " + groupCount);
 
-			individual.nodeProperty().addListener((obs, oldNode, newNode) -> {
-				if (newNode != null) {
-					newNode.setStyle("-fx-pie-color: #3498db;");
-				}
-			});
+			Platform.runLater(() -> {
 
-			group.nodeProperty().addListener((obs, oldNode, newNode) -> {
-				if (newNode != null) {
-					newNode.setStyle("-fx-pie-color: #e67e22;");
+				if (individual.getNode() != null) {
+					individual.getNode().setStyle("-fx-pie-color: #3498db;");
 				}
+
+				if (group.getNode() != null) {
+					group.getNode().setStyle("-fx-pie-color: #e67e22;");
+				}
+
+				pieChart.requestLayout();
 			});
 		});
 	}
@@ -175,8 +203,17 @@ public class ParkManagerVisitReportsPanelController {
 	@FXML
 	void saveReport(ActionEvent event) {
 
-		if (currentReport == null) {
-			System.out.println("No report to save");
+		if (currentReport == null ||
+			(currentReport.getIndividualVisitors() == 0 && currentReport.getGroupVisitors() == 0)) {
+
+			Platform.runLater(() -> {
+				Alert alert = new Alert(Alert.AlertType.WARNING);
+				alert.setTitle("Save Report");
+				alert.setHeaderText(null);
+				alert.setContentText("Cannot save an empty report.");
+				alert.showAndWait();
+			});
+
 			return;
 		}
 

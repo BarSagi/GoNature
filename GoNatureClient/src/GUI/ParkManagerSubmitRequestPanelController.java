@@ -125,10 +125,20 @@ public class ParkManagerSubmitRequestPanelController {
 			String oldValue = oldValueField.getText().trim();
 			String newValue = newValueField.getText().trim();
 
-			if (requestType.equals("AvgStayDuration") || requestType.equals("Promotion")) {
+			if (requestType.equals("Promotion")) {
+				try {
+					if (Double.parseDouble(newValue) <= 0 || Double.parseDouble(newValue) > 100) {
+						statusLabel.setText("New value can't be less than 0 or greater than 100");
+						return;
+					}
+				} catch (Exception e) {
+					statusLabel.setText("Must be a number");
+				}
+			}
+			if (requestType.equals("AvgStayDuration")) {
 				try {
 					if (Double.parseDouble(newValue) <= 0) {
-						statusLabel.setText("can't be less than 0 or equal to 0.");
+						statusLabel.setText("New value can't be less than 0 or equal to 0.");
 						return;
 					}
 				} catch (Exception e) {
@@ -138,7 +148,7 @@ public class ParkManagerSubmitRequestPanelController {
 			} else {
 				try {
 					if (Integer.parseInt(newValue) <= 0) {
-						statusLabel.setText("can't be less than 0 or equal to 0.");
+						statusLabel.setText("New value Can't be less than 0 or equal to 0.");
 						return;
 					}
 				} catch (Exception e) {

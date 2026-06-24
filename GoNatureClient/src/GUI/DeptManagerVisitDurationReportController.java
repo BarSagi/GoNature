@@ -14,6 +14,7 @@ import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import javafx.collections.FXCollections;
@@ -50,6 +51,9 @@ public class DeptManagerVisitDurationReportController {
 
 	@FXML
 	private NumberAxis yAxis;
+	
+	@FXML
+	private Label noDataLabel;
 
 	/**
 	 * Predefined time slots for report categorization.
@@ -117,13 +121,21 @@ public class DeptManagerVisitDurationReportController {
 	 */
 	@SuppressWarnings("unchecked")
 	public void showReport(List<Visit> visits) {
-		if (visits == null)
-			return;
 
 		Platform.runLater(() -> {
 
 			barChart.setAnimated(false);
 			barChart.getData().clear();
+			
+			if (visits == null) {
+				noDataLabel.setVisible(true);
+				noDataLabel.setManaged(true);
+
+				barChart.setVisible(false);
+				barChart.setManaged(false);
+
+				return;
+			}
 
 			XYChart.Series<String, Number> regularSeries = new XYChart.Series<>();
 			regularSeries.setName("Regular Groups");
@@ -146,13 +158,16 @@ public class DeptManagerVisitDurationReportController {
 				if (exit.isAfter(closingTime)) {
 					exit = closingTime;
 				}
+
 				long minutes = Duration.between(entry, exit).toMinutes();
+
 				if (minutes <= 0)
 					continue;
 
 				double duration = minutes / 60.0;
 
 				String slot = getTimeSlot(entry);
+
 				if (slot == null)
 					continue;
 
@@ -162,6 +177,26 @@ public class DeptManagerVisitDurationReportController {
 					regularMap.get(slot).add(duration);
 				}
 			}
+
+			boolean hasData = regularMap.values().stream().anyMatch(list -> !list.isEmpty())
+					|| organizedMap.values().stream().anyMatch(list -> !list.isEmpty());
+
+			if (!hasData) {
+
+				noDataLabel.setVisible(true);
+				noDataLabel.setManaged(true);
+
+				barChart.setVisible(false);
+				barChart.setManaged(false);
+
+				return;
+			}
+
+			noDataLabel.setVisible(false);
+			noDataLabel.setManaged(false);
+
+			barChart.setVisible(true);
+			barChart.setManaged(true);
 
 			for (String slot : timeSlots) {
 
@@ -181,7 +216,6 @@ public class DeptManagerVisitDurationReportController {
 			yAxis.setAutoRanging(true);
 		});
 	}
-
 	/**
 	 * Adds numerical labels on top of the bars in the chart.
 	 *

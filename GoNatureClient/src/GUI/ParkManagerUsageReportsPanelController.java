@@ -9,6 +9,7 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
@@ -44,6 +45,9 @@ public class ParkManagerUsageReportsPanelController {
 	@FXML
 	private VBox legendBox;
 
+	@FXML
+	private Button saveReportBtn;
+
 	/**
 	 * Initializes the controller, populates combo boxes, and initializes the
 	 * legend.
@@ -62,6 +66,9 @@ public class ParkManagerUsageReportsPanelController {
 		}
 
 		initLegend();
+
+		saveReportBtn.setVisible(false);
+		saveReportBtn.setManaged(false);
 	}
 
 	/**
@@ -120,7 +127,20 @@ public class ParkManagerUsageReportsPanelController {
 	 */
 	public void showReport(ArrayList<UsageReportData> report) {
 		Platform.runLater(() -> {
+
 			heatmapGrid.getChildren().clear();
+
+			boolean hasData = report != null && !report.isEmpty();
+
+			if (!hasData) {
+				saveReportBtn.setVisible(false);
+				saveReportBtn.setManaged(false);
+				return;
+			}
+
+			saveReportBtn.setVisible(true);
+			saveReportBtn.setManaged(true);
+
 			for (UsageReportData d : report) {
 				Label cell = new Label(String.valueOf(d.getDay()));
 				cell.setMinSize(40, 40);

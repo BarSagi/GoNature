@@ -13,23 +13,21 @@
 		style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
 
 	<HBox spacing="10" alignment="CENTER">
-
 		<ComboBox fx:id="monthCombo" promptText="Month" />
-
 		<ComboBox fx:id="yearCombo" promptText="Year" />
-
 		<Button text="Generate" onAction="#generateReport" />
 	</HBox>
 
-	<VBox fx:id="reportContainer" alignment="CENTER" spacing="10">
+	<Label fx:id="noDataLabel" text="No data available for the selected period"
+		style="-fx-font-size: 16px; -fx-text-fill: #7f8c8d; -fx-font-weight: bold;"
+		visible="false" managed="false" />
 
+	<VBox fx:id="reportContainer" alignment="CENTER" spacing="10">
 		<Label fx:id="totalLabel" text="Total visitors: -"
 			style="-fx-font-size: 14px; -fx-font-weight: bold;" />
-
 		<PieChart fx:id="pieChart" prefHeight="300" prefWidth="400" />
-
 	</VBox>
 
-	<Button text="Save Report" onAction="#saveReport" />
+	<Button fx:id="saveReportBtn" text="Save Report" onAction="#saveReport" />
 
 </VBox>

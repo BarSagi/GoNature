@@ -6,7 +6,8 @@
 <VBox alignment="CENTER" spacing="15.0"
 	xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
 	fx:controller="GUI.ParkManagerUsageReportsPanelController"
-	style="-fx-background-color: white; -fx-padding: 30;">
+	style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30;">
+
 	<Label text="Usage Heatmap - Days of Month"
 		style="-fx-font-size: 22px; -fx-font-weight: bold;" />
 
@@ -19,8 +20,11 @@
 		<ComboBox fx:id="yearCombo" />
 
 		<Button text="Generate" onAction="#generateReport" />
-		<Button text="Save Report" onAction="#saveReport"
+		<Button fx:id="saveReportBtn"
+			text="Save Report"
+			onAction="#saveReport"
 			style="-fx-background-color: #27ae60; -fx-text-fill: white;" />
+
 	</HBox>
 
 	<VBox fx:id="legendBox" alignment="CENTER" />
