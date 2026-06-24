@@ -32,7 +32,7 @@ public class CheckVisitorOrdersStrategy implements MessageStrategy {
 		server.log("[STRATEGY] Checking database for orders belonging to ID: " + visitorId);
 
 		// =========================================================
-		// NEW: Check if the visitor is already logged in elsewhere
+		// Check if the visitor is already logged in elsewhere
 		// =========================================================
 		boolean loginSuccess = server.loginUser(visitorId, client);
 
@@ -47,20 +47,15 @@ public class CheckVisitorOrdersStrategy implements MessageStrategy {
 			return; // Stop execution, do not query the DB
 		}
 
-		// 2. Query the Database
 		ArrayList<Order> visitorOrders = server.getDatabase().getVisitorOrders(visitorId);
-		ArrayList<String> visitor = null; // Declare outside so we can use it later
+		ArrayList<String> visitor = server.getDatabase().fetchVisitor(visitorId);
 
-		if (visitorOrders.size() > 0) {
-			visitor = server.getDatabase().fetchVisitor(visitorId);
-		}
-
-		else {
+		if (visitor == null) {
 			server.logoutUser(client);
 		}
 
 		// =========================================================
-		// 3. THE FIX: Combine both into an ArrayList of Objects!
+		// Combine both into an ArrayList of Objects!
 		// =========================================================
 		ArrayList<Object> combinedData = new ArrayList<>();
 		combinedData.add(visitor); // Index 0: The Visitor Data (ArrayList<String> or null)

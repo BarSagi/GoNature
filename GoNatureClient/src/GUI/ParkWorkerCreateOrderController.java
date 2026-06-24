@@ -160,7 +160,7 @@ public class ParkWorkerCreateOrderController {
 		if (type.equals("Guide")) {
 			cachedVisitorType = "OrganizedGroup";
 
-			if (Integer.parseInt(pendingVisitorCount) < 2 || Integer.parseInt(pendingVisitorCount) > 16) {
+			if (Integer.parseInt(pendingVisitorCount) < 1 || Integer.parseInt(pendingVisitorCount) > 15) {
 				Platform.runLater(() -> statusLabel.setText("Invalid visitor count for guide. "));
 				btnSubmit.setDisable(false);
 				return;

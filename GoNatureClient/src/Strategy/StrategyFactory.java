@@ -1,10 +1,11 @@
 package Strategy;
 
 /**
- * Creates the appropriate message handling strategy according to the received command.
+ * Creates the appropriate message handling strategy according to the received
+ * command.
  * <p>
- * This factory is used on the client side to match each server command
- * with the correct strategy class that knows how to handle it.
+ * This factory is used on the client side to match each server command with the
+ * correct strategy class that knows how to handle it.
  */
 public class StrategyFactory {
 
@@ -14,14 +15,12 @@ public class StrategyFactory {
 	 * If the command is not recognized, this method returns {@code null}.
 	 *
 	 * @param command the command received from the server
-	 * @return the matching {@code MessageStrategy}, or {@code null} if no strategy matches
+	 * @return the matching {@code MessageStrategy}, or {@code null} if no strategy
+	 *         matches
 	 */
 	public static MessageStrategy getStrategy(String command) {
 
 		switch (command) {
-
-		case "VISITOR_REGISTRATION_RESULT":
-			return new VisitorRegistrationStrategy();
 
 		case "ORDER_CREATION_RESULT":
 			return new OrderCreationStrategy();

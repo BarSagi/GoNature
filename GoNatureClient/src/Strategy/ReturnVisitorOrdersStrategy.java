@@ -19,8 +19,8 @@ public class ReturnVisitorOrdersStrategy implements MessageStrategy {
 	/**
 	 * Executes the strategy for handling visitor orders.
 	 * <p>
-	 * The message data is expected to contain an {@code ArrayList<Order>}
-	 * with the visitor's orders.
+	 * The message data is expected to contain an {@code ArrayList<Order>} with the
+	 * visitor's orders.
 	 *
 	 * @param message the message received from the server containing visitor orders
 	 */
@@ -28,14 +28,20 @@ public class ReturnVisitorOrdersStrategy implements MessageStrategy {
 	@Override
 	public void execute(Message message) {
 		ArrayList<Order> orders = (ArrayList<Order>) message.getData();
-		ClientUI.changeScreen("/GUI/VisitorOrdersScreen.fxml", "Your Orders");
+		if (orders == null || orders.isEmpty()) {
+			ClientUI.changeScreen("/GUI/LoginVisitor.fxml", "GoNature - Enter ID");
+		}
 
-		Platform.runLater(() -> {
-			if (VisitorOrdersScreenController.instance != null) {
-				VisitorOrdersScreenController.instance.loadOrders(orders);
-			} else {
-				System.err.println("CRITICAL ERROR: Controller instance is still null!");
-			}
-		});
+		else {
+			ClientUI.changeScreen("/GUI/VisitorOrdersScreen.fxml", "Your Orders");
+
+			Platform.runLater(() -> {
+				if (VisitorOrdersScreenController.instance != null) {
+					VisitorOrdersScreenController.instance.loadOrders(orders);
+				} else {
+					System.err.println("CRITICAL ERROR: Controller instance is still null!");
+				}
+			});
+		}
 	}
 }

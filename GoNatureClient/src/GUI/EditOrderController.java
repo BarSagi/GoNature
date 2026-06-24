@@ -115,9 +115,9 @@ public class EditOrderController {
 			} else if (newVisitorCount > 100) {
 				statusLabel.setText("Error: Number of visitors too large.");
 				return;
-			} else if ((newVisitorCount > 16 || newVisitorCount < 2)
+			} else if ((newVisitorCount > 15 || newVisitorCount < 1)
 					&& GoNatureClient.currentVisitor.getVisitorType() == "Guide") {
-				statusLabel.setText("Error: Guide can only orders for 2 to 16 visitors.");
+				statusLabel.setText("Error: Guide can only orders for 1 to 15 visitors.");
 				return;
 			}
 		} catch (NumberFormatException e) {
