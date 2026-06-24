@@ -79,7 +79,17 @@ public class ServiceRepresentativeDashboardController {
 	void showQuickSearchPanel(ActionEvent event) {
 		loadPanel("/GUI/ServiceRepSearch.fxml");
 	}
+	
+	@FXML
+	void showSearchSubscriberPanel(ActionEvent event) {
+		loadPanel("/GUI/ServiceRepSearchSubscriber.fxml");
+	}
 
+	@FXML
+	void showSearchEmployeePanel(ActionEvent event) {
+		loadPanel("/GUI/ServiceRepSearchEmployeePanel.fxml");
+	}
+	
 	/**
 	 * Sidebar Button Action: Logs out and returns to the main login route
 	 */

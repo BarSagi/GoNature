@@ -49,6 +49,10 @@
 				prefHeight="45.0" prefWidth="240.0"
 				style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 15px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
 
+			<Button text="My Details" onAction="#showMyDetails"
+				prefHeight="45.0" prefWidth="240.0"
+				style="-fx-background-color: #16a085; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 15px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
+
 			<VBox spacing="10.0" alignment="CENTER"
 				style="-fx-padding: 10 0 0 0;">
 				<Label text="Selected Order Actions:"

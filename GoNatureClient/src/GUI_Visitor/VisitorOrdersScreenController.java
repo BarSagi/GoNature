@@ -182,6 +182,27 @@ public class VisitorOrdersScreenController {
 			e.printStackTrace();
 		}
 	}
+	
+	@FXML
+	void showMyDetails(ActionEvent event) {
+		if (GoNatureClient.currentVisitor == null ||
+			!"Subscriber".equalsIgnoreCase(GoNatureClient.currentVisitor.getVisitorType())) {
+			showErrorAlert("Only subscribers can see their personal details.");
+			return;
+		}
+
+		try {
+			javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+					getClass().getResource("/GUI_Visitor/VisitorMyDetailsPanel.fxml"));
+			javafx.scene.Parent detailsView = loader.load();
+
+			mainBorderPane.setCenter(detailsView);
+
+		} catch (Exception e) {
+			System.out.println("Error loading My Details pane.");
+			e.printStackTrace();
+		}
+	}
 
 	@FXML
 	void cancelOrder(ActionEvent event) {

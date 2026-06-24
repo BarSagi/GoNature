@@ -139,7 +139,6 @@ public class DBController {
 			conn = pool.getConnection();
 
 			PreparedStatement ps = conn.prepareStatement(query);
-
 			ps.setString(1, visitorID);
 
 			ResultSet rs = ps.executeQuery();
@@ -147,14 +146,15 @@ public class DBController {
 			if (rs.next()) {
 				ArrayList<String> visitor = new ArrayList<>();
 
-				visitor.add(String.valueOf(rs.getInt("visitorId")));
-				visitor.add(rs.getString("firstName"));
-				visitor.add(rs.getString("lastName"));
-				visitor.add(rs.getString("phone"));
-				visitor.add(rs.getString("email"));
-				visitor.add(rs.getString("visitorType"));
-				visitor.add(String.valueOf(rs.getInt("subscriptionNumber")));
-				visitor.add(String.valueOf(rs.getInt("familyMembers")));
+				visitor.add(rs.getString("visitorId"));          // 0
+				visitor.add(rs.getString("firstName"));          // 1
+				visitor.add(rs.getString("lastName"));           // 2
+				visitor.add(rs.getString("phone"));              // 3
+				visitor.add(rs.getString("email"));              // 4
+				visitor.add(rs.getString("visitorType"));        // 5
+				visitor.add(String.valueOf(rs.getInt("subscriptionNumber"))); // 6
+				visitor.add(String.valueOf(rs.getInt("familyMembers")));      // 7
+				visitor.add(rs.getString("creditCard"));         // 8
 
 				rs.close();
 				ps.close();
@@ -2798,6 +2798,136 @@ public class DBController {
 
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			pool.releaseConnection(conn);
+		}
+
+		return null;
+	}
+	
+	// =========================================================
+	// UPDATE VISITOR DETAILS
+	// =========================================================
+	public boolean updateVisitorDetails(String visitorId, String firstName, String lastName,
+			String phone, String email, String creditCard) {
+
+		String query = "UPDATE Visitors SET firstName = ?, lastName = ?, phone = ?, email = ?, creditCard = ? WHERE visitorId = ?";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setString(1, firstName);
+			ps.setString(2, lastName);
+			ps.setString(3, phone);
+			ps.setString(4, email);
+			ps.setString(5, creditCard);
+			ps.setString(6, visitorId);
+
+			int rows = ps.executeUpdate();
+			ps.close();
+
+			return rows > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+	}
+	
+	// =========================================================
+	// FETCH EMPLOYEE BY ID
+	// =========================================================
+	public ArrayList<String> fetchEmployeeById(String employeeId) {
+
+		String query = "SELECT * FROM Employees WHERE employeeId = ?";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setString(1, employeeId);
+
+			ResultSet rs = ps.executeQuery();
+
+			if (rs.next()) {
+				ArrayList<String> employeeInfo = new ArrayList<>();
+
+				employeeInfo.add(String.valueOf(rs.getInt("employeeId"))); // 0
+				employeeInfo.add(rs.getString("firstName"));               // 1
+				employeeInfo.add(rs.getString("lastName"));                // 2
+				employeeInfo.add(rs.getString("email"));                   // 3
+				employeeInfo.add(rs.getString("role"));                    // 4
+				employeeInfo.add(rs.getString("affiliation"));             // 5
+
+				rs.close();
+				ps.close();
+
+				return employeeInfo;
+			}
+
+			rs.close();
+			ps.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+		} finally {
+			pool.releaseConnection(conn);
+		}
+
+		return null;
+	}
+	
+	// =========================================================
+	// FETCH SUBSCRIBER BY ID
+	// =========================================================
+	public ArrayList<String> fetchSubscriberById(String subscriberId) {
+
+		String query = "SELECT * FROM Visitors WHERE visitorId = ? AND visitorType = 'Subscriber'";
+
+		Connection conn = null;
+
+		try {
+			conn = pool.getConnection();
+
+			PreparedStatement ps = conn.prepareStatement(query);
+			ps.setString(1, subscriberId);
+
+			ResultSet rs = ps.executeQuery();
+
+			if (rs.next()) {
+				ArrayList<String> subscriberInfo = new ArrayList<>();
+
+				subscriberInfo.add(rs.getString("visitorId"));                       // 0
+				subscriberInfo.add(rs.getString("firstName"));                       // 1
+				subscriberInfo.add(rs.getString("lastName"));                        // 2
+				subscriberInfo.add(rs.getString("phone"));                           // 3
+				subscriberInfo.add(rs.getString("email"));                           // 4
+				subscriberInfo.add(rs.getString("visitorType"));                     // 5
+				subscriberInfo.add(String.valueOf(rs.getInt("subscriptionNumber"))); // 6
+				subscriberInfo.add(String.valueOf(rs.getInt("familyMembers")));      // 7
+				subscriberInfo.add(rs.getString("creditCard"));                      // 8
+
+				rs.close();
+				ps.close();
+
+				return subscriberInfo;
+			}
+
+			rs.close();
+			ps.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+
 		} finally {
 			pool.releaseConnection(conn);
 		}
