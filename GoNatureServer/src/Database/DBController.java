@@ -139,6 +139,7 @@ public class DBController {
 			conn = pool.getConnection();
 
 			PreparedStatement ps = conn.prepareStatement(query);
+
 			ps.setString(1, visitorID);
 
 			ResultSet rs = ps.executeQuery();
@@ -146,15 +147,15 @@ public class DBController {
 			if (rs.next()) {
 				ArrayList<String> visitor = new ArrayList<>();
 
-				visitor.add(rs.getString("visitorId"));          // 0
-				visitor.add(rs.getString("firstName"));          // 1
-				visitor.add(rs.getString("lastName"));           // 2
-				visitor.add(rs.getString("phone"));              // 3
-				visitor.add(rs.getString("email"));              // 4
-				visitor.add(rs.getString("visitorType"));        // 5
+				visitor.add(rs.getString("visitorId")); // 0
+				visitor.add(rs.getString("firstName")); // 1
+				visitor.add(rs.getString("lastName")); // 2
+				visitor.add(rs.getString("phone")); // 3
+				visitor.add(rs.getString("email")); // 4
+				visitor.add(rs.getString("visitorType")); // 5
 				visitor.add(String.valueOf(rs.getInt("subscriptionNumber"))); // 6
-				visitor.add(String.valueOf(rs.getInt("familyMembers")));      // 7
-				visitor.add(rs.getString("creditCard"));         // 8
+				visitor.add(String.valueOf(rs.getInt("familyMembers"))); // 7
+				visitor.add(rs.getString("creditCard")); // 8
 
 				rs.close();
 				ps.close();
@@ -274,7 +275,14 @@ public class DBController {
 			rs.close();
 			find.close();
 
-			if (hasRoomInSlot(parkId, visitDate, visitTime, visitorCount)) {
+			// ==============================================================
+			// We check for physical space AND verify no one is waiting in line
+			// ==============================================================
+			boolean hasRoom = hasRoomInSlot(parkId, visitDate, visitTime, visitorCount);
+			boolean queueExists = isWaitingListActive(parkId, visitDate, visitTime);
+
+			// Only allow immediate approval if there is room AND there is no line!
+			if (hasRoom && !queueExists) {
 
 				int attempts = 0;
 
@@ -320,6 +328,10 @@ public class DBController {
 				return "Failed";
 			}
 
+			// ==============================================================
+			// IF THE PARK IS FULL, OR IF THERE IS A WAITING LIST:
+			// Fall down here to generate alternatives and return "Full|"
+			// ==============================================================
 			ArrayList<String> alternatives = getAlternativeSlots(parkId, visitDate, visitorCount);
 			String joined = String.join(", ", alternatives);
 
@@ -330,7 +342,9 @@ public class DBController {
 			return "Failed";
 
 		} finally {
-			pool.releaseConnection(conn);
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
 		}
 	}
 
@@ -1372,16 +1386,19 @@ public class DBController {
 	}
 
 	// =========================================================
-	// GET APPROVED VISITOR COUNT FOR SLOT (Handles Empty Tables safely!)
+	// GET OCCUPIED VISITOR COUNT FOR SLOT (Updated to include Pending)
 	// =========================================================
-	private int getApprovedVisitorCountForSlot(int parkId, String visitDate, String visitTime, int excludeOrderId) {
+	private int getOccupiedVisitorCountForSlot(int parkId, String visitDate, String visitTime, int excludeOrderId) {
 		Connection conn = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
 			conn = pool.getConnection();
+
+			// FIX: We now use IN (...) to count EVERYONE who is taking up space!
 			String query = "SELECT SUM(visitorCount) AS total FROM Orders "
-					+ "WHERE parkId = ? AND visitDate = ? AND visitTime = ? AND status = 'Approved'";
+					+ "WHERE parkId = ? AND visitDate = ? AND visitTime = ? "
+					+ "AND status IN ('Approved', 'PendingConfirmation', 'PendingVisitReminder', 'Entered')";
 
 			if (excludeOrderId != -1) {
 				query += " AND orderId != ?";
@@ -1398,11 +1415,10 @@ public class DBController {
 
 			rs = ps.executeQuery();
 			if (rs.next()) {
-				// rs.getInt() is brilliant: if the SUM is NULL, it automatically returns 0!
 				return rs.getInt("total");
 			}
 		} catch (SQLException e) {
-			System.out.println("Error fetching approved visitors.");
+			System.out.println("Error fetching occupied visitors.");
 			e.printStackTrace();
 		} finally {
 			try {
@@ -1415,7 +1431,7 @@ public class DBController {
 			if (conn != null)
 				pool.releaseConnection(conn);
 		}
-		return 0; // If something goes wrong, assume 0 so we don't accidentally block the UI
+		return 0;
 	}
 
 	// =========================================================
@@ -1483,8 +1499,8 @@ public class DBController {
 	}
 
 	// OVERLOAD: For new orders (Doesn't exclude any IDs)
-	public int getApprovedVisitorCountForSlot(int parkId, String visitDate, String visitTime) {
-		return getApprovedVisitorCountForSlot(parkId, visitDate, visitTime, -1);
+	public int getOccupiedVisitorCountForSlot(int parkId, String visitDate, String visitTime) {
+		return getOccupiedVisitorCountForSlot(parkId, visitDate, visitTime, -1);
 	}
 
 	// =========================================================
@@ -1493,7 +1509,7 @@ public class DBController {
 	public boolean hasRoomInSlot(int parkId, String visitDate, String visitTime, int requestedVisitors,
 			int excludeOrderId) {
 		int maxCapacity = getParkMaxCapacity(parkId);
-		int approvedVisitors = getApprovedVisitorCountForSlot(parkId, visitDate, visitTime, excludeOrderId);
+		int approvedVisitors = getOccupiedVisitorCountForSlot(parkId, visitDate, visitTime, excludeOrderId);
 
 		if (maxCapacity == -1) {
 			return false;
@@ -1598,6 +1614,50 @@ public class DBController {
 	}
 
 	// =========================================================
+	// CHECK IF WAITING LIST IS ACTIVE FOR SLOT
+	// =========================================================
+	public boolean isWaitingListActive(int parkId, String visitDate, String visitTime) {
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			conn = pool.getConnection();
+
+			// Check if anyone is currently waiting for this exact slot
+			String query = "SELECT COUNT(*) AS waitlistCount FROM Orders "
+					+ "WHERE parkId = ? AND visitDate = ? AND visitTime = ? AND status = 'WaitingList'";
+
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, parkId);
+			ps.setString(2, visitDate);
+			ps.setString(3, visitTime);
+
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				// If the count is greater than 0, there is an active waiting list
+				return rs.getInt("waitlistCount") > 0;
+			}
+		} catch (SQLException e) {
+			System.out.println("Error checking if waiting list is active.");
+			e.printStackTrace();
+		} finally {
+			// This safely closes everything and prevents memory leaks!
+			try {
+				if (rs != null)
+					rs.close();
+				if (ps != null)
+					ps.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
+		return false;
+	}
+
+	// =========================================================
 	// CANCEL ORDER
 	// =========================================================
 	public boolean cancelOrder(int orderId) {
@@ -1679,30 +1739,31 @@ public class DBController {
 	// UPDATE COUNT FOR CASUAL VISITORS ONLY
 	// =========================================================
 	public boolean updateVisitorCount(int parkId, int visitorCountToAdd, Connection conn) {
-	    PreparedStatement ps = null;
-	    String query = "UPDATE Parks SET CurrentVisitorCount = CurrentVisitorCount + ? WHERE parkId = ?";
+		PreparedStatement ps = null;
+		String query = "UPDATE Parks SET CurrentVisitorCount = CurrentVisitorCount + ? WHERE parkId = ?";
 
-	    try {
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, visitorCountToAdd);
-	        ps.setInt(2, parkId);
+		try {
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, visitorCountToAdd);
+			ps.setInt(2, parkId);
 
-	        int rowsAffected = ps.executeUpdate();
-	        return rowsAffected > 0;
+			int rowsAffected = ps.executeUpdate();
+			return rowsAffected > 0;
 
-	    } catch (SQLException e) {
-	        System.err.println("[DB ERROR] Failed to update visitor count.");
-	        e.printStackTrace();
-	        return false;
-	    } finally {
-	        // ONLY close the PreparedStatement here. 
-	        // DO NOT close the Connection, because exitVisitor() still needs it to commit!
-	        try {
-	            if (ps != null) ps.close();
-	        } catch (SQLException ex) {
-	            ex.printStackTrace();
-	        }
-	    }
+		} catch (SQLException e) {
+			System.err.println("[DB ERROR] Failed to update visitor count.");
+			e.printStackTrace();
+			return false;
+		} finally {
+			// ONLY close the PreparedStatement here.
+			// DO NOT close the Connection, because exitVisitor() still needs it to commit!
+			try {
+				if (ps != null)
+					ps.close();
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+		}
 	}
 
 	// =========================================================
@@ -2804,12 +2865,12 @@ public class DBController {
 
 		return null;
 	}
-	
+
 	// =========================================================
 	// UPDATE VISITOR DETAILS
 	// =========================================================
-	public boolean updateVisitorDetails(String visitorId, String firstName, String lastName,
-			String phone, String email, String creditCard) {
+	public boolean updateVisitorDetails(String visitorId, String firstName, String lastName, String phone, String email,
+			String creditCard) {
 
 		String query = "UPDATE Visitors SET firstName = ?, lastName = ?, phone = ?, email = ?, creditCard = ? WHERE visitorId = ?";
 
@@ -2839,7 +2900,7 @@ public class DBController {
 			pool.releaseConnection(conn);
 		}
 	}
-	
+
 	// =========================================================
 	// FETCH EMPLOYEE BY ID
 	// =========================================================
@@ -2861,11 +2922,11 @@ public class DBController {
 				ArrayList<String> employeeInfo = new ArrayList<>();
 
 				employeeInfo.add(String.valueOf(rs.getInt("employeeId"))); // 0
-				employeeInfo.add(rs.getString("firstName"));               // 1
-				employeeInfo.add(rs.getString("lastName"));                // 2
-				employeeInfo.add(rs.getString("email"));                   // 3
-				employeeInfo.add(rs.getString("role"));                    // 4
-				employeeInfo.add(rs.getString("affiliation"));             // 5
+				employeeInfo.add(rs.getString("firstName")); // 1
+				employeeInfo.add(rs.getString("lastName")); // 2
+				employeeInfo.add(rs.getString("email")); // 3
+				employeeInfo.add(rs.getString("role")); // 4
+				employeeInfo.add(rs.getString("affiliation")); // 5
 
 				rs.close();
 				ps.close();
@@ -2885,7 +2946,7 @@ public class DBController {
 
 		return null;
 	}
-	
+
 	// =========================================================
 	// FETCH SUBSCRIBER BY ID
 	// =========================================================
@@ -2906,15 +2967,15 @@ public class DBController {
 			if (rs.next()) {
 				ArrayList<String> subscriberInfo = new ArrayList<>();
 
-				subscriberInfo.add(rs.getString("visitorId"));                       // 0
-				subscriberInfo.add(rs.getString("firstName"));                       // 1
-				subscriberInfo.add(rs.getString("lastName"));                        // 2
-				subscriberInfo.add(rs.getString("phone"));                           // 3
-				subscriberInfo.add(rs.getString("email"));                           // 4
-				subscriberInfo.add(rs.getString("visitorType"));                     // 5
+				subscriberInfo.add(rs.getString("visitorId")); // 0
+				subscriberInfo.add(rs.getString("firstName")); // 1
+				subscriberInfo.add(rs.getString("lastName")); // 2
+				subscriberInfo.add(rs.getString("phone")); // 3
+				subscriberInfo.add(rs.getString("email")); // 4
+				subscriberInfo.add(rs.getString("visitorType")); // 5
 				subscriberInfo.add(String.valueOf(rs.getInt("subscriptionNumber"))); // 6
-				subscriberInfo.add(String.valueOf(rs.getInt("familyMembers")));      // 7
-				subscriberInfo.add(rs.getString("creditCard"));                      // 8
+				subscriberInfo.add(String.valueOf(rs.getInt("familyMembers"))); // 7
+				subscriberInfo.add(rs.getString("creditCard")); // 8
 
 				rs.close();
 				ps.close();

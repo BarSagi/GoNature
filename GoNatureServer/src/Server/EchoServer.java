@@ -15,8 +15,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Server class responsible for handling client connections and messages.
- * The server receives messages from clients, sends them to the correct strategy,
+ * Server class responsible for handling client connections and messages. The
+ * server receives messages from clients, sends them to the correct strategy,
  * manages connected users, and writes logs to the server console.
  */
 public class EchoServer extends AbstractServer {
@@ -58,8 +58,8 @@ public class EchoServer extends AbstractServer {
 	}
 
 	/**
-	 * Logs out a user by removing the matching client connection
-	 * from the logged-in users map.
+	 * Logs out a user by removing the matching client connection from the logged-in
+	 * users map.
 	 *
 	 * @param client the client connection to log out
 	 */
@@ -74,11 +74,11 @@ public class EchoServer extends AbstractServer {
 	}
 
 	/**
-	 * Handles messages received from a client.
-	 * The method updates client activity, handles connect and disconnect commands,
-	 * and sends other commands to the matching strategy.
+	 * Handles messages received from a client. The method updates client activity,
+	 * handles connect and disconnect commands, and sends other commands to the
+	 * matching strategy.
 	 *
-	 * @param msg the message received from the client
+	 * @param msg    the message received from the client
 	 * @param client the client connection that sent the message
 	 */
 	@Override
@@ -137,8 +137,8 @@ public class EchoServer extends AbstractServer {
 	}
 
 	/**
-	 * Called when the server starts listening for client connections.
-	 * Initializes the idle checker and the database controller.
+	 * Called when the server starts listening for client connections. Initializes
+	 * the idle checker and the database controller.
 	 */
 	protected void serverStarted() {
 		log("[SYSTEM] Server listening for connections on port " + getPort());
@@ -154,8 +154,8 @@ public class EchoServer extends AbstractServer {
 	}
 
 	/**
-	 * Handles a graceful client disconnection.
-	 * Removes the client from the logged-in users map and activity map.
+	 * Handles a graceful client disconnection. Removes the client from the
+	 * logged-in users map and activity map.
 	 *
 	 * @param client the disconnected client
 	 */
@@ -167,10 +167,10 @@ public class EchoServer extends AbstractServer {
 	}
 
 	/**
-	 * Handles an abrupt client disconnection caused by an exception.
-	 * Removes the client from the logged-in users map and activity map.
+	 * Handles an abrupt client disconnection caused by an exception. Removes the
+	 * client from the logged-in users map and activity map.
 	 *
-	 * @param client the disconnected client
+	 * @param client    the disconnected client
 	 * @param exception the exception that caused the disconnection
 	 */
 	@Override
@@ -242,8 +242,8 @@ public class EchoServer extends AbstractServer {
 	}
 
 	/**
-	 * Starts a background thread that checks for inactive clients.
-	 * If a client is idle for too long, the server disconnects it.
+	 * Starts a background thread that checks for inactive clients. If a client is
+	 * idle for too long, the server disconnects it.
 	 */
 	private void startIdleChecker() {
 		Thread t = new Thread(() -> {

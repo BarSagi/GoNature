@@ -12,9 +12,9 @@ import javafx.stage.Stage;
 import Server.ServerUI;
 
 /**
- * Controller for the server port setup screen.
- * Handles receiving the port number from the user, starting the server,
- * and switching to the server console screen.
+ * Controller for the server port setup screen. Handles receiving the port
+ * number from the user, starting the server, and switching to the server
+ * console screen.
  */
 public class ServerPortFrameController {
 
@@ -40,9 +40,8 @@ public class ServerPortFrameController {
 	}
 
 	/**
-	 * Handles the Done button click.
-	 * Validates the port number, opens the server console screen,
-	 * and starts the server using the entered port.
+	 * Handles the Done button click. Validates the port number, opens the server
+	 * console screen, and starts the server using the entered port.
 	 *
 	 * @param event the action event triggered by the Done button
 	 */

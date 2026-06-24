@@ -26,8 +26,8 @@ public class ServerUI extends Application {
 	} // end main
 
 	/**
-	 * Starts the JavaFX server UI.
-	 * Opens the screen where the user enters the server port number.
+	 * Starts the JavaFX server UI. Opens the screen where the user enters the
+	 * server port number.
 	 *
 	 * @param primaryStage the main stage of the application
 	 * @throws Exception if the port screen cannot be loaded
@@ -39,9 +39,9 @@ public class ServerUI extends Application {
 	}
 
 	/**
-	 * Starts the server using the given port number.
-	 * If the port is invalid or the server cannot listen for clients,
-	 * an error message is shown in the server console.
+	 * Starts the server using the given port number. If the port is invalid or the
+	 * server cannot listen for clients, an error message is shown in the server
+	 * console.
 	 *
 	 * @param p the port number as a string
 	 */

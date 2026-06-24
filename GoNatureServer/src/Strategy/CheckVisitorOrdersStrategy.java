@@ -8,21 +8,22 @@ import Server.EchoServer;
 import java.util.ArrayList;
 
 /**
- * Strategy class responsible for checking visitor orders.
- * The strategy receives a visitor ID, checks if the visitor is already logged in,
- * retrieves the visitor's orders and personal data, and sends the result back to the client.
+ * Strategy class responsible for checking visitor orders. The strategy receives
+ * a visitor ID, checks if the visitor is already logged in, retrieves the
+ * visitor's orders and personal data, and sends the result back to the client.
  */
 public class CheckVisitorOrdersStrategy implements MessageStrategy {
 
 	/**
-	 * Executes the check visitor orders command.
-	 * The method extracts the visitor ID from the message, prevents duplicate logins,
-	 * retrieves the visitor orders from the database, combines the visitor data
-	 * with the order list, and sends the combined result back to the client.
+	 * Executes the check visitor orders command. The method extracts the visitor ID
+	 * from the message, prevents duplicate logins, retrieves the visitor orders
+	 * from the database, combines the visitor data with the order list, and sends
+	 * the combined result back to the client.
 	 *
 	 * @param message the message received from the client
-	 * @param client the client connection that sent the message
-	 * @param server the server that handles the request and provides database access
+	 * @param client  the client connection that sent the message
+	 * @param server  the server that handles the request and provides database
+	 *                access
 	 */
 	@Override
 	public void execute(Message message, ConnectionToClient client, EchoServer server) {

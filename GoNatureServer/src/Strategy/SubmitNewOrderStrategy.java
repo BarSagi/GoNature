@@ -7,22 +7,22 @@ import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
 /**
- * Strategy class responsible for submitting a new order.
- * The strategy receives order data from the client, tries to create the order
- * in the database, handles full time slots, and sends the result back to the client.
+ * Strategy class responsible for submitting a new order. The strategy receives
+ * order data from the client, tries to create the order in the database,
+ * handles full time slots, and sends the result back to the client.
  */
 public class SubmitNewOrderStrategy implements MessageStrategy {
 
 	/**
-	 * Executes the submit new order command.
-	 * The method extracts the order data from the message, creates the order
-	 * in the database, sends a success result if the order is approved,
-	 * sends alternative times if the selected time slot is full,
-	 * or sends a failure result if the order cannot be created.
+	 * Executes the submit new order command. The method extracts the order data
+	 * from the message, creates the order in the database, sends a success result
+	 * if the order is approved, sends alternative times if the selected time slot
+	 * is full, or sends a failure result if the order cannot be created.
 	 *
-	 * @param msg the message received from the client
+	 * @param msg    the message received from the client
 	 * @param client the client connection that sent the message
-	 * @param server the server that handles the request and provides database access
+	 * @param server the server that handles the request and provides database
+	 *               access
 	 */
 	@Override
 	public void execute(Message msg, ConnectionToClient client, EchoServer server) {

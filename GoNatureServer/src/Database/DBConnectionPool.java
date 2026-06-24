@@ -9,9 +9,9 @@ import java.util.Queue;
 import Server.EchoServer;
 
 /**
- * Manages a pool of database connections for the GoNature system.
- * This class creates, stores, provides, releases, and closes MySQL connections.
- * It uses the Singleton pattern so only one connection pool instance exists.
+ * Manages a pool of database connections for the GoNature system. This class
+ * creates, stores, provides, releases, and closes MySQL connections. It uses
+ * the Singleton pattern so only one connection pool instance exists.
  */
 public class DBConnectionPool {
 
@@ -36,8 +36,8 @@ public class DBConnectionPool {
 	}
 
 	/**
-	 * Returns the single instance of the database connection pool.
-	 * If the pool does not exist yet, it creates a new one.
+	 * Returns the single instance of the database connection pool. If the pool does
+	 * not exist yet, it creates a new one.
 	 *
 	 * @param server the server instance used when creating the pool
 	 * @return the single database connection pool instance
@@ -79,8 +79,8 @@ public class DBConnectionPool {
 	}
 
 	/**
-	 * Gets an available connection from the pool.
-	 * If the pool is empty, a new connection is created as a fallback.
+	 * Gets an available connection from the pool. If the pool is empty, a new
+	 * connection is created as a fallback.
 	 *
 	 * @return an available database connection
 	 * @throws SQLException if a database access error occurs
@@ -93,8 +93,8 @@ public class DBConnectionPool {
 	}
 
 	/**
-	 * Releases a database connection back into the pool.
-	 * If the connection is closed, a new connection is created and added instead.
+	 * Releases a database connection back into the pool. If the connection is
+	 * closed, a new connection is created and added instead.
 	 *
 	 * @param conn the connection to release back to the pool
 	 */

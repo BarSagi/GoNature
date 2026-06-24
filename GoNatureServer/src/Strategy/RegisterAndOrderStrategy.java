@@ -8,21 +8,23 @@ import Server.EchoServer;
 import java.util.ArrayList;
 
 /**
- * Strategy class responsible for registering a new visitor and creating an order.
- * The strategy receives visitor data, order data, and payment method from the client,
- * registers the visitor, tries to create the order, and sends the result back to the client.
+ * Strategy class responsible for registering a new visitor and creating an
+ * order. The strategy receives visitor data, order data, and payment method
+ * from the client, registers the visitor, tries to create the order, and sends
+ * the result back to the client.
  */
 public class RegisterAndOrderStrategy implements MessageStrategy {
 
 	/**
-	 * Executes the register and order command.
-	 * The method extracts the visitor information, order object, and payment method,
-	 * registers the visitor in the database, creates a new order, handles full time slots,
-	 * and sends the proper response back to the client.
+	 * Executes the register and order command. The method extracts the visitor
+	 * information, order object, and payment method, registers the visitor in the
+	 * database, creates a new order, handles full time slots, and sends the proper
+	 * response back to the client.
 	 *
 	 * @param message the message received from the client
-	 * @param client the client connection that sent the message
-	 * @param server the server that handles the request and provides database access
+	 * @param client  the client connection that sent the message
+	 * @param server  the server that handles the request and provides database
+	 *                access
 	 */
 	@Override
 	public void execute(Message message, ConnectionToClient client, EchoServer server) {

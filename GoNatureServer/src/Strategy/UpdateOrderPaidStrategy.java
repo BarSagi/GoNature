@@ -5,20 +5,21 @@ import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
 /**
- * Strategy class responsible for updating an order payment status.
- * The strategy receives an order ID from the client, marks the order as paid
- * in the database, and sends the result back to the client.
+ * Strategy class responsible for updating an order payment status. The strategy
+ * receives an order ID from the client, marks the order as paid in the
+ * database, and sends the result back to the client.
  */
 public class UpdateOrderPaidStrategy implements MessageStrategy {
 
 	/**
-	 * Executes the update order paid command.
-	 * The method extracts the order ID from the message, updates the payment status
-	 * in the database, and sends a success or failure message back to the client.
+	 * Executes the update order paid command. The method extracts the order ID from
+	 * the message, updates the payment status in the database, and sends a success
+	 * or failure message back to the client.
 	 *
 	 * @param message the message received from the client
-	 * @param client the client connection that sent the message
-	 * @param server the server that handles the request and provides database access
+	 * @param client  the client connection that sent the message
+	 * @param server  the server that handles the request and provides database
+	 *                access
 	 */
 	@Override
 	public void execute(Message message, ConnectionToClient client, EchoServer server) {

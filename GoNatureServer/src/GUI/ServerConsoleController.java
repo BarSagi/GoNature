@@ -8,8 +8,8 @@ import Server.EchoServer;
 import Server.ServerUI;
 
 /**
- * Controller for the server console screen.
- * Handles displaying server logs, connected clients, errors, and exiting the server.
+ * Controller for the server console screen. Handles displaying server logs,
+ * connected clients, errors, and exiting the server.
  */
 public class ServerConsoleController {
 
@@ -22,8 +22,8 @@ public class ServerConsoleController {
 	private TextArea logArea;
 
 	/**
-	 * Initializes the controller when the FXML screen is loaded.
-	 * Sets the current controller instance.
+	 * Initializes the controller when the FXML screen is loaded. Sets the current
+	 * controller instance.
 	 */
 	@FXML
 	public void initialize() {
@@ -67,8 +67,8 @@ public class ServerConsoleController {
 	}
 
 	/**
-	 * Adds a log message to the server console.
-	 * Uses the JavaFX application thread to safely update the UI.
+	 * Adds a log message to the server console. Uses the JavaFX application thread
+	 * to safely update the UI.
 	 *
 	 * @param msg the log message to display
 	 */
