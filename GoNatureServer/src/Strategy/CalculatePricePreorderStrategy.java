@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 
 import Common.Message;
-import PricingService.PricingService;
+import Common.PricingService;
 import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
