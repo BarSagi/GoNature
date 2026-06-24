@@ -256,7 +256,7 @@ public class VisitorOrdersScreenController {
 
 		try {
 			javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
-					getClass().getResource("/GUI_Visitor/VisitorMyDetailsPanel.fxml"));
+					getClass().getResource("/GUI/VisitorMyDetailsPanel.fxml"));
 			javafx.scene.Parent detailsView = loader.load();
 
 			mainBorderPane.setCenter(detailsView);

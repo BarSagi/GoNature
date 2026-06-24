@@ -76,6 +76,16 @@ public class VisitorMyDetailsPanelController {
 			statusLabel.setText("Please fill in all fields.");
 			return;
 		}
+		
+		if (!firstName.matches("[a-zA-Z ]+")) {
+			statusLabel.setText("First name must contain letters only.");
+			return;
+		}
+
+		if (!lastName.matches("[a-zA-Z ]+")) {
+			statusLabel.setText("Last name must contain letters only.");
+			return;
+		}
 
 		if (!phone.matches("\\d{10}")) {
 			statusLabel.setStyle("-fx-text-fill: #e74c3c;");
@@ -83,16 +93,16 @@ public class VisitorMyDetailsPanelController {
 			return;
 		}
 
-		String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[a-zA-Z]{2,}$";
+		String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.com$";
 		if (!email.matches(emailRegex)) {
 			statusLabel.setStyle("-fx-text-fill: #e74c3c;");
 			statusLabel.setText("Please enter a valid email address.");
 			return;
 		}
 
-		if (!creditCard.matches("\\d{16}")) {
+		if (!creditCard.matches("\\d{4}-\\d{4}-\\d{4}-\\d{4}")) {
 			statusLabel.setStyle("-fx-text-fill: #e74c3c;");
-			statusLabel.setText("Credit card must be exactly 16 digits.");
+			statusLabel.setText("Credit card must be exactly 16 digits, in this format: 1234-5678-9098-7654");
 			return;
 		}
 

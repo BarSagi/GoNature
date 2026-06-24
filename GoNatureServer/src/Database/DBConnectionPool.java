@@ -22,7 +22,7 @@ public class DBConnectionPool {
 
 	private final String url = "jdbc:mysql://localhost:3306/gonature?serverTimezone=Asia/Jerusalem&useSSL=false";
 	private final String user = "root";
-	private final String password = "2066"; // CHANGE PASSWORD HERE
+	private final String password = "Shirpot111!"; // CHANGE PASSWORD HERE
 
 	/**
 	 * Creates a new database connection pool and initializes it with connections.

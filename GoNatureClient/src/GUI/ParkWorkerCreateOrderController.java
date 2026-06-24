@@ -15,6 +15,8 @@ public class ParkWorkerCreateOrderController {
 	@FXML
 	private ComboBox<String> parkComboBox;
 	@FXML
+	private TextField emailField;
+	@FXML
 	private DatePicker visitDatePicker;
 	@FXML
 	private ComboBox<String> timeComboBox;
@@ -72,14 +74,15 @@ public class ParkWorkerCreateOrderController {
 
 		try {
 			String visitorId = visitorIdField.getText().trim();
+			String email = emailField.getText().trim();
 			String parkName = parkComboBox.getValue();
 			LocalDate visitDate = visitDatePicker.getValue();
 			String time = timeComboBox.getValue();
 			String visitorCount = visitorCountField.getText().trim();
 			String paymentMethod = paymentComboBox.getValue();
 
-			if (visitorId.isEmpty() || parkName == null || visitDate == null || time == null || paymentMethod == null
-					|| visitorCount.isEmpty()) {
+			if (visitorId.isEmpty() || email.isEmpty() || parkName == null || visitDate == null || time == null
+					|| paymentMethod == null || visitorCount.isEmpty()) {
 
 				statusLabel.setText("Please fill in all fields.");
 				return;
@@ -87,6 +90,13 @@ public class ParkWorkerCreateOrderController {
 
 			if (!visitorId.matches("\\d{9}")) {
 				statusLabel.setText("Visitor ID must be exactly 9 digits.");
+				return;
+			}
+
+			String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.com$";
+
+			if (!email.matches(emailRegex)) {
+				statusLabel.setText("Email must be valid and end with .com");
 				return;
 			}
 
@@ -102,6 +112,7 @@ public class ParkWorkerCreateOrderController {
 
 			// save state
 			pendingVisitorId = visitorId;
+			pendingEmail = email;
 			pendingParkName = parkName;
 			pendingDate = visitDate.toString();
 			pendingTime = time;
