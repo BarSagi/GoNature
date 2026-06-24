@@ -21,8 +21,8 @@ public class UpdateVisitorDetailsStrategy implements MessageStrategy {
 			String email = data.get(4);
 			String creditCard = data.get(5);
 
-			boolean success = server.getDatabase().updateVisitorDetails(
-					visitorId, firstName, lastName, phone, email, creditCard);
+			boolean success = server.getDatabase().updateVisitorDetails(visitorId, firstName, lastName, phone, email,
+					creditCard);
 
 			client.sendToClient(new Message("UPDATE_VISITOR_DETAILS_RESULT", success));
 

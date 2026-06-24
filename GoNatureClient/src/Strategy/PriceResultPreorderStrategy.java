@@ -2,8 +2,8 @@ package Strategy;
 
 import Common.Message;
 import GUI.CreateOrderController;
+import GUI.NewVisitorOrderController;
 import GUI.ParkWorkerCreateOrderController;
-import GUI_Visitor.NewVisitorOrderController;
 
 public class PriceResultPreorderStrategy implements MessageStrategy {
 
