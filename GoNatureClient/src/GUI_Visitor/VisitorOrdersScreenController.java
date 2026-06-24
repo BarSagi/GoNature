@@ -12,15 +12,18 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableCell;
+import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.text.Text;
 import javafx.application.Platform;
 
 public class VisitorOrdersScreenController {
@@ -73,7 +76,70 @@ public class VisitorOrdersScreenController {
 		colTime.setCellValueFactory(new PropertyValueFactory<>("visitTime"));
 		colVisitors.setCellValueFactory(new PropertyValueFactory<>("visitorCount"));
 		colType.setCellValueFactory(new PropertyValueFactory<>("orderType"));
+		colType.setCellFactory(column -> {
+		    return new TableCell<Order, String>() {
+		        private final Text textNode = new Text();
+
+		        @Override
+		        protected void updateItem(String item, boolean empty) {
+		            super.updateItem(item, empty);
+
+		            if (empty || item == null) {
+		                setGraphic(null);
+		            } else {
+		                textNode.wrappingWidthProperty().bind(column.widthProperty().subtract(10));
+
+		                switch (item) {
+		                    case "OrganizedGroup":
+		                        textNode.setText("Guide Tour");
+		                        break;
+		                    case "Individual":
+		                        textNode.setText("Regular Visit");
+		                        break;
+		                    default:
+		                        textNode.setText(item); 
+		                        break;
+		                }
+		                setGraphic(textNode);
+		            }
+		        }
+		    };
+		});
+
 		colStatus.setCellValueFactory(new PropertyValueFactory<>("orderStatus"));
+		colStatus.setCellFactory(column -> {
+		    return new TableCell<Order, String>() {
+		        private final Text textNode = new Text();
+
+		        @Override
+		        protected void updateItem(String item, boolean empty) {
+		            super.updateItem(item, empty);
+
+		            if (empty || item == null) {
+		                setGraphic(null);
+		            } else {
+		                textNode.wrappingWidthProperty().bind(column.widthProperty().subtract(10));
+
+		                switch (item) {
+		                    case "WaitingList":
+		                        textNode.setText("Waiting List");
+		                        break;
+		                    case "PendingConfirmation":
+		                        textNode.setText("Pending SMS/Email Order Confirmation");
+		                        break;
+		                    case "PendingVisitReminder":
+		                        textNode.setText("Pending SMS/Email Reminder Confirmation");
+		                        break;
+		                    default:
+		                        textNode.setText(item); 
+		                        break;
+		                }
+		                
+		                setGraphic(textNode);
+		            }
+		        }
+		    };
+		});
 
 		colPark.setCellValueFactory(new PropertyValueFactory<>("parkId"));
 
@@ -134,7 +200,6 @@ public class VisitorOrdersScreenController {
 		}
 	}
 
-	// FIXED: Removed the manual pop-ups. Now it only handles table data!
 	public void loadOrders(ArrayList<Order> rawOrders) {
 		tableData.clear();
 
@@ -142,7 +207,6 @@ public class VisitorOrdersScreenController {
 			tableData.add(order);
 		}
 
-		System.out.println("Controller: Finished loading. tableData size is now: " + tableData.size());
 	}
 
 	@FXML
@@ -160,9 +224,8 @@ public class VisitorOrdersScreenController {
 		}
 
 		try {
-			javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
-					getClass().getResource("/GUI_Visitor/EditOrder.fxml"));
-			javafx.scene.Parent editView = loader.load();
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/GUI_Visitor/EditOrder.fxml"));
+			Parent editView = loader.load();
 
 			EditOrderController editController = loader.getController();
 			editController.setOrderData(selectedOrder);
