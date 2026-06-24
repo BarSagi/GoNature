@@ -1,7 +1,21 @@
 package Strategy;
 
+/**
+ * Creates the appropriate message handling strategy according to the received command.
+ * <p>
+ * This factory is used on the client side to match each server command
+ * with the correct strategy class that knows how to handle it.
+ */
 public class StrategyFactory {
 
+	/**
+	 * Returns the strategy that matches the given command.
+	 * <p>
+	 * If the command is not recognized, this method returns {@code null}.
+	 *
+	 * @param command the command received from the server
+	 * @return the matching {@code MessageStrategy}, or {@code null} if no strategy matches
+	 */
 	public static MessageStrategy getStrategy(String command) {
 
 		switch (command) {

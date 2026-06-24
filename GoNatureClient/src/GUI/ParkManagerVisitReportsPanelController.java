@@ -139,8 +139,7 @@ public class ParkManagerVisitReportsPanelController {
 		Message msg = new Message("GET_VISIT_REPORT", data);
 
 		try {
-			// NOTE: Rule #3 - Should use ClientUI.send()
-			ClientUI.client.sendToServer(msg);
+			ClientUI.send(msg);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

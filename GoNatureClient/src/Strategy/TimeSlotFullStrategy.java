@@ -9,8 +9,23 @@ import javafx.scene.control.ButtonType;
 import java.util.ArrayList;
 import java.util.Optional;
 
+/**
+ * Handles the server response when the selected time slot is full.
+ * <p>
+ * This strategy displays a warning alert with alternative time slots if they
+ * exist, and allows the user to join the waiting list or choose another date.
+ */
 public class TimeSlotFullStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the strategy for handling a full time slot response.
+	 * <p>
+	 * The message data is expected to contain an {@code ArrayList<Object>}
+	 * where the first element contains alternative time slots, and the second
+	 * element contains the original order data.
+	 *
+	 * @param message the message received from the server containing alternatives and order data
+	 */
 	@Override
 	public void execute(Message message) {
 

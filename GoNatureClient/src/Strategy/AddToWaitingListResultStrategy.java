@@ -6,8 +6,24 @@ import Client.GoNatureClient;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 
+/**
+ * Handles the server response after attempting to add a visitor to the waiting list.
+ * <p>
+ * If the operation succeeds, a success message is displayed and the visitor's
+ * orders are fetched again. If the current visitor is not available, the user
+ * is redirected to the visitor login screen.
+ * If the operation fails, an error message is displayed.
+ */
 public class AddToWaitingListResultStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the strategy for handling the waiting list result message.
+	 * <p>
+	 * The message data is expected to contain a boolean value that indicates
+	 * whether the visitor was added to the waiting list successfully.
+	 *
+	 * @param message the message received from the server containing the operation result
+	 */
 	@Override
 	public void execute(Message message) {
 		boolean success = (boolean) message.getData();

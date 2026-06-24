@@ -4,8 +4,22 @@ import Common.Message;
 import GUI.ParkWorkerEnterVisitorController;
 import javafx.application.Platform;
 
+/**
+ * Handles the server response after attempting to enter a visitor into the park.
+ * <p>
+ * This strategy receives the entry result from the server and updates the park
+ * worker screen with either a success status or an entry denied message.
+ */
 public class EnterVisitorResultStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the strategy for handling the visitor entry result.
+	 * <p>
+	 * The message data is expected to contain a string that represents the
+	 * result status returned from the server.
+	 *
+	 * @param message the message received from the server containing the entry result
+	 */
 	@Override
 	public void execute(Message message) {
 		String resultStatus = (String) message.getData();

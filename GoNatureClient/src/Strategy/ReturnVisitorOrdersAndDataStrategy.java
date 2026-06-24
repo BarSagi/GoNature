@@ -9,7 +9,24 @@ import Client.GoNatureClient;
 import javafx.application.Platform;
 import java.util.ArrayList;
 
+/**
+ * Handles the server response containing visitor data and the visitor's orders.
+ * <p>
+ * This strategy receives combined data from the server, extracts the visitor
+ * information and order list, saves the current visitor, and opens the
+ * relevant visitor screen.
+ */
 public class ReturnVisitorOrdersAndDataStrategy implements MessageStrategy {
+	
+	/**
+	 * Executes the strategy for handling visitor data and order results.
+	 * <p>
+	 * The message data is expected to contain an {@code ArrayList<Object>}
+	 * where the first element is the visitor data and the second element is
+	 * the list of orders.
+	 *
+	 * @param message the message received from the server containing visitor data and orders
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public void execute(Message message) {

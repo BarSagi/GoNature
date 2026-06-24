@@ -5,7 +5,22 @@ import Client.GoNatureClient;
 import Common.Message;
 import javafx.application.Platform;
 
+/**
+ * Handles the server response when an order update succeeds.
+ * <p>
+ * This strategy displays a success alert to the user and refreshes the
+ * current visitor's orders.
+ */
 public class UpdateSuccessStrategy implements MessageStrategy {
+	
+	/**
+	 * Executes the strategy for handling a successful order update.
+	 * <p>
+	 * After showing a success message, a request is sent to the server to fetch
+	 * the updated list of orders for the current visitor.
+	 *
+	 * @param message the message received from the server
+	 */
 	@Override
 	public void execute(Message message) {
 		Platform.runLater(() -> {

@@ -5,8 +5,23 @@ import java.util.ArrayList;
 import Common.Message;
 import GUI.ParkDashboardController;
 
+/**
+ * Handles the server response containing park dashboard data.
+ * <p>
+ * This strategy receives park data from the server, converts the values
+ * to their required types, and updates the park dashboard screen.
+ */
 public class ParkDashboardDataStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the strategy for handling park dashboard data.
+	 * <p>
+	 * The message data is expected to contain an {@code ArrayList<String>}
+	 * with the park name, maximum capacity, casual gap, average stay time,
+	 * and current number of visitors.
+	 *
+	 * @param message the message received from the server containing park dashboard data
+	 */
 	@Override
 	public void execute(Message message) {
 		// Extract the data sent from the server

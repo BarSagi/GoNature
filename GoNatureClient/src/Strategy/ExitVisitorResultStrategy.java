@@ -6,14 +6,27 @@ import GUI.VisitorOrdersScreenController;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 
+/**
+ * Handles the server response after attempting to record a visitor exit.
+ * <p>
+ * This strategy receives the exit result from the server, checks whether the
+ * operation succeeded, and updates the relevant screen according to the active
+ * controller.
+ */
 public class ExitVisitorResultStrategy implements MessageStrategy {
 
+    /**
+     * Executes the strategy for handling the visitor exit result.
+     * <p>
+     * The message data is expected to contain a string result from the server.
+     * If the result starts with "Success", the exit is treated as successful.
+     *
+     * @param message the message received from the server containing the exit result
+     */
     @Override
     public void execute(Message message) {
-        // התיקון הקריטי: אנחנו קולטים String מהשרת, לא boolean!
         String resultMessage = (String) message.getData();
         
-        // נבדוק האם הפעולה הצליחה (לפי תחילת המחרוזת שהשרת שלח)
         boolean success = resultMessage.startsWith("Success");
 
         Platform.runLater(() -> {
@@ -25,7 +38,6 @@ public class ExitVisitorResultStrategy implements MessageStrategy {
                 if (success) {
                     ParkWorkerExitVisitorController.instance.showStatus("Visitor(s) exited successfully. Park capacity updated.");
                 } else {
-                    // מציגים גם את השגיאה המדויקת מהשרת, וגם הצעות לבדיקה
                     ParkWorkerExitVisitorController.instance.showStatus(
                             resultMessage + "\n\nPlease verify:\n1. The ID/QR is correct.\n2. The visitor is checked in.\n3. Amount doesn't exceed group size.");
                 }

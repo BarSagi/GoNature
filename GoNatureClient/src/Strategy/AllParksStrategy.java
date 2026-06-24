@@ -11,8 +11,23 @@ import GUI.VisitorOrdersScreenController;
 import GUI.DeptManagerParkDashboardController;
 import javafx.application.Platform;
 
+/**
+ * Handles a message containing the list of all parks in the system.
+ * <p>
+ * This strategy receives the park names from the server and loads them into
+ * every relevant screen controller that is currently active.
+ */
 public class AllParksStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the strategy for handling the list of all parks.
+	 * <p>
+	 * The message data is expected to contain an {@code ArrayList<String>}
+	 * with the names of the parks. The park list is then passed to each
+	 * relevant controller instance on the JavaFX application thread.
+	 *
+	 * @param msg the message received from the server containing the park list
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public void execute(Message msg) {

@@ -8,8 +8,22 @@ import GUI.ParkWorkerCreateOrderController;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 
+/**
+ * Handles the server response after attempting to create an order.
+ * <p>
+ * This strategy updates the relevant order screen, displays a success or
+ * failure alert, and refreshes the current visitor's orders if a visitor is logged in.
+ */
 public class OrderCreationStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the strategy for handling the order creation result.
+	 * <p>
+	 * The message data is expected to contain a boolean value that indicates
+	 * whether the order was created successfully.
+	 *
+	 * @param message the message received from the server containing the order creation result
+	 */
 	@Override
 	public void execute(Message message) {
 

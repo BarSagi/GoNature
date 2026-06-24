@@ -5,8 +5,23 @@ import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import java.util.ArrayList;
 
+/**
+ * Handles the server response containing unread notifications.
+ * <p>
+ * This strategy receives a list of notifications from the server and displays
+ * each one to the user as an information alert.
+ */
 public class ReturnNotificationsStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the strategy for displaying unread notifications.
+	 * <p>
+	 * The message data is expected to contain an {@code ArrayList<String>}
+	 * where each notification may include a contact method and message content,
+	 * separated by the "|" delimiter.
+	 *
+	 * @param message the message received from the server containing notifications
+	 */
 	@Override
 	public void execute(Message message) {
 

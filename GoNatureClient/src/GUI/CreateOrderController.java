@@ -83,8 +83,8 @@ public class CreateOrderController implements Initializable {
 		int minVisitors = 1;
 
 		if (GoNatureClient.currentVisitor != null && "Guide".equals(GoNatureClient.currentVisitor.getVisitorType())) {
-			maxVisitors = 16;
-			minVisitors = 2;
+			maxVisitors = 15;
+			minVisitors = 1;
 		}
 
 		visitorsSpinner.setValueFactory(
