@@ -24,6 +24,7 @@ public class DBConnectionPool {
 	private final String user = "root";
 	private final String password = "Shirpot111!"; // CHANGE PASSWORD HERE
 
+
 	/**
 	 * Creates a new database connection pool and initializes it with connections.
 	 *
