@@ -15,7 +15,7 @@
 <BorderPane fx:id="mainBorderPane" prefHeight="720.0"
 	prefWidth="1100.0" style="-fx-background-color: #f4f7f6;"
 	xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
-	fx:controller="GUI_Visitor.VisitorOrdersScreenController">
+	fx:controller="GUI.VisitorOrdersScreenController">
 
 	<left>
 		<VBox alignment="TOP_CENTER" prefWidth="280.0" spacing="15.0"

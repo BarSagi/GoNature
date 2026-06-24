@@ -1,8 +1,8 @@
 package Strategy;
 
 import Common.Message;
-import GUI_Visitor.VisitorOrdersScreenController; // Make sure this import is correct!
 import GUI.ParkWorkerExitVisitorController; // Make sure this import is correct!
+import GUI.VisitorOrdersScreenController;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 

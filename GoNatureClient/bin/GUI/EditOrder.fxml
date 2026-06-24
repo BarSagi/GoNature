@@ -14,7 +14,7 @@
 <VBox alignment="TOP_CENTER" spacing="20.0"
 	style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #bdc3c7; -fx-border-radius: 8;"
 	xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
-	fx:controller="GUI_Visitor.EditOrderController">
+	fx:controller="GUI.EditOrderController">
 
 	<padding>
 		<Insets top="30.0" right="40.0" bottom="30.0" left="40.0" />

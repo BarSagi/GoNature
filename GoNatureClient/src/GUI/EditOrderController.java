@@ -1,4 +1,4 @@
-package GUI_Visitor;
+package GUI;
 
 import Client.ClientUI;
 import Client.GoNatureClient;

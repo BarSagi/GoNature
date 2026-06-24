@@ -1,4 +1,4 @@
-package GUI_Visitor;
+package GUI;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -224,7 +224,7 @@ public class VisitorOrdersScreenController {
 		}
 
 		try {
-			FXMLLoader loader = new FXMLLoader(getClass().getResource("/GUI_Visitor/EditOrder.fxml"));
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/GUI/EditOrder.fxml"));
 			Parent editView = loader.load();
 
 			EditOrderController editController = loader.getController();
