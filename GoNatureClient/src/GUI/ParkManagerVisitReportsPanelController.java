@@ -9,12 +9,12 @@ import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.PieChart;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.image.WritableImage;
@@ -90,7 +90,6 @@ public class ParkManagerVisitReportsPanelController {
 	public void showReport(VisitReportData report) {
 
 		Platform.runLater(() -> {
-
 			if (report == null || (report.getIndividualVisitors() == 0 && report.getGroupVisitors() == 0)) {
 				currentReport = null;
 
@@ -117,6 +116,8 @@ public class ParkManagerVisitReportsPanelController {
 
 			currentReport = report;
 
+			pieChart.getData().clear();
+
 			PieChart.Data individual = new PieChart.Data("Regular Groups", report.getIndividualVisitors());
 			PieChart.Data group = new PieChart.Data("Organized Groups", report.getGroupVisitors());
 
@@ -133,7 +134,6 @@ public class ParkManagerVisitReportsPanelController {
 					+ " | Organized Groups: " + groupCount);
 
 			Platform.runLater(() -> {
-
 				if (individual.getNode() != null) {
 					individual.getNode().setStyle("-fx-pie-color: #3498db;");
 				}
@@ -203,8 +203,9 @@ public class ParkManagerVisitReportsPanelController {
 	@FXML
 	void saveReport(ActionEvent event) {
 
-		if (currentReport == null ||
-			(currentReport.getIndividualVisitors() == 0 && currentReport.getGroupVisitors() == 0)) {
+		if (currentReport == null
+				|| (currentReport.getIndividualVisitors() == 0 && currentReport.getGroupVisitors() == 0)) {
+			System.out.println("No report to save");
 
 			Platform.runLater(() -> {
 				Alert alert = new Alert(Alert.AlertType.WARNING);

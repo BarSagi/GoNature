@@ -12,26 +12,25 @@ import java.util.ArrayList;
 /**
  * Controller for the visitor's personal details panel.
  * <p>
- * This controller allows every visitor to view their personal details.
- * If the visitor is a subscriber, the fields are editable and the visitor
- * can update their personal information. Non-subscriber visitors can only
- * view their details.
+ * This controller allows every visitor to view their personal details. If the
+ * visitor is a subscriber, the fields are editable and the visitor can update
+ * their personal information. Non-subscriber visitors can only view their
+ * details.
  */
 public class VisitorMyDetailsPanelController {
 
 	/**
-	 * Static instance of this controller, used by client strategies to access
-	 * the currently loaded details panel.
+	 * Static instance of this controller, used by client strategies to access the
+	 * currently loaded details panel.
 	 */
 	public static VisitorMyDetailsPanelController instance;
-	
+
 	/**
-	 * Indicates whether the current visitor is a subscriber.
-	 * Subscribers are allowed to edit their details, while other visitors
-	 * have view-only access.
+	 * Indicates whether the current visitor is a subscriber. Subscribers are
+	 * allowed to edit their details, while other visitors have view-only access.
 	 */
 	private boolean isSubscriber = false;
-	
+
 	@FXML
 	private TextField firstNameField;
 
@@ -57,8 +56,8 @@ public class VisitorMyDetailsPanelController {
 	 * Initializes the controller.
 	 * <p>
 	 * The method saves the current controller instance and requests the current
-	 * visitor's details from the server, using the visitor ID stored in the
-	 * client session.
+	 * visitor's details from the server, using the visitor ID stored in the client
+	 * session.
 	 */
 	@FXML
 	public void initialize() {
@@ -77,12 +76,12 @@ public class VisitorMyDetailsPanelController {
 	/**
 	 * Loads the visitor details into the screen fields.
 	 * <p>
-	 * All visitors can view their details. If the visitor type is Subscriber,
-	 * the editable fields remain enabled. Otherwise, the fields are set to
-	 * view-only mode.
+	 * All visitors can view their details. If the visitor type is Subscriber, the
+	 * editable fields remain enabled. Otherwise, the fields are set to view-only
+	 * mode.
 	 *
-	 * @param visitorDetails an ArrayList containing the visitor's details
-	 *                       returned from the server
+	 * @param visitorDetails an ArrayList containing the visitor's details returned
+	 *                       from the server
 	 */
 	public void loadVisitorDetails(ArrayList<String> visitorDetails) {
 		if (visitorDetails == null || visitorDetails.isEmpty()) {
@@ -95,6 +94,7 @@ public class VisitorMyDetailsPanelController {
 		phoneField.setText(visitorDetails.get(3));
 		emailField.setText(visitorDetails.get(4));
 		visitorTypeField.setText(visitorDetails.get(5));
+		creditCardField.setText(visitorDetails.get(8));
 
 		if (visitorDetails.size() > 8 && visitorDetails.get(8) != null) {
 			creditCardField.setText(visitorDetails.get(8));
@@ -128,10 +128,10 @@ public class VisitorMyDetailsPanelController {
 	 * Handles the save button action.
 	 * <p>
 	 * Only subscribers are allowed to update their personal details. The method
-	 * validates the updated input fields and sends an update request to the
-	 * server if all values are valid.
-	 *
-	 * @param event the action event triggered by the save changes button
+	 * validates the updated input fields and sends an update request to the server
+	 * if all values are valid.
+	 * 
+	 * @param event The action event triggered by the save changes button
 	 */
 	@FXML
 	void saveChanges(ActionEvent event) {
@@ -140,7 +140,6 @@ public class VisitorMyDetailsPanelController {
 			statusLabel.setText("Only subscribers can update personal details.");
 			return;
 		}
-		
 		String firstName = firstNameField.getText().trim();
 		String lastName = lastNameField.getText().trim();
 		String phone = phoneField.getText().trim();
@@ -176,9 +175,9 @@ public class VisitorMyDetailsPanelController {
 			return;
 		}
 
-		if (!creditCard.matches("\\d{4}-\\d{4}-\\d{4}-\\d{4}")) {
+		if (!creditCard.matches("\\d{16}")) {
 			statusLabel.setStyle("-fx-text-fill: #e74c3c;");
-			statusLabel.setText("Credit card must be exactly 16 digits, in this format: 1234-5678-9098-7654");
+			statusLabel.setText("Credit card must be exactly 16 digits");
 			return;
 		}
 

@@ -20,11 +20,10 @@
 		<ComboBox fx:id="yearCombo" />
 
 		<Button text="Generate" onAction="#generateReport" />
-		<Button fx:id="saveReportBtn"
-			text="Save Report"
+
+		<Button fx:id="saveReportBtn" text="Save Report"
 			onAction="#saveReport"
 			style="-fx-background-color: #27ae60; -fx-text-fill: white;" />
-
 	</HBox>
 
 	<VBox fx:id="legendBox" alignment="CENTER" />

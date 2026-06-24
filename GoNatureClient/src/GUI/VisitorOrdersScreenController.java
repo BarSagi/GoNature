@@ -271,22 +271,13 @@ public class VisitorOrdersScreenController {
 	}
 
 	/**
-	 * Displays the visitor's personal details panel.
-	 *
-	 * @param event The action event.
-	 */
-	/**
-	 * Displays the visitor's personal details panel.
-	 * All visitors can view their details, but only subscribers can edit them.
+	 * Displays the visitor's personal details panel. All visitors can view their
+	 * details, but only subscribers can edit them.
 	 *
 	 * @param event The action event.
 	 */
 	@FXML
 	void showMyDetails(ActionEvent event) {
-		if (GoNatureClient.currentVisitor == null) {
-			showErrorAlert("No visitor is currently logged in.");
-			return;
-		}
 
 		try {
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("/GUI/VisitorMyDetailsPanel.fxml"));

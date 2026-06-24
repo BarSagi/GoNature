@@ -9,12 +9,12 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import javafx.collections.FXCollections;
@@ -51,7 +51,7 @@ public class DeptManagerVisitDurationReportController {
 
 	@FXML
 	private NumberAxis yAxis;
-	
+
 	@FXML
 	private Label noDataLabel;
 
@@ -126,7 +126,7 @@ public class DeptManagerVisitDurationReportController {
 
 			barChart.setAnimated(false);
 			barChart.getData().clear();
-			
+
 			if (visits == null) {
 				noDataLabel.setVisible(true);
 				noDataLabel.setManaged(true);
@@ -158,16 +158,13 @@ public class DeptManagerVisitDurationReportController {
 				if (exit.isAfter(closingTime)) {
 					exit = closingTime;
 				}
-
 				long minutes = Duration.between(entry, exit).toMinutes();
-
 				if (minutes <= 0)
 					continue;
 
 				double duration = minutes / 60.0;
 
 				String slot = getTimeSlot(entry);
-
 				if (slot == null)
 					continue;
 
@@ -177,7 +174,6 @@ public class DeptManagerVisitDurationReportController {
 					regularMap.get(slot).add(duration);
 				}
 			}
-
 			boolean hasData = regularMap.values().stream().anyMatch(list -> !list.isEmpty())
 					|| organizedMap.values().stream().anyMatch(list -> !list.isEmpty());
 
@@ -216,6 +212,7 @@ public class DeptManagerVisitDurationReportController {
 			yAxis.setAutoRanging(true);
 		});
 	}
+
 	/**
 	 * Adds numerical labels on top of the bars in the chart.
 	 *

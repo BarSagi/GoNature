@@ -20,10 +20,9 @@ public class GetVisitReportStrategy implements MessageStrategy {
 	 * from the message, converts the park name to a park ID, retrieves the visit
 	 * report from the database, and sends the result back to the client.
 	 *
-	 * @param message the message received from the client
-	 * @param client  the client connection that sent the message
-	 * @param server  the server that handles the request and provides database
-	 *                access
+	 * @param client the client connection that sent the message
+	 * @param server the server that handles the request and provides database
+	 *               access
 	 */
 	@Override
 	public void execute(Message message, ConnectionToClient client, EchoServer server) {

@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 import Common.CancellationReportData;
 import Common.Order;
 import Common.PricingService;
@@ -25,51 +24,65 @@ import Common.VisitReportData;
 import Common.VisitRecord;
 import Server.EchoServer;
 
+/**
+ * 
+ * The {@code DBController} class serves as the central Database Access Object
+ * (DAO) for the GoNature server application. It acts as the primary bridge
+ * between the server's business logic and the MySQL database, ensuring data
+ * integrity, transaction safety, and optimal query execution.
+ * <p>
+ * Key responsibilities of this controller include:
+ * <ul>
+ * <li>Managing visitor registrations, family subscriptions, and employee
+ * authentication.</li>
+ * <li>Processing, updating, and validating park orders, including dynamic
+ * waitlist management.</li>
+ * <li>Logging physical park entries and exits, while dynamically tracking
+ * real-time park capacities.</li>
+ * <li>Aggregating statistical data to generate comprehensive reports for
+ * management (e.g., Visit, Cancellation, and Usage reports).</li>
+ * <li>Executing critical background system maintenance tasks, such as
+ * auto-canceling expired orders.</li>
+ * </ul>
+ * <p>
+ * All database interactions are managed efficiently and safely utilizing a
+ * custom connection pool, allowing the multi-threaded server to handle
+ * concurrent client requests without resource exhaustion.
+ * 
+ * @author Reut Dahan
+ */
 public class DBController {
 
 	private DBConnectionPool pool;
 
+	/**
+	 * Constructs a new DBController instance and initializes the database
+	 * connection pool.
+	 *
+	 * @param server The EchoServer instance used to configure or initialize the
+	 *               connection pool.
+	 */
 	public DBController(EchoServer server) {
 		this.pool = DBConnectionPool.getInstance(server);
 	}
 
 	// =========================================================
-	// ORDERS - GET ALL
-	// =========================================================
-	public ArrayList<Order> getAllOrders() throws SQLException {
-
-		ArrayList<Order> result = new ArrayList<>();
-
-		String query = "SELECT * FROM Orders";
-
-		Connection conn = null;
-
-		try {
-			conn = pool.getConnection();
-
-			PreparedStatement ps = conn.prepareStatement(query);
-			ResultSet rs = ps.executeQuery();
-
-			while (rs.next()) {
-				result.add(new Order(rs.getInt("orderId"), rs.getInt("parkId"), rs.getString("visitorId"),
-						rs.getDate("visitDate"), rs.getTime("visitTime"), rs.getInt("visitorCount"),
-						rs.getString("email"), rs.getString("orderType"), rs.getString("status"),
-						rs.getTimestamp("holdUntil")));
-			}
-
-			rs.close();
-			ps.close();
-
-		} finally {
-			pool.releaseConnection(conn);
-		}
-
-		return result;
-	}
-
-	// =========================================================
 	// ORDERS - GET ALL ORDERS OF SPECIFIC PARK
 	// =========================================================
+
+	/**
+	 * Retrieves a list of all orders associated with a specific park. This method
+	 * first resolves the provided park name to its corresponding park ID. If the
+	 * park is found, it queries the database and maps the result set into Order
+	 * objects.
+	 *
+	 * @param parkName The name of the park for which orders should be retrieved.
+	 * @return An {@link ArrayList} of {@link Order} objects containing the park's
+	 *         orders. Returns an empty list if the park name is not found or if no
+	 *         orders exist.
+	 * @throws SQLException If a database access error occurs, or if the SQL
+	 *                      execution fails.
+	 */
 	public ArrayList<Order> getAllParkOrders(String parkName) throws SQLException {
 		ArrayList<Order> result = new ArrayList<>();
 
@@ -131,6 +144,20 @@ public class DBController {
 	// =========================================================
 	// FETCH VISITOR
 	// =========================================================
+
+	/**
+	 * Retrieves the details of a specific visitor from the database based on their
+	 * visitor ID. The method executes a query against the Visitors table and maps
+	 * the resulting record into an ArrayList of Strings, where each index
+	 * represents a specific visitor attribute.
+	 *
+	 * @param visitorID The unique identifier of the visitor to fetch.
+	 * @return An {@link ArrayList} of {@link String} containing the visitor's data
+	 *         in the following order: [0] visitorId, [1] firstName, [2] lastName,
+	 *         [3] phone, [4] email, [5] visitorType, [6] subscriptionNumber, [7]
+	 *         familyMembers, [8] creditCard. Returns {@code null} if the visitor is
+	 *         not found or if a database error occurs.
+	 */
 	public ArrayList<String> fetchVisitor(String visitorID) {
 		String query = "SELECT * FROM Visitors WHERE visitorId = ?";
 
@@ -177,6 +204,19 @@ public class DBController {
 	// =========================================================
 	// REGISTER VISITOR
 	// =========================================================
+
+	/**
+	 * Registers a new casual visitor in the database. The method executes an INSERT
+	 * query to add the visitor's details to the Visitors table, with the visitor
+	 * type explicitly set to 'Casual'.
+	 *
+	 * @param visitorData An {@link ArrayList} of {@link String} containing the new
+	 *                    visitor's details in the following order: [0] visitorId,
+	 *                    [1] firstName, [2] lastName, [3] phone, [4] email.
+	 * @return {@code true} if the visitor was successfully registered (i.e., at
+	 *         least one row was affected), {@code false} if the registration failed
+	 *         or if a database error occurred.
+	 */
 	public boolean registerNewVisitor(ArrayList<String> visitorData) {
 
 		String query = "INSERT INTO Visitors (visitorId, firstName, lastName, phone, email, visitorType) "
@@ -213,6 +253,17 @@ public class DBController {
 	// =========================================================
 	// DELETE VISITOR (Used for Rollbacks)
 	// =========================================================
+
+	/**
+	 * Deletes a visitor from the database based on their visitor ID. This method is
+	 * primarily used for rollback operations to undo a previous registration or
+	 * data entry in case a subsequent process fails.
+	 *
+	 * @param visitorId The unique identifier of the visitor to be deleted.
+	 * @return {@code true} if the visitor was successfully deleted (i.e., at least
+	 *         one row was affected), {@code false} if the deletion failed, the
+	 *         visitor was not found, or a database error occurred.
+	 */
 	public boolean deleteVisitor(String visitorId) {
 		Connection conn = null;
 		try {
@@ -241,8 +292,66 @@ public class DBController {
 	}
 
 	// =========================================================
+	// CANCEL EXPIRED ORDERS (for the thread)
+	// =========================================================
+
+	/**
+	 * Automatically cancels expired orders by updating their status in the
+	 * database. This method is intended to be executed periodically by a background
+	 * thread. It identifies orders with a status of 'Approved',
+	 * 'PendingConfirmation', or 'WaitingList' and updates them to 'Canceled' if
+	 * more than 30 minutes have passed since their scheduled visit date and time.
+	 *
+	 * @return The number of expired orders that were successfully canceled (rows
+	 *         affected). Returns 0 if no orders were eligible for cancellation or
+	 *         if a database error occurred.
+	 */
+	public int cancelExpiredOrders() {
+		int rowsAffected = 0;
+		Connection conn = null;
+		try {
+			conn = pool.getConnection();
+			// SQL query to cancel orders that are 30+ minutes past visitDate/visitTime
+			String query = "UPDATE orders " + "SET orderStatus = 'Canceled' "
+					+ "WHERE orderStatus IN ('Approved', 'PendingConfirmation', 'WaitingList') "
+					+ "AND ADDDATE(TIMESTAMP(visitDate, visitTime), INTERVAL 30 MINUTE) <= NOW()";
+
+			PreparedStatement stmt = conn.prepareStatement(query);
+			rowsAffected = stmt.executeUpdate();
+			stmt.close();
+
+		} catch (SQLException e) {
+			System.out.println("Error executing auto-cancel query.");
+			e.printStackTrace();
+		}
+		return rowsAffected;
+	}
+
+	// =========================================================
 	// CREATE ORDER
 	// =========================================================
+
+	/**
+	 * Creates a new order for a park visit and processes its approval based on
+	 * availability. The method parses the provided order data, resolves the park
+	 * ID, and checks both physical capacity and the existence of an active waiting
+	 * list. If space is available and no queue exists, it attempts to generate a
+	 * unique 8-character QR code and register the order as 'Approved' (with up to 3
+	 * retries in case of a QR collision). If the park is full or a waiting list is
+	 * active, it generates alternative available slots.
+	 *
+	 * @param orderData An {@link ArrayList} of {@link String} containing the order
+	 *                  details in the following order: [0] visitorId, [1] parkName,
+	 *                  [2] visitDate, [3] visitTime, [4] visitorCount, [5]
+	 *                  orderType, [6] email, [7] payment status (must exactly equal
+	 *                  "Pay Now" to be marked as paid).
+	 * @return A {@link String} indicating the result of the operation: -
+	 *         "Approved": If the order was successfully created and approved. -
+	 *         "Full|slot1, slot2...": If the requested slot is unavailable,
+	 *         returning a comma-separated list of alternative slots. - "Failed": If
+	 *         the park is not found, a database error occurs, or insertion fails
+	 *         after 3 attempts.
+	 */
 	public String createNewOrder(ArrayList<String> orderData) {
 
 		String visitorId = orderData.get(0);
@@ -352,16 +461,29 @@ public class DBController {
 	// =========================================================
 	// UPDATE ORDER
 	// =========================================================
+
+	/**
+	 * Updates the visit details of an existing order in the database. This method
+	 * modifies the visit date, visit time, and visitor count for a specific order
+	 * identified by its unique order ID.
+	 *
+	 * @param order An {@link Order} object containing the updated visit date, visit
+	 *              time, visitor count, and the target order ID to be updated.
+	 * @return {@code true} if the order was successfully updated (i.e., at least
+	 *         one row was affected), {@code false} if the update failed, the order
+	 *         ID was not found, or a database error occurred.
+	 */
 	public boolean updateOrder(Order order) {
 		// The SQL UPDATE statement
 		String query = "UPDATE Orders SET visitDate = ?, visitTime = ?, visitorCount = ? WHERE orderId = ?";
 
 		Connection conn = null;
+		PreparedStatement pstmt = null;
+		boolean isUpdated = false;
 
 		try {
 			conn = pool.getConnection();
-
-			PreparedStatement pstmt = conn.prepareStatement(query);
+			pstmt = conn.prepareStatement(query);
 
 			// Inject the values from the Order object into the ? placeholders
 			pstmt.setDate(1, order.getVisitDate());
@@ -373,35 +495,56 @@ public class DBController {
 			int rowsAffected = pstmt.executeUpdate();
 
 			// If it changed 1 or more rows, the update was successful!
-			return rowsAffected > 0;
+			isUpdated = rowsAffected > 0;
 
 		} catch (SQLException e) {
 			System.out.println("Error updating order in database.");
 			e.printStackTrace();
-			return false;
+		} finally {
+			// 1. Close the statement safely
+			if (pstmt != null) {
+				try {
+					pstmt.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			// 2. CRITICAL: Release the connection back to the pool
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
 		}
+
+		return isUpdated;
 	}
 
 	// =========================================================
 	// VISITOR ORDERS
 	// =========================================================
-	public ArrayList<Order> getVisitorOrders(String visitorId) {
 
+	/**
+	 * Retrieves a list of all orders associated with a specific visitor, sorted by
+	 * visit date in descending order.
+	 *
+	 * @param visitorId The unique identifier of the visitor whose orders are being
+	 *                  fetched.
+	 * @return An {@link ArrayList} of {@link Order} objects containing the
+	 *         visitor's order history. Returns an empty list if no orders are found
+	 *         or if a database error occurs.
+	 */
+	public ArrayList<Order> getVisitorOrders(String visitorId) {
 		ArrayList<Order> list = new ArrayList<>();
 		String query = "SELECT * FROM Orders WHERE visitorId = ? ORDER BY visitDate DESC";
+
 		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
 		try {
 			conn = pool.getConnection();
-
-			releaseExpiredPendingConfirmations();
-			sendVisitRemindersForTomorrow();
-			releaseExpiredVisitReminders();
-
-			PreparedStatement ps = conn.prepareStatement(query);
+			ps = conn.prepareStatement(query);
 			ps.setString(1, visitorId);
-
-			ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
 			while (rs.next()) {
 				int orderId = rs.getInt("orderId");
@@ -409,44 +552,31 @@ public class DBController {
 				Time visitTime = rs.getTime("visitTime");
 				String status = rs.getString("status");
 
-				if (status != null && !status.equals("Canceled") && !status.equals("Fulfilled")
-						&& !status.equals("Entered")) {
-					if (visitDate != null && visitTime != null) {
-
-						LocalDateTime visitDateTime = LocalDateTime.of(visitDate.toLocalDate(),
-								visitTime.toLocalTime());
-
-						LocalDateTime expirationTime = visitDateTime.plusMinutes(30);
-
-						if (LocalDateTime.now().isAfter(expirationTime)) {
-
-							String updateQuery = "UPDATE Orders SET status = 'Canceled' WHERE orderId = ?";
-							try (PreparedStatement updatePs = conn.prepareStatement(updateQuery)) {
-								updatePs.setInt(1, orderId);
-								updatePs.executeUpdate();
-							}
-							status = "Canceled";
-						}
-					}
-				}
-
 				Order order = new Order(orderId, rs.getInt("parkId"), rs.getString("visitorId"), visitDate, visitTime,
 						rs.getInt("visitorCount"), rs.getString("email"), rs.getString("orderType"), status,
 						rs.getTimestamp("holdUntil"), rs.getTimestamp("reminderUntil"));
 
 				order.setQrCode(rs.getString("QRCode"));
-
 				list.add(order);
 			}
-
-			rs.close();
-			ps.close();
-
 		} catch (SQLException e) {
+			System.out.println("Error fetching visitor orders.");
 			e.printStackTrace();
-
 		} finally {
-			pool.releaseConnection(conn);
+			if (rs != null)
+				try {
+					rs.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			if (ps != null)
+				try {
+					ps.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			if (conn != null)
+				pool.releaseConnection(conn);
 		}
 
 		return list;
@@ -455,6 +585,21 @@ public class DBController {
 	// =========================================================
 	// EMPLOYEE INFO
 	// =========================================================
+
+	/**
+	 * Authenticates an employee and retrieves their profile information from the
+	 * database. This method queries the Employees table using the provided username
+	 * and password. If a match is found, it maps the employee's record into an
+	 * ArrayList of Strings.
+	 *
+	 * @param empData An {@link ArrayList} of {@link String} containing the login
+	 *                credentials: [0] username, [1] password.
+	 * @return An {@link ArrayList} of {@link String} containing the employee's
+	 *         details in the following order: [0] employeeId, [1] firstName, [2]
+	 *         lastName, [3] email, [4] username, [5] password, [6] role, [7]
+	 *         affiliation. Returns {@code null} if the credentials are invalid, the
+	 *         employee is not found, or a database error occurs.
+	 */
 	public ArrayList<String> getEmployeeInfo(ArrayList<String> empData) {
 
 		String query = "SELECT * FROM Employees WHERE username = ? AND password = ?";
@@ -504,6 +649,20 @@ public class DBController {
 	// =========================================================
 	// REPORTS - VISIT REPORT
 	// =========================================================
+
+	/**
+	 * Generates a visit report for a specific park over a given month and year.
+	 * This method aggregates the total number of visitors, categorizing them into
+	 * individual visitors (RegularGroup) and organized groups (OrganizedGroup)
+	 * using conditional SQL aggregation based on their entry times.
+	 *
+	 * @param parkId The unique identifier of the target park.
+	 * @param month  The numerical month for the report (1-12).
+	 * @param year   The year for the report (e.g., 2026).
+	 * @return A {@link VisitReportData} object containing the aggregated totals for
+	 *         individual and group visitors. Returns a default object with zero
+	 *         totals if no data is found or if a database error occurs.
+	 */
 	public VisitReportData getVisitReport(int parkId, int month, int year) {
 		String query = "SELECT "
 				+ "SUM(CASE WHEN visitType = 'RegularGroup' THEN actualVisitorCount ELSE 0 END) as individualTotal, "
@@ -553,6 +712,27 @@ public class DBController {
 	// =========================================================
 	// ENTER VISITOR (RESERVED)
 	// =========================================================
+
+	/**
+	 * Processes the entry of a visitor with a reserved order into the park. This
+	 * method searches for an approved order matching the provided identifier (which
+	 * can be an Order ID, Visitor ID, or QR Code) valid for the current date and
+	 * within a 30-minute window of the current time. If a valid order is found, it
+	 * logs the visit in the Visits table, updates the order status to 'Entered',
+	 * and updates the park's current capacity. Additionally, if the order has not
+	 * been paid for, it calculates the required entry fee dynamically using the
+	 * PricingService.
+	 *
+	 * @param identifier A {@link String} representing the visitor's identification.
+	 *                   This can be an Order ID (numeric), a Visitor ID, or a QR
+	 *                   Code.
+	 * @return A {@link String} indicating the result of the entry process: -
+	 *         "Success": If the entry was logged successfully and the order was
+	 *         already paid. - "Success_Pay_{price}_{orderId}": If the entry was
+	 *         logged successfully but payment is required upon entry. - "Order not
+	 *         found or invalid time window.": If no matching, valid order is found.
+	 *         - "Database error.": If an SQL exception occurs during execution.
+	 */
 	public String enterVisitor(String identifier) {
 		int searchOrderId = -1;
 		try {
@@ -649,8 +829,33 @@ public class DBController {
 	}
 
 	// =========================================================
-	// EXIT VISITOR
+	// EXIT VISITOR (Supports multiple active visits for same ID)
 	// =========================================================
+
+	/**
+	 * Processes the exit of a visitor or a group of visitors from a specific park.
+	 * This method supports partial exits and gracefully handles scenarios where
+	 * multiple active visits are associated with the same identifier (e.g., a guide
+	 * managing several groups). It utilizes database transactions to guarantee data
+	 * consistency, distributing the exiting amount across active visits (oldest
+	 * first). Fully exited visits are timestamped, and their associated orders are
+	 * marked as 'Fulfilled'.
+	 *
+	 * @param identifier    A {@link String} representing the visitor's
+	 *                      identification (Order ID, Visitor ID, or QR Code).
+	 * @param parkId        The unique identifier of the park from which the
+	 *                      visitors are exiting.
+	 * @param exitingAmount The number of visitors attempting to exit.
+	 * @return A {@link String} indicating the result of the exit transaction: -
+	 *         "Success: All associated groups exited completely.": If all visitors
+	 *         associated with the ID have exited. - "Success: {amount} exited.
+	 *         {remaining} remaining...": If a partial exit was successfully
+	 *         processed. - "Error: No active visit found...": If no active entries
+	 *         match the identifier. - "Error: Cannot exit {amount} people...": If
+	 *         the exiting amount exceeds the number of people currently inside. -
+	 *         "Error: Failed to safely update park counts." / "Database
+	 *         exception...": If the transaction fails and rolls back.
+	 */
 	public String exitVisitor(String identifier, int parkId, int exitingAmount) {
 		// Attempt to parse the input as an integer for orderId
 		int searchOrderId = -1;
@@ -660,23 +865,40 @@ public class DBController {
 			// Not a valid integer, meaning it's likely a Visitor ID or QR code
 		}
 
-		// SELECT query using LEFT JOIN to support searching by QR code in the Orders
-		// table
+		// SELECT query: Fetch ALL active visits for this identifier, ORDER BY visitId
+		// ASC (Oldest first). No LIMIT 1.
 		String selectQuery = "SELECT V.visitId, V.currentlyIn, V.orderId, V.visitorId "
 				+ "FROM Visits V LEFT JOIN Orders O ON V.orderId = O.orderId "
 				+ "WHERE V.parkId = ? AND V.currentlyIn > 0 AND V.exitTime IS NULL "
-				+ "AND (V.orderId = ? OR V.visitorId = ? OR O.QRCode = ?) " + "ORDER BY V.visitId DESC LIMIT 1";
+				+ "AND (V.orderId = ? OR V.visitorId = ? OR O.QRCode = ?) " + "ORDER BY V.visitId ASC";
 
 		Connection conn = null;
 		PreparedStatement psSelect = null;
-		PreparedStatement psUpdateVisit = null;
+
+		// Pre-compile update statements for reuse in the loop
+		PreparedStatement psUpdateVisitFull = null;
+		PreparedStatement psUpdateVisitPartial = null;
 		PreparedStatement psUpdateOrder = null;
 		ResultSet rs = null;
 
+		// A local class to hold the fetched visit data
+		class ActiveVisit {
+			int visitId;
+			int currentlyIn;
+			int orderId;
+			boolean isCasual;
+
+			ActiveVisit(int visitId, int currentlyIn, int orderId, boolean isCasual) {
+				this.visitId = visitId;
+				this.currentlyIn = currentlyIn;
+				this.orderId = orderId;
+				this.isCasual = isCasual;
+			}
+		}
+
 		try {
 			conn = pool.getConnection();
-			// Start transaction
-			conn.setAutoCommit(false);
+			conn.setAutoCommit(false); // Start transaction
 
 			psSelect = conn.prepareStatement(selectQuery);
 			psSelect.setInt(1, parkId);
@@ -685,65 +907,86 @@ public class DBController {
 			psSelect.setString(4, identifier);
 			rs = psSelect.executeQuery();
 
-			if (rs.next()) {
+			List<ActiveVisit> activeVisits = new ArrayList<>();
+			int totalCurrentlyIn = 0;
+
+			// 1. Gather all active visits and calculate total available capacity
+			while (rs.next()) {
 				int visitId = rs.getInt("visitId");
 				int currentlyIn = rs.getInt("currentlyIn");
-
-				// rs.getInt returns 0 if the value in DB was NULL (casual visitor)
 				int orderId = rs.getInt("orderId");
 				boolean isCasual = rs.wasNull();
 
-				// Validation: Cannot exit more people than currently inside
-				if (exitingAmount > currentlyIn) {
-					return "Error: Cannot exit " + exitingAmount + " people. Only " + currentlyIn + " are inside.";
-				}
-
-				int remainingIn = currentlyIn - exitingAmount;
-				boolean isFullExit = (remainingIn == 0);
-
-				// UPDATE Visits table based on whether it's a full or partial exit
-				String updateVisitQuery;
-				if (isFullExit) {
-					// Last visitor of the group: set exitTime
-					updateVisitQuery = "UPDATE Visits SET currentlyIn = 0, exitTime = NOW() WHERE visitId = ?";
-					psUpdateVisit = conn.prepareStatement(updateVisitQuery);
-					psUpdateVisit.setInt(1, visitId);
-				} else {
-					// Partial exit: just decrement the currentlyIn count
-					updateVisitQuery = "UPDATE Visits SET currentlyIn = ? WHERE visitId = ?";
-					psUpdateVisit = conn.prepareStatement(updateVisitQuery);
-					psUpdateVisit.setInt(1, remainingIn);
-					psUpdateVisit.setInt(2, visitId);
-				}
-				int visitRows = psUpdateVisit.executeUpdate();
-
-				// UPDATE Orders table (Only if it's a full exit and they had an order)
-				if (isFullExit && !isCasual) {
-					String updateOrderQuery = "UPDATE Orders SET status = 'Fulfilled' WHERE orderId = ?";
-					psUpdateOrder = conn.prepareStatement(updateOrderQuery);
-					psUpdateOrder.setInt(1, orderId);
-					psUpdateOrder.executeUpdate();
-				}
-
-				// Update overall park capacity using your existing methods
-				boolean isCountUpdated = false;
-				isCountUpdated = updateVisitorCount(parkId, -exitingAmount, conn);
-
-				// Commit or Rollback transaction
-				if (visitRows > 0 && isCountUpdated) {
-					conn.commit();
-					if (isFullExit) {
-						return "Success: Group exited completely. Order Fulfilled.";
-					} else {
-						return "Success: " + exitingAmount + " exited. " + remainingIn + " remaining in park.";
-					}
-				} else {
-					conn.rollback();
-					return "Error: Failed to safely update park counts.";
-				}
+				activeVisits.add(new ActiveVisit(visitId, currentlyIn, orderId, isCasual));
+				totalCurrentlyIn += currentlyIn;
 			}
 
-			return "Error: No active visit found for this identifier in this park.";
+			// 2. Validate we have visits and enough people to exit
+			if (activeVisits.isEmpty()) {
+				return "Error: No active visit found for this identifier in this park.";
+			}
+
+			if (exitingAmount > totalCurrentlyIn) {
+				return "Error: Cannot exit " + exitingAmount + " people. Only " + totalCurrentlyIn + " are inside.";
+			}
+
+			// 3. Prepare the update statements
+			psUpdateVisitFull = conn
+					.prepareStatement("UPDATE Visits SET currentlyIn = 0, exitTime = NOW() WHERE visitId = ?");
+			psUpdateVisitPartial = conn.prepareStatement("UPDATE Visits SET currentlyIn = ? WHERE visitId = ?");
+			psUpdateOrder = conn.prepareStatement("UPDATE Orders SET status = 'Fulfilled' WHERE orderId = ?");
+
+			// 4. Loop through the visits (oldest first) and distribute the exit amount
+			int remainingToExit = exitingAmount;
+
+			for (ActiveVisit visit : activeVisits) {
+				if (remainingToExit <= 0) {
+					break; // We've successfully exited the required amount of people
+				}
+
+				// Determine how many to exit from THIS specific visit row
+				int exitingFromThisVisit = Math.min(remainingToExit, visit.currentlyIn);
+				int remainingInThisVisit = visit.currentlyIn - exitingFromThisVisit;
+				boolean isFullExit = (remainingInThisVisit == 0);
+
+				if (isFullExit) {
+					// Fully exit this specific group
+					psUpdateVisitFull.setInt(1, visit.visitId);
+					psUpdateVisitFull.executeUpdate();
+
+					// Fulfill the order if it wasn't casual
+					if (!visit.isCasual) {
+						psUpdateOrder.setInt(1, visit.orderId);
+						psUpdateOrder.executeUpdate();
+					}
+				} else {
+					// Partially exit this group
+					psUpdateVisitPartial.setInt(1, remainingInThisVisit);
+					psUpdateVisitPartial.setInt(2, visit.visitId);
+					psUpdateVisitPartial.executeUpdate();
+				}
+
+				// Deduct what we just processed from the total remaining amount
+				remainingToExit -= exitingFromThisVisit;
+			}
+
+			// 5. Update overall park capacity once at the end
+			boolean isCountUpdated = updateVisitorCount(parkId, -exitingAmount, conn);
+
+			// 6. Commit or Rollback transaction
+			if (isCountUpdated) {
+				conn.commit();
+				int newTotalInPark = totalCurrentlyIn - exitingAmount;
+				if (newTotalInPark == 0) {
+					return "Success: All associated groups exited completely.";
+				} else {
+					return "Success: " + exitingAmount + " exited. " + newTotalInPark
+							+ " remaining associated with this ID.";
+				}
+			} else {
+				conn.rollback();
+				return "Error: Failed to safely update park counts.";
+			}
 
 		} catch (SQLException e) {
 			System.err.println("[DB ERROR] Exception during visitor exit process.");
@@ -757,17 +1000,21 @@ public class DBController {
 			}
 			return "Error: Database exception occurred.";
 		} finally {
+			// Clean up all resources
 			try {
 				if (rs != null)
 					rs.close();
 				if (psSelect != null)
 					psSelect.close();
-				if (psUpdateVisit != null)
-					psUpdateVisit.close();
+				if (psUpdateVisitFull != null)
+					psUpdateVisitFull.close();
+				if (psUpdateVisitPartial != null)
+					psUpdateVisitPartial.close();
 				if (psUpdateOrder != null)
 					psUpdateOrder.close();
+
 				if (conn != null) {
-					conn.setAutoCommit(true); // Return to default auto-commit
+					conn.setAutoCommit(true);
 					pool.releaseConnection(conn);
 				}
 			} catch (SQLException e) {
@@ -779,7 +1026,25 @@ public class DBController {
 	// =========================================================
 	// REGISTER FAMILY SUBSCRIBER
 	// =========================================================
-	public boolean registerFamilySubscriber(ArrayList<String> data) {
+
+	/**
+	 * Registers a new family subscriber or upgrades an existing casual visitor to a
+	 * subscriber status. This method first determines the next available
+	 * subscription number. It then performs an "upsert" (Insert or Update)
+	 * operation: if the visitor ID already exists in the database, their details
+	 * are updated, and their type is changed to 'Subscriber' while retaining their
+	 * existing subscription number if they have one. If the visitor is new, a
+	 * completely new record is created.
+	 *
+	 * @param data An {@link ArrayList} of {@link String} containing the
+	 *             subscriber's details in the following order: [0] visitorId, [1]
+	 *             firstName, [2] lastName, [3] phone, [4] email, [5] familyMembers
+	 *             (numeric string), [6] creditCard (can be null or empty).
+	 * @return {@code true} if the registration or update was successful (rows
+	 *         affected > 0), {@code false} if the operation failed or a database
+	 *         error occurred.
+	 */
+	public synchronized boolean registerFamilySubscriber(ArrayList<String> data) {
 
 		String getNextSubQuery = "SELECT IFNULL(MAX(subscriptionNumber), 10000) + 1 AS nextSub FROM Visitors";
 
@@ -845,6 +1110,22 @@ public class DBController {
 	// =========================================================
 	// REGISTER GROUP GUIDE
 	// =========================================================
+
+	/**
+	 * Registers a new group guide or updates an existing visitor to a guide status.
+	 * This method utilizes an "upsert" (Insert or Update) operation. If the visitor
+	 * ID already exists in the system, their personal details are updated, their
+	 * type is forced to 'Guide', and any previous subscription data is reset
+	 * (subscriptionNumber and creditCard are set to NULL, and familyMembers is
+	 * reset to 1). If the visitor is new, a fresh guide record is created.
+	 *
+	 * @param data An {@link ArrayList} of {@link String} containing the guide's
+	 *             details in the following order: [0] visitorId, [1] firstName, [2]
+	 *             lastName, [3] phone, [4] email.
+	 * @return {@code true} if the registration or update was successful (rows
+	 *         affected > 0), {@code false} if the operation failed or a database
+	 *         error occurred.
+	 */
 	public boolean registerGroupGuide(ArrayList<String> data) {
 
 		// Use ON DUPLICATE KEY UPDATE to insert or update if visitorId already exists
@@ -886,6 +1167,23 @@ public class DBController {
 	// =========================================================
 	// SUBMIT PARK REQUEST
 	// =========================================================
+
+	/**
+	 * Submits a new configuration or promotion request for a specific park. The
+	 * method first resolves the park's ID based on the provided park name. It then
+	 * records the request in the Requests table with a default 'Pending' status. If
+	 * the request type is identified as a "Promotion", it also parses and stores
+	 * the promotion's active date range.
+	 *
+	 * @param data An {@link ArrayList} of {@link String} containing the request
+	 *             details in the following order: [0] parkName, [1] requestType,
+	 *             [2] oldValue, [3] newValue. If the requestType is "Promotion",
+	 *             the list must also contain: [4] startDate, [5] endDate (in
+	 *             ISO-8601 format).
+	 * @return {@code true} if the request was successfully submitted (rows affected
+	 *         > 0), {@code false} if the park name was not found, if parsing
+	 *         failed, or if a database error occurred.
+	 */
 	public boolean submitParkRequest(ArrayList<String> data) {
 
 		String parkName = data.get(0);
@@ -896,38 +1194,38 @@ public class DBController {
 		LocalDate startDate = null;
 		LocalDate endDate = null;
 
-		if ("Promotion".equals(requestType)) {
-			startDate = LocalDate.parse(data.get(4));
-			endDate = LocalDate.parse(data.get(5));
-		}
-
 		Connection conn = null;
+		PreparedStatement findPark = null;
+		ResultSet rs = null;
+		PreparedStatement ps = null;
+		boolean isSuccess = false;
 
 		try {
+			// Moved date parsing inside the try block to safely catch
+			// DateTimeParseException
+			if ("Promotion".equals(requestType)) {
+				startDate = LocalDate.parse(data.get(4));
+				endDate = LocalDate.parse(data.get(5));
+			}
+
 			conn = pool.getConnection();
 
-			int parkId = -1;
-
-			PreparedStatement findPark = conn.prepareStatement("SELECT parkId FROM Parks WHERE parkName = ?");
+			findPark = conn.prepareStatement("SELECT parkId FROM Parks WHERE parkName = ?");
 			findPark.setString(1, parkName);
 
-			ResultSet rs = findPark.executeQuery();
+			rs = findPark.executeQuery();
 
+			int parkId = -1;
 			if (rs.next()) {
 				parkId = rs.getInt("parkId");
 			} else {
-				rs.close();
-				findPark.close();
-				return false;
+				return false; // Exit early if park is not found (finally block will still execute!)
 			}
-
-			rs.close();
-			findPark.close();
 
 			String insertQuery = "INSERT INTO Requests (parkId, requestType, oldValue, newValue, status, startDate, endDate) "
 					+ "VALUES (?, ?, ?, ?, 'Pending', ?, ?)";
 
-			PreparedStatement ps = conn.prepareStatement(insertQuery);
+			ps = conn.prepareStatement(insertQuery);
 			ps.setInt(1, parkId);
 			ps.setString(2, requestType);
 			ps.setString(3, oldValue);
@@ -946,22 +1244,59 @@ public class DBController {
 			}
 
 			int rows = ps.executeUpdate();
-			ps.close();
+			isSuccess = rows > 0;
 
-			return rows > 0;
-
-		} catch (SQLException e) {
+		} catch (Exception e) {
+			// Catches both SQLException and general Exceptions (like
+			// DateTimeParseException)
 			e.printStackTrace();
 			return false;
 
 		} finally {
-			pool.releaseConnection(conn);
+			// Safe cleanup of all resources
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			if (findPark != null) {
+				try {
+					findPark.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			if (ps != null) {
+				try {
+					ps.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
 		}
+
+		return isSuccess;
 	}
 
 	// =========================================================
 	// GET PARK CURRENT VALUE
 	// =========================================================
+	/**
+	 * Retrieves a specific current value for a park based on the requested property
+	 * type. * @param parkName The name of the park to query.
+	 * 
+	 * @param requestType The type of data to retrieve (e.g., "MaxCapacity",
+	 *                    "CasualGap", "AvgStayDuration", "CurrentVisitorCount",
+	 *                    "OpenCasualSpots").
+	 * @return The requested value as a {@link String}, or {@code null} if the park
+	 *         is not found, the request type is invalid, or a database error
+	 *         occurs.
+	 */
 	public String getParkCurrentValue(String parkName, String requestType) {
 
 		Connection conn = null;
@@ -1036,6 +1371,14 @@ public class DBController {
 	// =========================================================
 	// GET PARK ID BY NAME
 	// =========================================================
+	/**
+	 * Retrieves the unique park ID for a given park name from the database. The
+	 * search is performed in a case-insensitive manner using trimmed input strings.
+	 *
+	 * @param parkName The name of the park to search for.
+	 * @return The unique park ID as an {@code int}, or {@code -1} if the park is
+	 *         not found or the input is null.
+	 */
 	public int getParkIdByName(String parkName) {
 		if (parkName == null)
 			return -1;
@@ -1072,6 +1415,19 @@ public class DBController {
 	// =========================================================
 	// USAGE REPORT
 	// =========================================================
+	/**
+	 * Generates a usage report for a specific park, month, and year. It calculates
+	 * the peak visitor count and whether the park reached its maximum capacity for
+	 * each day of the month by simulating minute-by-minute visitor activity.
+	 *
+	 * @param parkName The name of the park.
+	 * @param month    The month for which to generate the report.
+	 * @param year     The year for which to generate the report.
+	 * @return An {@link ArrayList} of {@link UsageReportData} objects, each
+	 *         containing the day of the month, the peak visitor count for that day,
+	 *         and a flag indicating if maximum capacity was reached. Returns an
+	 *         empty list if the park is not found or an error occurs.
+	 */
 	public ArrayList<UsageReportData> getUsageReport(String parkName, int month, int year) {
 
 		ArrayList<UsageReportData> result = new ArrayList<>();
@@ -1180,6 +1536,17 @@ public class DBController {
 	// =========================================================
 	// VISIT DURATION
 	// =========================================================
+	/**
+	 * Retrieves all completed visit records for a specific park, month, and year to
+	 * support duration reporting. Only visits with an exit time are included.
+	 *
+	 * @param parkId The unique identifier of the park.
+	 * @param month  The month for which to retrieve data.
+	 * @param year   The year for which to retrieve data.
+	 * @return An {@link ArrayList} of {@link Visit} objects representing the
+	 *         completed visits, or an empty list if none are found or a database
+	 *         error occurs.
+	 */
 	public ArrayList<Visit> getVisitDurationReport(int parkId, int month, int year) {
 
 		ArrayList<Visit> result = new ArrayList<>();
@@ -1224,6 +1591,17 @@ public class DBController {
 	// =========================================================
 	// REPORTS - CANCELLATION
 	// =========================================================
+	/**
+	 * Generates a cancellation report for a specific park, month, and year,
+	 * aggregating the total number of cancellations per day.
+	 *
+	 * @param parkId The unique identifier of the park.
+	 * @param month  The month for which to generate the report.
+	 * @param year   The year for which to generate the report.
+	 * @return An {@link ArrayList} of {@link CancellationReportData} objects, each
+	 *         containing the day of the month and the number of cancellations, or
+	 *         an empty list if no data is found or an error occurs.
+	 */
 	public ArrayList<CancellationReportData> getCancellationReport(int parkId, int month, int year) {
 
 		ArrayList<CancellationReportData> result = new ArrayList<>();
@@ -1268,6 +1646,13 @@ public class DBController {
 	// =========================================================
 	// GET PARK NAMES
 	// =========================================================
+	/**
+	 * Retrieves a list of all park names from the database, sorted alphabetically.
+	 *
+	 * @return An {@link ArrayList} of {@link String} containing the names of all
+	 *         parks, or an empty list if no parks are found or a database error
+	 *         occurs.
+	 */
 	public ArrayList<String> getAllParkNames() {
 
 		ArrayList<String> parks = new ArrayList<>();
@@ -1304,6 +1689,17 @@ public class DBController {
 	// =========================================================
 	// CREATE NEW CASUAL VISIT
 	// =========================================================
+	/**
+	 * Registers a new casual visit in the system. Checks for available capacity
+	 * before inserting the visit record and updating the current visitor count for
+	 * the park.
+	 *
+	 * @param parkName     The name of the park.
+	 * @param visitorId    The unique identifier of the visitor.
+	 * @param visitorCount The number of visitors for the casual visit.
+	 * @return {@code true} if the visit was successfully registered and the visitor
+	 *         count updated, {@code false} otherwise.
+	 */
 	public boolean createCasualVisit(String parkName, String visitorId, int visitorCount) {
 
 		// Fetch the OpenCasualSpots using the helper method
@@ -1385,71 +1781,22 @@ public class DBController {
 			}
 		}
 	}
-	
-	// =========================================================
-	// CHECK IF VISITOR IS ALREADY INSIDE PARK
-	// =========================================================
-	public boolean isVisitorAlreadyInsidePark(String visitorId, String parkName) {
-
-		int parkId = getParkIdByName(parkName);
-
-		if (parkId == -1) {
-			System.err.println("[DB ERROR] Park name '" + parkName + "' not found.");
-			return false;
-		}
-
-		String query = "SELECT visitId FROM Visits "
-				+ "WHERE visitorId = ? "
-				+ "AND parkId = ? "
-				+ "AND exitTime IS NULL "
-				+ "AND currentlyIn > 0";
-
-		Connection conn = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-
-		try {
-			conn = pool.getConnection();
-
-			ps = conn.prepareStatement(query);
-			ps.setString(1, visitorId);
-			ps.setInt(2, parkId);
-
-			rs = ps.executeQuery();
-
-			// If a row exists, the visitor is already inside the park
-			return rs.next();
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return false;
-
-		} finally {
-			if (rs != null) {
-				try {
-					rs.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			}
-
-			if (ps != null) {
-				try {
-					ps.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			}
-
-			if (conn != null) {
-				pool.releaseConnection(conn);
-			}
-		}
-	}
 
 	// =========================================================
 	// GET OCCUPIED VISITOR COUNT FOR SLOT (Updated to include Pending)
 	// =========================================================
+	/**
+	 * Calculates the total number of visitors currently booked for a specific park
+	 * and time slot, optionally excluding a specific order from the total count.
+	 *
+	 * @param parkId         The unique identifier of the park.
+	 * @param visitDate      The date of the visit.
+	 * @param visitTime      The time slot of the visit.
+	 * @param excludeOrderId An order ID to exclude from the total count (use -1 to
+	 *                       include all orders).
+	 * @return The total number of visitors booked for the slot as an {@code int},
+	 *         or {@code 0} if no visitors are found or an error occurs.
+	 */
 	private int getOccupiedVisitorCountForSlot(int parkId, String visitDate, String visitTime, int excludeOrderId) {
 		Connection conn = null;
 		PreparedStatement ps = null;
@@ -1457,7 +1804,6 @@ public class DBController {
 		try {
 			conn = pool.getConnection();
 
-			// FIX: We now use IN (...) to count EVERYONE who is taking up space!
 			String query = "SELECT SUM(visitorCount) AS total FROM Orders "
 					+ "WHERE parkId = ? AND visitDate = ? AND visitTime = ? "
 					+ "AND status IN ('Approved', 'PendingConfirmation', 'PendingVisitReminder', 'Entered')";
@@ -1479,6 +1825,7 @@ public class DBController {
 			if (rs.next()) {
 				return rs.getInt("total");
 			}
+
 		} catch (SQLException e) {
 			System.out.println("Error fetching occupied visitors.");
 			e.printStackTrace();
@@ -1499,6 +1846,13 @@ public class DBController {
 	// =========================================================
 	// GET PARK MAX CAPACITY
 	// =========================================================
+	/**
+	 * Retrieves the maximum capacity for a specific park from the database.
+	 *
+	 * @param parkId The unique identifier of the park.
+	 * @return The maximum capacity as an {@code int}, or {@code -1} if the park is
+	 *         not found or a database error occurs.
+	 */
 	private int getParkMaxCapacity(int parkId) {
 		Connection conn = null;
 		PreparedStatement ps = null;
@@ -1531,6 +1885,14 @@ public class DBController {
 	// =========================================================
 	// GET PARK CASUAL GAP
 	// =========================================================
+	/**
+	 * Retrieves the casual gap (the buffer of reserved spots for non-booked
+	 * visitors) for a specific park from the database.
+	 *
+	 * @param parkId The unique identifier of the park.
+	 * @return The casual gap value as an {@code int}, or {@code -1} if the park is
+	 *         not found or a database error occurs.
+	 */
 	private int getParkCasualGap(int parkId) {
 		Connection conn = null;
 		PreparedStatement ps = null;
@@ -1560,14 +1922,22 @@ public class DBController {
 		return -1;
 	}
 
-	// OVERLOAD: For new orders (Doesn't exclude any IDs)
-	public int getOccupiedVisitorCountForSlot(int parkId, String visitDate, String visitTime) {
-		return getOccupiedVisitorCountForSlot(parkId, visitDate, visitTime, -1);
-	}
-
 	// =========================================================
 	// CHECK IF THERE IS ROOM IN SLOT (Supports Exclusions)
 	// =========================================================
+	/**
+	 * Determines if a park has enough remaining capacity for a requested number of
+	 * visitors in a specific time slot, optionally excluding a specific order from
+	 * the calculation.
+	 *
+	 * @param parkId            The unique identifier of the park.
+	 * @param visitDate         The date of the visit.
+	 * @param visitTime         The time slot of the visit.
+	 * @param requestedVisitors The number of visitors to check capacity for.
+	 * @param excludeOrderId    An order ID to ignore in the occupied visitor count
+	 *                          (use -1 to include all orders).
+	 * @return {@code true} if there is sufficient room, {@code false} otherwise.
+	 */
 	public boolean hasRoomInSlot(int parkId, String visitDate, String visitTime, int requestedVisitors,
 			int excludeOrderId) {
 		int maxCapacity = getParkMaxCapacity(parkId);
@@ -1586,7 +1956,16 @@ public class DBController {
 		return approvedVisitors + requestedVisitors <= maxCapacity - gap;
 	}
 
-	// OVERLOAD: For new orders (Doesn't exclude any IDs)
+	/**
+	 * Overloaded method to check for room in a slot for new orders, without
+	 * excluding any existing orders.
+	 *
+	 * @param parkId            The unique identifier of the park.
+	 * @param visitDate         The date of the visit.
+	 * @param visitTime         The time slot of the visit.
+	 * @param requestedVisitors The number of visitors to check capacity for.
+	 * @return {@code true} if there is sufficient room, {@code false} otherwise.
+	 */
 	public boolean hasRoomInSlot(int parkId, String visitDate, String visitTime, int requestedVisitors) {
 		return hasRoomInSlot(parkId, visitDate, visitTime, requestedVisitors, -1);
 	}
@@ -1594,6 +1973,17 @@ public class DBController {
 	// =========================================================
 	// TRY TO PROMOTE FIRST WAITING ORDER
 	// =========================================================
+	/**
+	 * Checks the waiting list for a specific park and time slot, and if sufficient
+	 * capacity becomes available, promotes the first eligible order in the queue to
+	 * "PendingConfirmation" status and notifies the visitor.
+	 *
+	 * @param parkId    The unique identifier of the park.
+	 * @param visitDate The date of the visit.
+	 * @param visitTime The time slot of the visit.
+	 * @return {@code true} if an order was successfully promoted, {@code false}
+	 *         otherwise.
+	 */
 	public boolean promoteWaitingOrderIfPossible(int parkId, String visitDate, String visitTime) {
 
 		// Selects the FIRST order in the waiting list for this specific time slot
@@ -1678,6 +2068,16 @@ public class DBController {
 	// =========================================================
 	// CHECK IF WAITING LIST IS ACTIVE FOR SLOT
 	// =========================================================
+	/**
+	 * Checks if there are any pending orders currently on the waiting list for a
+	 * specific park, date, and time slot.
+	 *
+	 * @param parkId    The unique identifier of the park.
+	 * @param visitDate The date to check.
+	 * @param visitTime The time slot to check.
+	 * @return {@code true} if there is at least one order with 'WaitingList' status
+	 *         for the given parameters, {@code false} otherwise.
+	 */
 	public boolean isWaitingListActive(int parkId, String visitDate, String visitTime) {
 		Connection conn = null;
 		PreparedStatement ps = null;
@@ -1722,6 +2122,16 @@ public class DBController {
 	// =========================================================
 	// CANCEL ORDER
 	// =========================================================
+	/**
+	 * Cancels a visitor's order if the visit time has not yet arrived or passed. If
+	 * the cancellation is successful, it subsequently attempts to promote orders
+	 * from the waiting list for the associated park and time slot.
+	 *
+	 * @param orderId The unique identifier of the order to cancel.
+	 * @return {@code true} if the order was successfully canceled, {@code false} if
+	 *         the order could not be found, was already canceled, or if the visit
+	 *         time has already arrived.
+	 */
 	public boolean cancelOrder(int orderId) {
 
 		Connection conn = null;
@@ -1800,6 +2210,18 @@ public class DBController {
 	// =========================================================
 	// UPDATE COUNT FOR CASUAL VISITORS ONLY
 	// =========================================================
+	/**
+	 * Updates the current visitor count for a specified park in the database. *
+	 * Note: This method is designed to be part of a larger transaction; it accepts
+	 * a shared {@link Connection} and does not manage transaction commits or
+	 * connection closure to ensure atomicity.
+	 *
+	 * @param parkId            The unique identifier of the park.
+	 * @param visitorCountToAdd The number of visitors to add to the current count
+	 *                          (can be negative to subtract).
+	 * @param conn              The active database {@link Connection} to use.
+	 * @return {@code true} if the update was successful, {@code false} otherwise.
+	 */
 	public boolean updateVisitorCount(int parkId, int visitorCountToAdd, Connection conn) {
 		PreparedStatement ps = null;
 		String query = "UPDATE Parks SET CurrentVisitorCount = CurrentVisitorCount + ? WHERE parkId = ?";
@@ -1831,6 +2253,16 @@ public class DBController {
 	// =========================================================
 	// GET ALTERNATIVE SLOTS
 	// =========================================================
+	/**
+	 * Identifies available time slots for a given park and date by checking each
+	 * predefined hourly slot for sufficient capacity.
+	 *
+	 * @param parkId            The unique identifier of the park.
+	 * @param visitDate         The date for which to check availability.
+	 * @param requestedVisitors The number of visitors for which to check capacity.
+	 * @return An {@link ArrayList} of {@link String} containing all available time
+	 *         slots, or an empty list if no slots are available.
+	 */
 	public ArrayList<String> getAlternativeSlots(int parkId, String visitDate, int requestedVisitors) {
 
 		ArrayList<String> alternativeSlots = new ArrayList<>();
@@ -1850,6 +2282,17 @@ public class DBController {
 	// =========================================================
 	// ADD ORDER TO WAITING LIST
 	// =========================================================
+	/**
+	 * Adds a new order request to the waiting list for a specific park. This method
+	 * retrieves the park ID based on the provided park name, generates a unique QR
+	 * code for the order, and saves the order entry with 'WaitingList' status.
+	 *
+	 * @param orderData An {@link ArrayList} of {@link String} containing the order
+	 *                  details in the following order: Visitor ID, Park Name, Visit
+	 *                  Date, Visit Time, Visitor Count, Order Type, and Email.
+	 * @return {@code true} if the order was successfully added to the waiting list,
+	 *         {@code false} otherwise.
+	 */
 	public boolean addOrderToWaitingList(ArrayList<String> orderData) {
 
 		String visitorId = orderData.get(0);
@@ -1927,6 +2370,15 @@ public class DBController {
 	// =========================================================
 	// APPROVE REQUEST
 	// =========================================================
+	/**
+	 * Processes and approves a pending request by updating the corresponding park
+	 * parameters or inserting a new promotion into the database. The operation is
+	 * performed within a transaction to ensure data integrity.
+	 *
+	 * @param requestId The unique identifier of the request to be approved.
+	 * @return {@code true} if the request was successfully approved and database
+	 *         records updated, {@code false} otherwise.
+	 */
 	public boolean approveRequest(int requestId) {
 
 		Connection conn = null;
@@ -2034,7 +2486,7 @@ public class DBController {
 			}
 
 			// =========================================================
-			// CASE 3: Request is for AvgStayDuration (New Logic Added)
+			// CASE 3: Request is for AvgStayDuration
 			// =========================================================
 			else if ("AvgStayDuration".equals(requestType)) {
 				int requestedDuration = Integer.parseInt(newValue);
@@ -2048,7 +2500,7 @@ public class DBController {
 			}
 
 			// =========================================================
-			// CASE 4: Request is for Promotion (New Logic Added)
+			// CASE 4: Request is for Promotion
 			// =========================================================
 			else if ("Promotion".equals(requestType)) {
 				double discountPercentage = Double.parseDouble(newValue);
@@ -2101,111 +2553,18 @@ public class DBController {
 			pool.releaseConnection(conn);
 		}
 	}
-	/*
-	 * public boolean approveRequest(int requestId) {
-	 * 
-	 * Connection conn = null;
-	 * 
-	 * try { conn = pool.getConnection(); conn.setAutoCommit(false);
-	 * 
-	 * // 1. Fetch request details String selectQuery =
-	 * "SELECT parkId, requestType, newValue FROM Requests WHERE requestId = ?";
-	 * PreparedStatement selectPs = conn.prepareStatement(selectQuery);
-	 * selectPs.setInt(1, requestId);
-	 * 
-	 * ResultSet rs = selectPs.executeQuery();
-	 * 
-	 * if (!rs.next()) { rs.close(); selectPs.close(); conn.rollback(); return
-	 * false; }
-	 * 
-	 * int parkId = rs.getInt("parkId"); String requestType =
-	 * rs.getString("requestType"); String newValue = rs.getString("newValue");
-	 * 
-	 * rs.close(); selectPs.close();
-	 * 
-	 * // ========================================================= // CASE 1:
-	 * Request is for updating MaxCapacity //
-	 * ========================================================= if
-	 * ("MaxCapacity".equals(requestType)) { PreparedStatement gapPs =
-	 * conn.prepareStatement("SELECT casualGap FROM Parks WHERE parkId = ?");
-	 * gapPs.setInt(1, parkId);
-	 * 
-	 * ResultSet gapRs = gapPs.executeQuery();
-	 * 
-	 * if (!gapRs.next()) { gapRs.close(); gapPs.close(); conn.rollback(); return
-	 * false; }
-	 * 
-	 * int casualGap = gapRs.getInt("casualGap"); int requestedCapacity =
-	 * Integer.parseInt(newValue);
-	 * 
-	 * gapRs.close(); gapPs.close();
-	 * 
-	 * // Business Rule: maxCapacity cannot be less than or equal to the casual gap
-	 * if (requestedCapacity <= casualGap) { conn.rollback(); return false; }
-	 * 
-	 * PreparedStatement updateParkPs = conn
-	 * .prepareStatement("UPDATE Parks SET maxCapacity = ? WHERE parkId = ?");
-	 * updateParkPs.setInt(1, requestedCapacity); updateParkPs.setInt(2, parkId);
-	 * updateParkPs.executeUpdate(); updateParkPs.close(); }
-	 * 
-	 * // ========================================================= // CASE 2:
-	 * Request is for updating CasualGap (New Logic Added) //
-	 * ========================================================= else if
-	 * ("CasualGap".equals(requestType)) { // Fetch current casualGap and
-	 * maxCapacity to validate and calculate the // difference PreparedStatement
-	 * parkPs = conn
-	 * .prepareStatement("SELECT maxCapacity, casualGap FROM Parks WHERE parkId = ?"
-	 * ); parkPs.setInt(1, parkId); ResultSet parkRs = parkPs.executeQuery();
-	 * 
-	 * if (!parkRs.next()) { parkRs.close(); parkPs.close(); conn.rollback(); return
-	 * false; }
-	 * 
-	 * int maxCapacity = parkRs.getInt("maxCapacity"); int currentCasualGap =
-	 * parkRs.getInt("casualGap"); int requestedCasualGap =
-	 * Integer.parseInt(newValue);
-	 * 
-	 * parkRs.close(); parkPs.close();
-	 * 
-	 * // Business Rule Validation: New gap cannot exceed or equal total max
-	 * capacity if (requestedCasualGap >= maxCapacity) { conn.rollback(); return
-	 * false; }
-	 * 
-	 * // Calculate the difference between the new gap and the old gap int
-	 * gapDifference = requestedCasualGap - currentCasualGap;
-	 * 
-	 * // Update the casualGap inside the Parks table PreparedStatement updateGapPs
-	 * = conn .prepareStatement("UPDATE Parks SET casualGap = ? WHERE parkId = ?");
-	 * updateGapPs.setInt(1, requestedCasualGap); updateGapPs.setInt(2, parkId);
-	 * updateGapPs.executeUpdate(); updateGapPs.close();
-	 * 
-	 * // Dynamic adjustment: Add the gap difference directly to the current open //
-	 * casual spots String updateSpotsQuery =
-	 * "UPDATE Parks SET OpenCasualSpots = OpenCasualSpots + ? WHERE parkId = ?";
-	 * PreparedStatement updateSpotsPs = conn.prepareStatement(updateSpotsQuery);
-	 * updateSpotsPs.setInt(1, gapDifference); updateSpotsPs.setInt(2, parkId);
-	 * updateSpotsPs.executeUpdate(); updateSpotsPs.close(); }
-	 * 
-	 * // ========================================================= // Final Step:
-	 * Update the request status to 'Approved' //
-	 * ========================================================= PreparedStatement
-	 * updateRequestPs = conn
-	 * .prepareStatement("UPDATE Requests SET status = 'Approved' WHERE requestId = ?"
-	 * ); updateRequestPs.setInt(1, requestId); int rows =
-	 * updateRequestPs.executeUpdate(); updateRequestPs.close();
-	 * 
-	 * conn.commit(); return rows > 0;
-	 * 
-	 * } catch (SQLException e) { e.printStackTrace(); try { if (conn != null)
-	 * conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); } return
-	 * false;
-	 * 
-	 * } finally { try { if (conn != null) conn.setAutoCommit(true); } catch
-	 * (SQLException e) { e.printStackTrace(); } pool.releaseConnection(conn); } }
-	 */
 
 	// =========================================================
 	// GET PENDING REQUESTS
 	// =========================================================
+	/**
+	 * Retrieves all requests currently pending approval from the database.
+	 *
+	 * @return An {@link ArrayList} of {@link ArrayList} of {@link String}, where
+	 *         each inner list represents a request record (ID, Park Name, Type, Old
+	 *         Value, New Value, Status), or an empty list if no pending requests
+	 *         are found or an error occurs.
+	 */
 	public ArrayList<ArrayList<String>> getPendingRequests() {
 
 		ArrayList<ArrayList<String>> result = new ArrayList<>();
@@ -2248,6 +2607,13 @@ public class DBController {
 	// =========================================================
 	// REJECT REQUEST
 	// =========================================================
+	/**
+	 * Updates the status of a specific request in the database to "Rejected".
+	 *
+	 * @param requestId The unique identifier of the request to be rejected.
+	 * @return {@code true} if the update was successful (at least one row was
+	 *         affected), {@code false} otherwise.
+	 */
 	public boolean rejectRequest(int requestId) {
 
 		String query = "UPDATE Requests SET status = 'Rejected' WHERE requestId = ?";
@@ -2277,6 +2643,14 @@ public class DBController {
 	// =========================================================
 	// GET PARK ORDERS
 	// =========================================================
+	/**
+	 * Retrieves a list of all orders associated with a specific park, ordered
+	 * chronologically by visit date and time.
+	 *
+	 * @param parkName The name of the park for which to retrieve orders.
+	 * @return An {@link ArrayList} of {@link Order} objects for the specified park,
+	 *         or an empty list if no orders are found or an error occurs.
+	 */
 	public ArrayList<Order> getOrdersByParkName(String parkName) {
 
 		ArrayList<Order> result = new ArrayList<>();
@@ -2314,6 +2688,17 @@ public class DBController {
 		return result;
 	}
 
+	// =========================================================
+	// GET VISITOR TYPE BY ID
+	// =========================================================
+	/**
+	 * Retrieves the visitor type (e.g., "Subscriber", "Casual") for a specific
+	 * visitor from the database based on their unique visitor ID.
+	 *
+	 * @param visitorId The unique identifier of the visitor.
+	 * @return The visitor type as a {@link String}, or {@code null} if the visitor
+	 *         is not found or a database error occurs.
+	 */
 	public String getVisitorTypeById(String visitorId) {
 
 		String query = "SELECT visitorType FROM Visitors WHERE visitorId = ?";
@@ -2361,6 +2746,16 @@ public class DBController {
 	// =========================================================
 	// GET PARK DATA FOR DASHBOARD
 	// =========================================================
+	/**
+	 * Retrieves statistical data for a specific park to populate the manager's
+	 * dashboard, including capacity and current visitor metrics.
+	 *
+	 * @param parkName The name of the park to query.
+	 * @return An {@link ArrayList} of {@link String} containing the park's data
+	 *         (Name, Max Capacity, Casual Gap, Average Stay Duration, Current
+	 *         Visitor Count), or an empty list if the park is not found or a
+	 *         database error occurs.
+	 */
 	public ArrayList<String> getParkDashboardData(String parkName) {
 		ArrayList<String> parkData = new ArrayList<>();
 		String query = "SELECT parkName, maxCapacity, casualGap, avgStayDuration, CurrentVisitorCount "
@@ -2396,6 +2791,15 @@ public class DBController {
 	// =========================================================
 	// GET TOTAL ACTIVE PROMOTIONS DISCOUNT
 	// =========================================================
+	/**
+	 * Calculates the total discount percentage for all approved active promotions
+	 * applicable to a specific park on a given date.
+	 *
+	 * @param parkId The unique identifier of the park.
+	 * @param date   The date for which to calculate the active discounts.
+	 * @return The total discount percentage as a {@code double}, or {@code 0} if no
+	 *         active promotions exist or an error occurs.
+	 */
 	public double getActivePromotionsDiscount(int parkId, LocalDate date) {
 
 		String query = "SELECT IFNULL(SUM(discountPercentage), 0) AS totalDiscount " + "FROM promotions "
@@ -2433,6 +2837,14 @@ public class DBController {
 	// =========================================================
 	// GET QUICK SEARCH RESULT
 	// =========================================================
+	/**
+	 * Performs a quick search for orders in the database matching either the
+	 * specific order ID or the visitor ID provided.
+	 *
+	 * @param searchInput The identifier (Order ID or Visitor ID) to search for.
+	 * @return An {@link ArrayList} of {@link Order} objects matching the search
+	 *         criteria, or an empty list if no matches are found.
+	 */
 	public ArrayList<Order> quickSearchOrders(String searchInput) {
 		ArrayList<Order> ordersList = new ArrayList<>();
 
@@ -2476,6 +2888,16 @@ public class DBController {
 	// =========================================================
 	// CONFIRM ORDER
 	// =========================================================
+	/**
+	 * Confirms a visitor's order by updating its status to "Approved" if the
+	 * confirmation is received within the allowed time frame (hold or reminder
+	 * duration).
+	 *
+	 * @param orderId The unique identifier of the order to be confirmed.
+	 * @return {@code true} if the order status was successfully updated,
+	 *         {@code false} if the order does not exist or the time limit has
+	 *         expired.
+	 */
 	public boolean confirmOrder(int orderId) {
 
 		Connection conn = null;
@@ -2520,6 +2942,11 @@ public class DBController {
 	// =========================================================
 	// RELEASE EXPIRED PENDING CONFIRMATIONS
 	// =========================================================
+	/**
+	 * Identifies orders in 'PendingConfirmation' status that have exceeded their
+	 * hold duration, cancels them, and subsequently attempts to promote orders from
+	 * the waiting list for the associated park and time slot.
+	 */
 	public void releaseExpiredPendingConfirmations() {
 
 		Connection conn = null;
@@ -2582,6 +3009,12 @@ public class DBController {
 	// =========================================================
 	// SEND VISIT REMINDERS FOR TOMORROW
 	// =========================================================
+	/**
+	 * Identifies "Approved" orders scheduled for the following day that have not
+	 * yet received a visit reminder. Updates these orders to "PendingVisitReminder"
+	 * status, sets a 2-hour confirmation deadline, and creates both Email and SMS
+	 * notification records.
+	 */
 	public void sendVisitRemindersForTomorrow() {
 
 		Connection conn = null;
@@ -2651,14 +3084,21 @@ public class DBController {
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
-			if (conn != null)
+
+			if (conn != null) {
 				pool.releaseConnection(conn);
+			}
 		}
 	}
 
 	// =========================================================
 	// RELEASE EXPIRED VISIT REMINDERS
 	// =========================================================
+	/**
+	 * Identifies orders that have exceeded their visit reminder deadline, cancels
+	 * them, and generates corresponding notification records for both Email and SMS
+	 * channels.
+	 */
 	public void releaseExpiredVisitReminders() {
 
 		Connection conn = null;
@@ -2732,6 +3172,17 @@ public class DBController {
 		}
 	}
 
+	// =========================================================
+	// GET VISITOR EMAIL BY ID
+	// =========================================================
+	/**
+	 * Retrieves the email address of a visitor from the database based on their
+	 * unique visitor ID.
+	 *
+	 * @param visitorId The unique identifier of the visitor.
+	 * @return The email address of the visitor as a {@link String}, or {@code null}
+	 *         if the visitor is not found or a database error occurs.
+	 */
 	public String getVisitorEmailById(String visitorId) {
 
 		String query = "SELECT email FROM Visitors WHERE visitorId = ?";
@@ -2773,6 +3224,16 @@ public class DBController {
 		}
 	}
 
+	// =========================================================
+	// UPDATE ORDER PAID STATUS
+	// =========================================================
+	/**
+	 * Updates the payment status of a specific order in the database to "paid".
+	 *
+	 * @param orderId The unique identifier of the order to update.
+	 * @return {@code true} if the update was successful (at least one row was
+	 *         affected), {@code false} otherwise.
+	 */
 	public boolean updateOrderPaidStatus(int orderId) {
 		String query = "UPDATE Orders SET paid = 1 WHERE orderId = ?";
 		Connection conn = null;
@@ -2799,6 +3260,18 @@ public class DBController {
 		}
 	}
 
+	// =========================================================
+	// SAVE REPORT
+	// =========================================================
+	/**
+	 * Persists a report record into the database, including its associated image
+	 * data.
+	 *
+	 * @param report The {@link ReportImage} object containing the report details
+	 *               (type, park name, month, year, and image byte array).
+	 * @return {@code true} if the insertion was successful (at least one row was
+	 *         affected), {@code false} otherwise.
+	 */
 	public boolean saveReport(ReportImage report) {
 
 		String sql = """
@@ -2824,6 +3297,16 @@ public class DBController {
 		return false;
 	}
 
+	// =========================================================
+	// GET ALL REPORTS
+	// =========================================================
+	/**
+	 * Retrieves a list of all report records from the database, including their
+	 * associated image data.
+	 *
+	 * @return A {@link List} of {@link ReportImage} objects containing all report
+	 *         data, or an empty list if no reports are found or an error occurs.
+	 */
 	public List<ReportImage> getAllReports() {
 
 		List<ReportImage> reports = new ArrayList<>();
@@ -2853,6 +3336,16 @@ public class DBController {
 	// =========================================================
 	// GET UNREAD NOTIFICATIONS
 	// =========================================================
+	/**
+	 * Retrieves a list of unread notifications for a specific user based on their
+	 * email address. * Each notification string is formatted as
+	 * "contactMethod|messageContent".
+	 *
+	 * @param email The destination email address of the user.
+	 * @return An {@link ArrayList} of {@link String} representing the unread
+	 *         notifications, or an empty list if no notifications are found or an
+	 *         error occurs.
+	 */
 	public ArrayList<String> getUnreadNotifications(String email) {
 		ArrayList<String> notifications = new ArrayList<>();
 		Connection conn = null;
@@ -2885,6 +3378,13 @@ public class DBController {
 	// =========================================================
 	// MARK NOTIFICATIONS AS READ
 	// =========================================================
+	/**
+	 * Updates the status of all unread notifications for a specific user to "sent"
+	 * (read status) in the database.
+	 *
+	 * @param email The destination email address of the user whose notifications
+	 *              are to be marked as read.
+	 */
 	public void markNotificationsAsRead(String email) {
 		Connection conn = null;
 		try {
@@ -2901,6 +3401,16 @@ public class DBController {
 		}
 	}
 
+	// =========================================================
+	// GET PARK NAME BY ID
+	// =========================================================
+	/**
+	 * Retrieves the name of a park from the database based on its unique park ID.
+	 *
+	 * @param parkId The unique identifier of the park.
+	 * @return The name of the park as a {@link String}, or {@code null} if the park
+	 *         is not found or a database error occurs.
+	 */
 	public String getParkNameById(int parkId) {
 
 		String query = "SELECT parkName FROM parks WHERE parkId = ?";
@@ -2931,6 +3441,19 @@ public class DBController {
 	// =========================================================
 	// UPDATE VISITOR DETAILS
 	// =========================================================
+	/**
+	 * Updates the personal and payment information of a specific visitor in the
+	 * database.
+	 *
+	 * @param visitorId  The unique identifier of the visitor.
+	 * @param firstName  The new first name of the visitor.
+	 * @param lastName   The new last name of the visitor.
+	 * @param phone      The new phone number of the visitor.
+	 * @param email      The new email address of the visitor.
+	 * @param creditCard The new credit card information for the visitor.
+	 * @return {@code true} if the update was successful (at least one row was
+	 *         affected), {@code false} otherwise.
+	 */
 	public boolean updateVisitorDetails(String visitorId, String firstName, String lastName, String phone, String email,
 			String creditCard) {
 
@@ -2966,6 +3489,16 @@ public class DBController {
 	// =========================================================
 	// FETCH EMPLOYEE BY ID
 	// =========================================================
+	/**
+	 * Retrieves the details of a specific employee from the database by their
+	 * unique ID.
+	 *
+	 * @param employeeId The unique identifier of the employee to search for.
+	 * @return An {@link ArrayList} of {@link String} containing the employee's
+	 *         details (ID, First Name, Last Name, Email, Role, Affiliation), or
+	 *         {@code null} if the employee was not found or a database error
+	 *         occurred.
+	 */
 	public ArrayList<String> fetchEmployeeById(String employeeId) {
 
 		String query = "SELECT * FROM Employees WHERE employeeId = ?";
@@ -2983,12 +3516,12 @@ public class DBController {
 			if (rs.next()) {
 				ArrayList<String> employeeInfo = new ArrayList<>();
 
-				employeeInfo.add(String.valueOf(rs.getInt("employeeId"))); // 0
-				employeeInfo.add(rs.getString("firstName")); // 1
-				employeeInfo.add(rs.getString("lastName")); // 2
-				employeeInfo.add(rs.getString("email")); // 3
-				employeeInfo.add(rs.getString("role")); // 4
-				employeeInfo.add(rs.getString("affiliation")); // 5
+				employeeInfo.add(String.valueOf(rs.getInt("employeeId")));
+				employeeInfo.add(rs.getString("firstName"));
+				employeeInfo.add(rs.getString("lastName"));
+				employeeInfo.add(rs.getString("email"));
+				employeeInfo.add(rs.getString("role"));
+				employeeInfo.add(rs.getString("affiliation"));
 
 				rs.close();
 				ps.close();
@@ -3012,6 +3545,15 @@ public class DBController {
 	// =========================================================
 	// FETCH SUBSCRIBER BY ID
 	// =========================================================
+	/**
+	 * Retrieves comprehensive details for a specific subscriber from the database.
+	 *
+	 * @param subscriberId The unique identifier of the subscriber to retrieve.
+	 * @return An {@link ArrayList} of {@link String} containing subscriber
+	 *         information (ID, First Name, Last Name, Phone, Email, Type,
+	 *         Subscription Number, Family Members, Credit Card), or {@code null} if
+	 *         no subscriber is found or an error occurs.
+	 */
 	public ArrayList<String> fetchSubscriberById(String subscriberId) {
 
 		String query = "SELECT * FROM Visitors WHERE visitorId = ? AND visitorType = 'Subscriber'";
@@ -3029,15 +3571,15 @@ public class DBController {
 			if (rs.next()) {
 				ArrayList<String> subscriberInfo = new ArrayList<>();
 
-				subscriberInfo.add(rs.getString("visitorId")); // 0
-				subscriberInfo.add(rs.getString("firstName")); // 1
-				subscriberInfo.add(rs.getString("lastName")); // 2
-				subscriberInfo.add(rs.getString("phone")); // 3
-				subscriberInfo.add(rs.getString("email")); // 4
-				subscriberInfo.add(rs.getString("visitorType")); // 5
-				subscriberInfo.add(String.valueOf(rs.getInt("subscriptionNumber"))); // 6
-				subscriberInfo.add(String.valueOf(rs.getInt("familyMembers"))); // 7
-				subscriberInfo.add(rs.getString("creditCard")); // 8
+				subscriberInfo.add(rs.getString("visitorId"));
+				subscriberInfo.add(rs.getString("firstName"));
+				subscriberInfo.add(rs.getString("lastName"));
+				subscriberInfo.add(rs.getString("phone"));
+				subscriberInfo.add(rs.getString("email"));
+				subscriberInfo.add(rs.getString("visitorType"));
+				subscriberInfo.add(String.valueOf(rs.getInt("subscriptionNumber")));
+				subscriberInfo.add(String.valueOf(rs.getInt("familyMembers")));
+				subscriberInfo.add(rs.getString("creditCard"));
 
 				rs.close();
 				ps.close();
@@ -3056,50 +3598,5 @@ public class DBController {
 		}
 
 		return null;
-	}
-	
-	// =========================================================
-	// AUTO CANCEL NO-SHOW ORDERS
-	// =========================================================
-	public int autoCancelNoShowOrders() {
-
-		String query = "UPDATE Orders "
-				+ "SET status = 'Canceled' "
-				+ "WHERE status = 'Approved' "
-				+ "AND TIMESTAMP(visitDate, visitTime) < DATE_SUB(NOW(), INTERVAL 30 MINUTE)";
-
-		Connection conn = null;
-		PreparedStatement ps = null;
-
-		try {
-			conn = pool.getConnection();
-
-			ps = conn.prepareStatement(query);
-
-			int rowsAffected = ps.executeUpdate();
-
-			if (rowsAffected > 0) {
-				System.out.println("[AUTO CANCEL] " + rowsAffected + " no-show orders were canceled.");
-			}
-
-			return rowsAffected;
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return 0;
-
-		} finally {
-			if (ps != null) {
-				try {
-					ps.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			}
-
-			if (conn != null) {
-				pool.releaseConnection(conn);
-			}
-		}
 	}
 }
