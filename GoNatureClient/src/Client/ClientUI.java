@@ -211,7 +211,7 @@ public class ClientUI extends Application {
 	public void stop() {
 		try {
 			if (client != null && client.isConnected()) {
-				client.sendToServer(new Message("DISCONNECT", null));
+				ClientUI.send(new Message("DISCONNECT", null));
 				client.closeConnection();
 			}
 
