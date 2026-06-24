@@ -92,6 +92,12 @@ public class ParkWorkerEnterVisitorController {
 				statusLabel.setStyle("-fx-text-fill: green;");
 				statusLabel.setText("Visitor entered successfully! (Paid)");
 				identifierField.clear();
+				
+			    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+			    alert.setTitle("Information Dialog");
+			    alert.setHeaderText(null);
+			    alert.setContentText("Client has already paid!");
+			    alert.showAndWait();
 			} else {
 				statusLabel.setStyle("-fx-text-fill: red;");
 				statusLabel.setText(text);

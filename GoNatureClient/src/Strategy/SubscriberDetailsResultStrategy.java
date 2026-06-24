@@ -14,8 +14,7 @@ public class SubscriberDetailsResultStrategy implements MessageStrategy {
 		ArrayList<String> subscriberInfo = (ArrayList<String>) message.getData();
 
 		Platform.runLater(() -> {
-			ServiceRepSearchSubscriberController controller =
-					ServiceRepSearchSubscriberController.getInstance();
+			ServiceRepSearchSubscriberController controller = ServiceRepSearchSubscriberController.getInstance();
 
 			if (subscriberInfo == null || subscriberInfo.isEmpty()) {
 				controller.showSubscriberNotFound();

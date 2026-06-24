@@ -10,31 +10,81 @@ import javafx.fxml.FXMLLoader;
 import GUI.ConnectionController;
 import javafx.application.Application;
 import javafx.application.Platform;
-//import GUI.ClientController;
 
-// client will run this program
+/**
+ * The main entry point for the client-side application.
+ * This class handles the JavaFX lifecycle, manages the primary stage,
+ * establishes the connection to the server, and tracks application idle time.
+ */
 public class ClientUI extends Application {
 
+	/**
+	 * The controller managing the initial connection screen.
+	 */
 	public static ConnectionController connectionController;
 
 	// public static OrderClient aaaclient;
+
+	/**
+	 * The client instance responsible for communicating with the server.
+	 */
 	public static GoNatureClient client;
 
+	/**
+	 * The primary JavaFX stage for the application.
+	 */
 	private static Stage mainStage;
 
+	/**
+	 * A flag indicating whether the user interface is fully loaded and ready.
+	 */
 	public static volatile boolean uiReady = false;
 
+	/**
+	 * The IP address of the currently connected server.
+	 */
 	public static String serverIP; // current client
+
+	/**
+	 * The port number of the currently connected server.
+	 */
 	public static int serverPort; // current server port
 
-	private static Timer idleTimer = new Timer(true);
-	private static long lastActivityTime = System.currentTimeMillis();
-	private static final long TIMEOUT = 200000_000; // 20 seconds
+	/**
+	 * Timestamp of the last recorded user or system activity.
+	 * Marked as volatile to ensure thread safety between the UI thread and timer thread.
+	 */
+	private static volatile long lastActivityTime = System.currentTimeMillis();
 
+	/**
+	 * The allowed timeout duration in milliseconds before the client is disconnected.
+	 * Set to 120,000 milliseconds (2 minutes).
+	 */
+	private static final long TIMEOUT = 120_000;
+
+	/**
+	 * Timer used to monitor user inactivity.
+	 */
+	private static Timer idleTimer;
+	
+	/**
+	 * The specific timer task tracking inactivity, saved so it can be canceled to prevent duplicates.
+	 */
+	private static TimerTask currentTask;
+
+	/**
+	 * The main method that launches the JavaFX application.
+	 * * @param args Command line arguments.
+	 */
 	public static void main(String[] args) {
 		launch(); // call start method
 	}
 
+	/**
+	 * The starting point of the JavaFX application. Loads the initial Connection
+	 * FXML screen and displays it.
+	 * * @param primaryStage The primary stage for this application.
+	 */
 	@Override
 	public void start(Stage primaryStage) {
 		try {
@@ -55,6 +105,13 @@ public class ClientUI extends Application {
 		}
 	}
 
+	/**
+	 * Connects the client to the server using the provided IP and port, starts the
+	 * idle monitor, and loads the LoginRoute UI.
+	 * * @param ip   The IP address of the server.
+	 * @param port The port number of the server.
+	 * @throws Exception If the connection fails or if there is an error loading the FXML.
+	 */
 	public static void startClient(String ip, int port) throws Exception {
 		serverIP = ip;
 		serverPort = port;
@@ -109,8 +166,7 @@ public class ClientUI extends Application {
 
 	/**
 	 * A generic method to switch screens in the application.
-	 * 
-	 * @param fxmlPath The path to the FXML file
+	 * * @param fxmlPath The path to the FXML file
 	 * @param title    The title to display at the top of the window
 	 */
 	public static void changeScreen(String fxmlPath, String title) {
@@ -141,12 +197,19 @@ public class ClientUI extends Application {
 		});
 	}
 
+	/**
+	 * Disconnects the client from the server gracefully.
+	 */
 	public static void disconnect() {
 		if (client != null) {
 			client.disconnectClient();
 		}
 	}
 
+	/**
+	 * Called when the application is closing. Ensures that a disconnect message is
+	 * sent to the server and the connection is closed.
+	 */
 	@Override
 	public void stop() {
 		try {
@@ -162,21 +225,37 @@ public class ClientUI extends Application {
 		System.out.println("Client application stopped");
 	}
 
+	/**
+	 * Updates the last activity timestamp to the current time, preventing idle timeout.
+	 */
 	public static void updateActivity() {
 		lastActivityTime = System.currentTimeMillis();
 	}
 
+	/**
+	 * Starts a background timer task that periodically checks if the client has
+	 * been idle longer than the defined TIMEOUT. If so, it closes the connection.
+	 * Ensures previous tasks are canceled to avoid memory leaks.
+	 */
 	public static void startIdleMonitor() {
-		idleTimer.scheduleAtFixedRate(new TimerTask() {
+		// If there is an old task running, cancel it so we don't get duplicates!
+		if (currentTask != null) {
+			currentTask.cancel();
+		}
+
+		// If we don't have a timer yet, make one
+		if (idleTimer == null) {
+			idleTimer = new Timer(true);
+		}
+
+		currentTask = new TimerTask() {
 			@Override
 			public void run() {
-
 				if (client == null)
 					return;
 
 				if (client.isConnected()) {
 					long now = System.currentTimeMillis();
-
 					if (now - lastActivityTime > TIMEOUT) {
 						try {
 							System.out.println("Idle timeout - closing connection");
@@ -187,9 +266,18 @@ public class ClientUI extends Application {
 					}
 				}
 			}
-		}, 1000, 1000);
+		};
+
+		// Schedule the clean, newly created task
+		idleTimer.scheduleAtFixedRate(currentTask, 1000, 1000);
 	}
 
+	/**
+	 * Sends a message to the server synchronously. Updates the activity timer and
+	 * attempts to reconnect if the client is not connected.
+	 * * @param msg The message object to be sent.
+	 * @throws Exception If an error occurs during sending or reconnection.
+	 */
 	public static synchronized void send(Message msg) throws Exception {
 
 		updateActivity();
@@ -201,6 +289,10 @@ public class ClientUI extends Application {
 		client.sendToServer(msg);
 	}
 
+	/**
+	 * Attempts to reconnect to the server using the previously saved IP and port.
+	 * * @throws Exception If there is no saved connection info or if the connection fails.
+	 */
 	public static void reconnect() throws Exception {
 		if (serverIP == null || serverPort == 0) {
 			throw new Exception("No saved server connection info");

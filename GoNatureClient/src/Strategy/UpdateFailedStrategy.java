@@ -1,7 +1,7 @@
 package Strategy;
 
 import Common.Message;
-import GUI_Visitor.EditOrderController;
+import GUI.EditOrderController;
 
 public class UpdateFailedStrategy implements MessageStrategy {
 	@Override

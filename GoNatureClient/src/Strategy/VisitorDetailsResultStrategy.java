@@ -3,7 +3,7 @@ package Strategy;
 import java.util.ArrayList;
 
 import Common.Message;
-import GUI_Visitor.VisitorMyDetailsPanelController;
+import GUI.VisitorMyDetailsPanelController;
 import javafx.application.Platform;
 
 public class VisitorDetailsResultStrategy implements MessageStrategy {

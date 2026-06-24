@@ -33,8 +33,8 @@ public class ParkWorkerController {
 
 			welcomeLabel.setText("Welcome " + fullName + "!");
 			parkNameLabel.setText("Park: " + GoNatureClient.currentEmployee.getAffiliation());
-			
-			// Request dashboard data from the server 
+
+			// Request dashboard data from the server
 			try {
 				Message msg = new Message("GET_PARK_DASHBOARD", GoNatureClient.currentEmployee.getAffiliation());
 				ClientUI.client.sendToServer(msg);
@@ -42,21 +42,21 @@ public class ParkWorkerController {
 				System.out.println("Error requesting dashboard data.");
 				e.printStackTrace();
 			}
-			
+
 			loadPanel("/GUI/ParkDashboard.fxml");
-			
+
 		} else {
 			welcomeLabel.setText("Welcome!");
 			parkNameLabel.setText("Park: Unknown");
 		}
-		
+
 		Platform.runLater(() -> {
-            // Get the current window (Stage) using one of the nodes (contentArea)
-            Stage stage = (Stage) contentArea.getScene().getWindow();
-            if (stage != null) {
-                stage.setMaximized(true);
-            }
-        });
+			// Get the current window (Stage) using one of the nodes (contentArea)
+			Stage stage = (Stage) contentArea.getScene().getWindow();
+			if (stage != null) {
+				stage.setMaximized(true);
+			}
+		});
 	}
 
 	@FXML
@@ -68,7 +68,7 @@ public class ParkWorkerController {
 	void viewOrders(ActionEvent event) {
 		loadPanel("/GUI/ParkWorkerViewOrders.fxml");
 	}
-	
+
 	@FXML
 	void createCasualVisit(ActionEvent event) {
 		loadPanel("/GUI/ParkWorkerCreateCasualVisit.fxml");
@@ -83,13 +83,12 @@ public class ParkWorkerController {
 	void exitVisitor(ActionEvent event) {
 		loadPanel("/GUI/ParkWorkerExitVisitor.fxml");
 	}
-	
 
 	@FXML
 	void showParkDashboard(ActionEvent event) {
 		loadPanel("/GUI/ParkDashboard.fxml");
 	}
-	
+
 	@FXML
 	void showMyDetails(ActionEvent event) {
 		loadPanel("/GUI/ParkWorkerMyDetailsPanel.fxml");
