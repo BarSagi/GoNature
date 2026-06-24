@@ -30,7 +30,7 @@ public class ApproveRequestResultStrategy implements MessageStrategy {
 					DeptManagerApproveRejectPanelController.instance.showStatus("Request approved successfully.");
 					DeptManagerApproveRejectPanelController.instance.refreshRequests(null);
 				} else {
-					DeptManagerApproveRejectPanelController.instance.showStatus("Approval failed. Check the requested capacity.");
+					DeptManagerApproveRejectPanelController.instance.showStatus("Approval failed. Check the requested value.");
 				}
 			}
 		});

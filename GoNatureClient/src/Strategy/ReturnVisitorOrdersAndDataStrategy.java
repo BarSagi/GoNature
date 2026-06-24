@@ -17,7 +17,7 @@ import java.util.ArrayList;
  * relevant visitor screen.
  */
 public class ReturnVisitorOrdersAndDataStrategy implements MessageStrategy {
-	
+
 	/**
 	 * Executes the strategy for handling visitor data and order results.
 	 * <p>
@@ -39,26 +39,28 @@ public class ReturnVisitorOrdersAndDataStrategy implements MessageStrategy {
 		ArrayList<Order> orders = (ArrayList<Order>) combinedData.get(1);
 
 		Platform.runLater(() -> {
+
+			// Extract the visitor data based on the indices from fetchVisitor
+			String id = visitor.get(0);
+			String firstName = visitor.get(1);
+			String lastName = visitor.get(2);
+			String phone = visitor.get(3);
+			String email = visitor.get(4);
+			String visitorType = visitor.get(5);
+			int subscriptionNumber = Integer.parseInt(visitor.get(6));
+			int familyMembers = Integer.parseInt(visitor.get(7));
+
+			// Save the visitor globally for all visitor types
+			GoNatureClient.currentVisitor = new Visitor(id, firstName, lastName, phone, email, visitorType,
+					subscriptionNumber, familyMembers);
+
 			if (orders == null || orders.isEmpty()) {
 				ClientUI.changeScreen("/GUI/NewVisitorOrder.fxml", "Visitor Registration");
 			} else {
 				System.out.println("Found " + orders.size() + " orders. Routing to Orders Screen.");
 
-				// Extract the visitor data based on the indices from fetchVisitor
-				String id = visitor.get(0);
-				String firstName = visitor.get(1);
-				String lastName = visitor.get(2);
-				String phone = visitor.get(3);
-				String email = visitor.get(4);
-				String visitorType = visitor.get(5);
-				int subscriptionNumber = Integer.parseInt(visitor.get(6));
-				int familyMembers = Integer.parseInt(visitor.get(7));
-
-				// Instantiate the Visitor entity and save it globally
-				GoNatureClient.currentVisitor = new Visitor(id, firstName, lastName, phone, email, visitorType,
-						subscriptionNumber, familyMembers);
-
 				ClientUI.changeScreen("/GUI/VisitorOrdersScreen.fxml", "Your Orders");
+
 				Platform.runLater(() -> {
 					if (VisitorOrdersScreenController.instance != null) {
 						VisitorOrdersScreenController.instance.loadOrders(orders);

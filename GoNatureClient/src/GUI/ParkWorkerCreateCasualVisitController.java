@@ -13,6 +13,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 /**
  * Controller for the park worker's casual visit registration screen. Manages
@@ -26,6 +28,7 @@ public class ParkWorkerCreateCasualVisitController {
 	 */
 	public static ParkWorkerCreateCasualVisitController instance;
 
+	
 	@FXML
 	private TextField visitorIdField;
 
@@ -69,6 +72,17 @@ public class ParkWorkerCreateCasualVisitController {
 		String countStr = visitorCountField.getText().trim();
 		String paymentMethod = paymentComboBox.getValue();
 
+		// Check park opening hours according to the computer clock
+		LocalTime now = LocalTime.now();
+		LocalTime openingTime = LocalTime.of(9, 0);
+		LocalTime closingTime = LocalTime.of(16, 0);
+
+		if (now.isBefore(openingTime) || !now.isBefore(closingTime)) {
+			statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+			statusLabel.setText("Casual visits are allowed only between 09:00 and 16:00.");
+			return;
+		}
+
 		// Reset label color to neutral gray during processing
 		statusLabel.setStyle("-fx-text-fill: #7f8c8d; -fx-font-weight: normal;");
 
@@ -76,58 +90,8 @@ public class ParkWorkerCreateCasualVisitController {
 		if (visitorId.isEmpty() || countStr.isEmpty()) {
 			statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
 			statusLabel.setText("Please fill in all fields.");
-			return;
+			return;}
 		}
-
-		if (!visitorId.matches("\\d{9}")) {
-			statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-			statusLabel.setText("Visitor ID must be exactly 9 digits.");
-			return;
-		}
-		if (paymentMethod == null) {
-			statusLabel.setText("Please select payment method.");
-			return;
-		}
-
-		try {
-			int visitorCount = Integer.parseInt(countStr);
-			if (visitorCount <= 0) {
-				statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-				statusLabel.setText("Visitor count must be greater than 0.");
-				return;
-			}
-
-			String parkName = GoNatureClient.currentEmployee.getAffiliation();
-
-			// Pack data into an ArrayList to transfer safely across the network stream
-			ArrayList<String> data = new ArrayList<>();
-			data.add(parkName);
-			data.add(visitorId);
-			data.add(String.valueOf(visitorCount));
-
-			// Send standard dynamic server message request
-			Message msg = new Message("CREATE_CASUAL_VISIT", data);
-			ClientUI.send(msg);
-			statusLabel.setText("Processing casual entry...");
-
-			ArrayList<String> priceData = new ArrayList<>();
-			priceData.add(visitorId);
-			priceData.add(String.valueOf(visitorCount));
-			priceData.add(parkName);
-			priceData.add(LocalDate.now().toString());
-
-			Message priceMsg = new Message("CALCULATE_PRICE_CASUAL", priceData);
-			ClientUI.send(priceMsg);
-
-		} catch (NumberFormatException e) {
-			statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-			statusLabel.setText("Visitor count must be a valid number.");
-		} catch (Exception e) {
-			statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-			statusLabel.setText("Connection error with the server.");
-			e.printStackTrace();
-		}
-	}
 
 	/**
 	 * Callback method called by the client architecture when server confirmation

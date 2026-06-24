@@ -1385,6 +1385,67 @@ public class DBController {
 			}
 		}
 	}
+	
+	// =========================================================
+	// CHECK IF VISITOR IS ALREADY INSIDE PARK
+	// =========================================================
+	public boolean isVisitorAlreadyInsidePark(String visitorId, String parkName) {
+
+		int parkId = getParkIdByName(parkName);
+
+		if (parkId == -1) {
+			System.err.println("[DB ERROR] Park name '" + parkName + "' not found.");
+			return false;
+		}
+
+		String query = "SELECT visitId FROM Visits "
+				+ "WHERE visitorId = ? "
+				+ "AND parkId = ? "
+				+ "AND exitTime IS NULL "
+				+ "AND currentlyIn > 0";
+
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			conn = pool.getConnection();
+
+			ps = conn.prepareStatement(query);
+			ps.setString(1, visitorId);
+			ps.setInt(2, parkId);
+
+			rs = ps.executeQuery();
+
+			// If a row exists, the visitor is already inside the park
+			return rs.next();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+
+		} finally {
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+
+			if (ps != null) {
+				try {
+					ps.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
+	}
 
 	// =========================================================
 	// GET OCCUPIED VISITOR COUNT FOR SLOT (Updated to include Pending)
@@ -2995,5 +3056,50 @@ public class DBController {
 		}
 
 		return null;
+	}
+	
+	// =========================================================
+	// AUTO CANCEL NO-SHOW ORDERS
+	// =========================================================
+	public int autoCancelNoShowOrders() {
+
+		String query = "UPDATE Orders "
+				+ "SET status = 'Canceled' "
+				+ "WHERE status = 'Approved' "
+				+ "AND TIMESTAMP(visitDate, visitTime) < DATE_SUB(NOW(), INTERVAL 30 MINUTE)";
+
+		Connection conn = null;
+		PreparedStatement ps = null;
+
+		try {
+			conn = pool.getConnection();
+
+			ps = conn.prepareStatement(query);
+
+			int rowsAffected = ps.executeUpdate();
+
+			if (rowsAffected > 0) {
+				System.out.println("[AUTO CANCEL] " + rowsAffected + " no-show orders were canceled.");
+			}
+
+			return rowsAffected;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return 0;
+
+		} finally {
+			if (ps != null) {
+				try {
+					ps.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+
+			if (conn != null) {
+				pool.releaseConnection(conn);
+			}
+		}
 	}
 }

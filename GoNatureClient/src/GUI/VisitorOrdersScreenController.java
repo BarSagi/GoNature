@@ -275,11 +275,16 @@ public class VisitorOrdersScreenController {
 	 *
 	 * @param event The action event.
 	 */
+	/**
+	 * Displays the visitor's personal details panel.
+	 * All visitors can view their details, but only subscribers can edit them.
+	 *
+	 * @param event The action event.
+	 */
 	@FXML
 	void showMyDetails(ActionEvent event) {
-		if (GoNatureClient.currentVisitor == null
-				|| !"Subscriber".equalsIgnoreCase(GoNatureClient.currentVisitor.getVisitorType())) {
-			showErrorAlert("Only subscribers can see their personal details.");
+		if (GoNatureClient.currentVisitor == null) {
+			showErrorAlert("No visitor is currently logged in.");
 			return;
 		}
 

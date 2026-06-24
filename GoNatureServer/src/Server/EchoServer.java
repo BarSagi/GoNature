@@ -144,6 +144,37 @@ public class EchoServer extends AbstractServer {
 		log("[SYSTEM] Server listening for connections on port " + getPort());
 		startIdleChecker();
 		database = new DBController(this);
+		startAutoCancelNoShowTask();
+	}
+	
+	/**
+	 * Starts a background task that automatically cancels approved orders
+	 * if the visitor did not arrive within 30 minutes after the scheduled visit time.
+	 */
+	private void startAutoCancelNoShowTask() {
+		Thread autoCancelThread = new Thread(() -> {
+			while (true) {
+				try {
+					if (database != null) {
+						int canceledOrders = database.autoCancelNoShowOrders();
+
+						if (canceledOrders > 0) {
+							log("[AUTO CANCEL] No-show orders canceled: " + canceledOrders);
+						}
+					}
+
+					// Run the check every minute
+					Thread.sleep(60 * 1000);
+
+				} catch (Exception e) {
+					log("[AUTO CANCEL ERROR] " + e.getMessage());
+					e.printStackTrace();
+				}
+			}
+		});
+
+		autoCancelThread.setDaemon(true);
+		autoCancelThread.start();
 	}
 
 	/**
