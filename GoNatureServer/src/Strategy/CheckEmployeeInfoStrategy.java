@@ -6,8 +6,25 @@ import Common.Message;
 import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
+/**
+ * Strategy class responsible for checking employee login information.
+ * The strategy receives employee data from the client, checks the employee
+ * details in the database, prevents duplicate logins, and sends the result
+ * back to the client.
+ */
 public class CheckEmployeeInfoStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the employee information check command.
+	 * The method extracts the employee data from the message, checks if the employee
+	 * exists in the database, verifies that the user is not already logged in,
+	 * and sends the employee role result back to the client.
+	 *
+	 * @param msg the message received from the client
+	 * @param client the client connection that sent the message
+	 * @param server the server that handles the request and provides database access
+	 * @throws Exception if an error occurs while checking employee information or sending the response
+	 */
 	@Override
 	public void execute(Message msg, ConnectionToClient client, EchoServer server) throws Exception {
 		try {

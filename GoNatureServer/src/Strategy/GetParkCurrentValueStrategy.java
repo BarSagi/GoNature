@@ -6,8 +6,25 @@ import Common.Message;
 import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
+/**
+ * Strategy class responsible for fetching the current value of a park setting.
+ * The strategy receives a park name and request type from the client,
+ * retrieves the matching current value from the database,
+ * and sends the result back to the client.
+ */
 public class GetParkCurrentValueStrategy implements MessageStrategy {
 
+    /**
+     * Executes the get park current value command.
+     * The method extracts the park name and request type from the message,
+     * retrieves the current value from the database,
+     * and sends the result back to the client.
+     *
+     * @param msg the message received from the client
+     * @param client the client connection that sent the message
+     * @param server the server that handles the request and provides database access
+     * @throws Exception if an error occurs while fetching or sending the current value
+     */
     @Override
     public void execute(Message msg, ConnectionToClient client, EchoServer server) throws Exception {
         try {

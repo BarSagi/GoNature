@@ -1,7 +1,7 @@
 package Strategy;
 
 import Common.Message;
-import GUI.NewVisitorOrderController;
+import GUI_Visitor.NewVisitorOrderController;
 import javafx.application.Platform;
 
 public class RegisterOrderSuccessStrategy implements MessageStrategy {

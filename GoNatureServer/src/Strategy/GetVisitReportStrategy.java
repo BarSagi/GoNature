@@ -7,8 +7,24 @@ import Server.EchoServer;
 
 import java.util.ArrayList;
 
+/**
+ * Strategy class responsible for generating a visit report.
+ * The strategy receives the park name, month, and year from the client,
+ * retrieves the matching visit report from the database,
+ * and sends the result back to the client.
+ */
 public class GetVisitReportStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the visit report request.
+	 * The method extracts the report parameters from the message,
+	 * converts the park name to a park ID, retrieves the visit report
+	 * from the database, and sends the result back to the client.
+	 *
+	 * @param message the message received from the client
+	 * @param client the client connection that sent the message
+	 * @param server the server that handles the request and provides database access
+	 */
 	@Override
 	public void execute(Message message, ConnectionToClient client, EchoServer server) {
 		try {

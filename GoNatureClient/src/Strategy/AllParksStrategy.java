@@ -5,10 +5,10 @@ import Common.Message;
 import GUI.CreateOrderController;
 import GUI.DeptManagerCancellationReportPanelController;
 import GUI.DeptManagerVisitDurationReportController;
-import GUI.NewVisitorOrderController;
 import GUI.ParkWorkerCreateOrderController;
-import GUI.VisitorOrdersScreenController;
 import GUI.DeptManagerParkDashboardController;
+import GUI_Visitor.NewVisitorOrderController;
+import GUI_Visitor.VisitorOrdersScreenController;
 import javafx.application.Platform;
 
 public class AllParksStrategy implements MessageStrategy {

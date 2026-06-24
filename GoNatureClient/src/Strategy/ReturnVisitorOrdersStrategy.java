@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import Client.ClientUI;
 import Common.Message;
 import Common.Order;
-import GUI.VisitorOrdersScreenController;
+import GUI_Visitor.VisitorOrdersScreenController;
 import javafx.application.Platform;
 
 public class ReturnVisitorOrdersStrategy implements MessageStrategy {
@@ -14,7 +14,7 @@ public class ReturnVisitorOrdersStrategy implements MessageStrategy {
 	@Override
 	public void execute(Message message) {
 		ArrayList<Order> orders = (ArrayList<Order>) message.getData();
-		ClientUI.changeScreen("/GUI/VisitorOrdersScreen.fxml", "Your Orders");
+		ClientUI.changeScreen("/GUI_Visitor/VisitorOrdersScreen.fxml", "Your Orders");
 
 		Platform.runLater(() -> {
 			if (VisitorOrdersScreenController.instance != null) {

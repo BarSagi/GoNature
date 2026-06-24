@@ -1,7 +1,19 @@
 package Strategy;
 
+/**
+ * Factory class responsible for creating message strategy objects.
+ * The factory receives a command string and returns the matching strategy
+ * that knows how to handle that command.
+ */
 public class StrategyFactory {
 
+	/**
+	 * Returns the matching strategy object for the given command.
+	 * If the command is not recognized, the method returns null.
+	 *
+	 * @param command the command received from the client
+	 * @return the matching message strategy, or null if no strategy matches the command
+	 */
 	public static MessageStrategy getStrategy(String command) {
 
 		switch (command) {
@@ -116,16 +128,16 @@ public class StrategyFactory {
 
 		case "GET_ALL_REPORTS":
 			return new GetAllReportsStrategy();
-
+			
 		case "GET_VISITOR_DETAILS":
 			return new GetVisitorDetailsStrategy();
 
 		case "UPDATE_VISITOR_DETAILS":
 			return new UpdateVisitorDetailsStrategy();
-
+			
 		case "GET_EMPLOYEE_DETAILS":
 			return new FetchEmployeeByIdStrategy();
-
+			
 		case "FETCH_SUBSCRIBER_BY_ID":
 			return new FetchSubscriberByIdStrategy();
 

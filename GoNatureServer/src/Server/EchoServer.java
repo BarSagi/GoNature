@@ -14,6 +14,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Server class responsible for handling client connections and messages.
+ * The server receives messages from clients, sends them to the correct strategy,
+ * manages connected users, and writes logs to the server console.
+ */
 public class EchoServer extends AbstractServer {
 
 	public static EchoServer instance;
@@ -26,12 +31,23 @@ public class EchoServer extends AbstractServer {
 
 	private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+	/**
+	 * Constructs a new EchoServer with the given port.
+	 *
+	 * @param port the port number used by the server
+	 */
 	public EchoServer(int port) {
 		super(port);
 		instance = this;
 	}
 
-	// ADDED: Helper method to handle user login
+	/**
+	 * Logs in a user if the user is not already connected.
+	 *
+	 * @param userId the ID of the user trying to log in
+	 * @param client the client connection of the user
+	 * @return true if the login succeeded, otherwise false
+	 */
 	public boolean loginUser(String userId, ConnectionToClient client) {
 		if (loggedInUsers.containsKey(userId)) {
 			return false; // User is already logged in!
@@ -41,7 +57,12 @@ public class EchoServer extends AbstractServer {
 		return true;
 	}
 
-	// ADDED: Helper method to handle user logout/disconnect
+	/**
+	 * Logs out a user by removing the matching client connection
+	 * from the logged-in users map.
+	 *
+	 * @param client the client connection to log out
+	 */
 	public void logoutUser(ConnectionToClient client) {
 		loggedInUsers.entrySet().removeIf(entry -> {
 			if (entry.getValue().equals(client)) {
@@ -52,6 +73,14 @@ public class EchoServer extends AbstractServer {
 		});
 	}
 
+	/**
+	 * Handles messages received from a client.
+	 * The method updates client activity, handles connect and disconnect commands,
+	 * and sends other commands to the matching strategy.
+	 *
+	 * @param msg the message received from the client
+	 * @param client the client connection that sent the message
+	 */
 	@Override
 	public void handleMessageFromClient(Object msg, ConnectionToClient client) {
 
@@ -107,17 +136,29 @@ public class EchoServer extends AbstractServer {
 		}
 	}
 
+	/**
+	 * Called when the server starts listening for client connections.
+	 * Initializes the idle checker and the database controller.
+	 */
 	protected void serverStarted() {
 		log("[SYSTEM] Server listening for connections on port " + getPort());
 		startIdleChecker();
 		database = new DBController(this);
 	}
 
+	/**
+	 * Called when the server stops listening for client connections.
+	 */
 	protected void serverStopped() {
 		log("[SYSTEM] Server has stopped listening for connections.");
 	}
 
-	// ADDED: OCSF Hook for graceful disconnection (e.g. app closed)
+	/**
+	 * Handles a graceful client disconnection.
+	 * Removes the client from the logged-in users map and activity map.
+	 *
+	 * @param client the disconnected client
+	 */
 	@Override
 	synchronized protected void clientDisconnected(ConnectionToClient client) {
 		logoutUser(client);
@@ -125,7 +166,13 @@ public class EchoServer extends AbstractServer {
 		log("[SYSTEM] Client disconnected gracefully.");
 	}
 
-	// ADDED: OCSF Hook for abrupt disconnection (e.g. internet drop)
+	/**
+	 * Handles an abrupt client disconnection caused by an exception.
+	 * Removes the client from the logged-in users map and activity map.
+	 *
+	 * @param client the disconnected client
+	 * @param exception the exception that caused the disconnection
+	 */
 	@Override
 	synchronized protected void clientException(ConnectionToClient client, Throwable exception) {
 		logoutUser(client);
@@ -133,6 +180,11 @@ public class EchoServer extends AbstractServer {
 		log("[SYSTEM] Client disconnected abruptly: " + exception.getMessage());
 	}
 
+	/**
+	 * Writes a timestamped message to the console and to the server GUI.
+	 *
+	 * @param msg the message to write
+	 */
 	public void log(String msg) {
 
 		String timeStampedMsg = "[" + dtf.format(LocalDateTime.now()) + "] " + msg;
@@ -149,6 +201,11 @@ public class EchoServer extends AbstractServer {
 		}
 	}
 
+	/**
+	 * Builds a text summary of all currently connected clients.
+	 *
+	 * @return a string containing information about connected clients
+	 */
 	public String getConnectedClientInfo() {
 		StringBuilder sb = new StringBuilder();
 
@@ -175,10 +232,19 @@ public class EchoServer extends AbstractServer {
 		return sb.toString();
 	}
 
+	/**
+	 * Returns the database controller used by the server.
+	 *
+	 * @return the database controller
+	 */
 	public DBController getDatabase() {
 		return database;
 	}
 
+	/**
+	 * Starts a background thread that checks for inactive clients.
+	 * If a client is idle for too long, the server disconnects it.
+	 */
 	private void startIdleChecker() {
 		Thread t = new Thread(() -> {
 			while (true) {

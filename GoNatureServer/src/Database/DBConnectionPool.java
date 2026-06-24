@@ -8,6 +8,11 @@ import java.util.Queue;
 
 import Server.EchoServer;
 
+/**
+ * Manages a pool of database connections for the GoNature system.
+ * This class creates, stores, provides, releases, and closes MySQL connections.
+ * It uses the Singleton pattern so only one connection pool instance exists.
+ */
 public class DBConnectionPool {
 
 	private static DBConnectionPool instance;
@@ -17,14 +22,26 @@ public class DBConnectionPool {
 
 	private final String url = "jdbc:mysql://localhost:3306/gonature?serverTimezone=Asia/Jerusalem&useSSL=false";
 	private final String user = "root";
-	private final String password = "galdolev123"; // CHANGE PASSWORD HERE
+	private final String password = "Shirpot111!"; // CHANGE PASSWORD HERE
 
+	/**
+	 * Creates a new database connection pool and initializes it with connections.
+	 *
+	 * @param server the server instance used for logging pool initialization
+	 */
 	private DBConnectionPool(EchoServer server) {
 		initializePool();
 
 		server.log("MySQL Connection Pool initialized with " + MAX_POOL_SIZE + " connections");
 	}
 
+	/**
+	 * Returns the single instance of the database connection pool.
+	 * If the pool does not exist yet, it creates a new one.
+	 *
+	 * @param server the server instance used when creating the pool
+	 * @return the single database connection pool instance
+	 */
 	public static synchronized DBConnectionPool getInstance(EchoServer server) {
 		if (instance == null) {
 			instance = new DBConnectionPool(server);
@@ -32,6 +49,9 @@ public class DBConnectionPool {
 		return instance;
 	}
 
+	/**
+	 * Initializes the connection pool with a fixed number of database connections.
+	 */
 	private void initializePool() {
 		try {
 			for (int i = 0; i < MAX_POOL_SIZE; i++) {
@@ -42,6 +62,12 @@ public class DBConnectionPool {
 		}
 	}
 
+	/**
+	 * Creates a new connection to the MySQL database.
+	 *
+	 * @return a new database connection
+	 * @throws SQLException if a database access error occurs
+	 */
 	private Connection createNewConnection() throws SQLException {
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
@@ -52,6 +78,13 @@ public class DBConnectionPool {
 		return DriverManager.getConnection(url, user, password);
 	}
 
+	/**
+	 * Gets an available connection from the pool.
+	 * If the pool is empty, a new connection is created as a fallback.
+	 *
+	 * @return an available database connection
+	 * @throws SQLException if a database access error occurs
+	 */
 	public synchronized Connection getConnection() throws SQLException {
 		if (!pool.isEmpty()) {
 			return pool.poll();
@@ -59,6 +92,12 @@ public class DBConnectionPool {
 		return createNewConnection(); // fallback
 	}
 
+	/**
+	 * Releases a database connection back into the pool.
+	 * If the connection is closed, a new connection is created and added instead.
+	 *
+	 * @param conn the connection to release back to the pool
+	 */
 	public synchronized void releaseConnection(Connection conn) {
 		if (conn == null)
 			return;
@@ -74,6 +113,9 @@ public class DBConnectionPool {
 		}
 	}
 
+	/**
+	 * Closes all database connections in the pool and clears the pool.
+	 */
 	public synchronized void closeAll() {
 		for (Connection conn : pool) {
 			try {

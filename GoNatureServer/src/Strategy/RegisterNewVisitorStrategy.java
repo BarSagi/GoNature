@@ -5,8 +5,23 @@ import Common.Message;
 import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
+/**
+ * Strategy class responsible for registering a new visitor.
+ * The strategy receives visitor data from the client, saves the visitor
+ * in the database, and sends the registration result back to the client.
+ */
 public class RegisterNewVisitorStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the new visitor registration command.
+	 * The method extracts the visitor data from the message, sends it to the
+	 * database controller for registration, and returns a success or failure
+	 * result to the client.
+	 *
+	 * @param msg the message received from the client
+	 * @param client the client connection that sent the message
+	 * @param server the server that handles the request and provides database access
+	 */
 	@Override
 	public void execute(Message msg, ConnectionToClient client, EchoServer server) {
 		try {

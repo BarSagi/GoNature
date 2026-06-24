@@ -20,7 +20,7 @@
 <AnchorPane prefHeight="600.0" prefWidth="600.0"
 	style="-fx-background-color: #f4f6f7;"
 	xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
-	fx:controller="GUI.NewVisitorOrderController">
+	fx:controller="GUI_Visitor.NewVisitorOrderController">
 	<children>
 		<ScrollPane fitToWidth="true"
 			style="-fx-background: #f4f6f7; -fx-background-color: transparent; -fx-border-color: transparent;"

@@ -1,7 +1,7 @@
 package Strategy;
 
 import Common.Message;
-import GUI.VisitorMyDetailsPanelController;
+import GUI_Visitor.VisitorMyDetailsPanelController;
 import javafx.application.Platform;
 
 public class UpdateVisitorDetailsResultStrategy implements MessageStrategy {

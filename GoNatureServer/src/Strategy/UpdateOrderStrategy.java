@@ -7,8 +7,24 @@ import Common.Order;
 import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
+/**
+ * Strategy class responsible for updating an existing order.
+ * The strategy receives an updated order from the client, checks if the new
+ * time slot has enough space, updates the order in the database, and sends
+ * the result back to the client.
+ */
 public class UpdateOrderStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the update order command.
+	 * The method extracts the updated order data, checks park capacity for the
+	 * requested date and time, updates the order in the database if possible,
+	 * and sends a success or failure response back to the client.
+	 *
+	 * @param message the message received from the client
+	 * @param client the client connection that sent the message
+	 * @param server the server that handles the request and provides database access
+	 */
 	@Override
 	public void execute(Message message, ConnectionToClient client, EchoServer server) {
 		Order orderToUpdate = (Order) message.getData();

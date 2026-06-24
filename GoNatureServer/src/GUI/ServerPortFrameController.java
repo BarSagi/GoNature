@@ -11,6 +11,11 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import Server.ServerUI;
 
+/**
+ * Controller for the server port setup screen.
+ * Handles receiving the port number from the user, starting the server,
+ * and switching to the server console screen.
+ */
 public class ServerPortFrameController {
 
 	@FXML
@@ -19,6 +24,12 @@ public class ServerPortFrameController {
 	@FXML
 	private Label errorLabel; // Displays errors before the console loads
 
+	/**
+	 * Opens the server port setup screen.
+	 *
+	 * @param primaryStage the main stage of the application
+	 * @throws Exception if the FXML file cannot be loaded
+	 */
 	public void start(Stage primaryStage) throws Exception {
 		FXMLLoader loader = new FXMLLoader(getClass().getResource("/GUI/ServerPort.fxml"));
 		Parent root = loader.load();
@@ -28,6 +39,13 @@ public class ServerPortFrameController {
 		primaryStage.show();
 	}
 
+	/**
+	 * Handles the Done button click.
+	 * Validates the port number, opens the server console screen,
+	 * and starts the server using the entered port.
+	 *
+	 * @param event the action event triggered by the Done button
+	 */
 	@FXML
 	public void done(ActionEvent event) {
 		String portNumber = portxt.getText();
@@ -58,6 +76,11 @@ public class ServerPortFrameController {
 		}
 	}
 
+	/**
+	 * Exits the application.
+	 *
+	 * @param event the action event triggered by the Exit button
+	 */
 	@FXML
 	public void exit(ActionEvent event) {
 		System.exit(0);

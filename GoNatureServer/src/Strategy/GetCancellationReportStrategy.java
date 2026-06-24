@@ -7,8 +7,24 @@ import OCSFUtils.ConnectionToClient;
 
 import java.util.ArrayList;
 
+/**
+ * Strategy class responsible for generating a cancellation report.
+ * The strategy receives the park name, month, and year from the client,
+ * retrieves the matching cancellation report from the database,
+ * and sends the result back to the client.
+ */
 public class GetCancellationReportStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the cancellation report request.
+	 * The method extracts the report parameters from the message, converts
+	 * the park name to a park ID, retrieves the cancellation report from
+	 * the database, and sends the result back to the client.
+	 *
+	 * @param message the message received from the client
+	 * @param client the client connection that sent the message
+	 * @param server the server that handles the request and provides database access
+	 */
 	@Override
 	public void execute(Message message, ConnectionToClient client, EchoServer server) {
 

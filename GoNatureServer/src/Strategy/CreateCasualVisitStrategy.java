@@ -5,8 +5,23 @@ import Common.Message;
 import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
+/**
+ * Strategy class responsible for creating a casual visit.
+ * The strategy receives visit details from the client, creates the visit
+ * in the database, and sends the result back to the client.
+ */
 public class CreateCasualVisitStrategy implements MessageStrategy {
 
+    /**
+     * Executes the create casual visit command.
+     * The method extracts the park name, visitor ID, and visitor count
+     * from the message, creates the casual visit in the database,
+     * and sends a success or failure response back to the client.
+     *
+     * @param message the message received from the client
+     * @param client the client connection that sent the message
+     * @param server the server that handles the request and provides database access
+     */
     @Override
     public void execute(Message message, ConnectionToClient client, EchoServer server) {
         try {

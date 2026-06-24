@@ -29,7 +29,6 @@
 				</VBox.margin>
 			</Label>
 
-
 			<VBox spacing="4.0" alignment="CENTER"
 				style="-fx-background-color: #113f5c; -fx-background-radius: 8; -fx-padding: 10;">
 				<Label fx:id="welcomeLabel" text="Welcome!"
@@ -55,7 +54,6 @@
 			<Button text="Enter Visitor to Park" onAction="#enterVisitor"
 				prefHeight="45.0" prefWidth="230.0"
 				style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;" />
-
 
 			<Button text="Exit Visitor from Park" onAction="#exitVisitor"
 				prefHeight="45.0" prefWidth="230.0"

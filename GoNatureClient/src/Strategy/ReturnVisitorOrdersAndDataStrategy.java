@@ -3,7 +3,7 @@ package Strategy;
 import Common.Message;
 import Common.Order;
 import Entity.Visitor;
-import GUI.VisitorOrdersScreenController;
+import GUI_Visitor.VisitorOrdersScreenController;
 import Client.ClientUI;
 import Client.GoNatureClient;
 import javafx.application.Platform;
@@ -23,7 +23,7 @@ public class ReturnVisitorOrdersAndDataStrategy implements MessageStrategy {
 
 		Platform.runLater(() -> {
 			if (orders == null || orders.isEmpty()) {
-				ClientUI.changeScreen("/GUI/NewVisitorOrder.fxml", "Visitor Registration");
+				ClientUI.changeScreen("/GUI_Visitor/NewVisitorOrder.fxml", "Visitor Registration");
 			} else {
 				System.out.println("Found " + orders.size() + " orders. Routing to Orders Screen.");
 
@@ -41,7 +41,7 @@ public class ReturnVisitorOrdersAndDataStrategy implements MessageStrategy {
 				GoNatureClient.currentVisitor = new Visitor(id, firstName, lastName, phone, email, visitorType,
 						subscriptionNumber, familyMembers);
 
-				ClientUI.changeScreen("/GUI/VisitorOrdersScreen.fxml", "Your Orders");
+				ClientUI.changeScreen("/GUI_Visitor/VisitorOrdersScreen.fxml", "Your Orders");
 				Platform.runLater(() -> {
 					if (VisitorOrdersScreenController.instance != null) {
 						VisitorOrdersScreenController.instance.loadOrders(orders);

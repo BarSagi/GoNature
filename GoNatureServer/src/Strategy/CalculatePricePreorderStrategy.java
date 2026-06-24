@@ -8,8 +8,23 @@ import PricingService.PricingService;
 import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
+/**
+ * Strategy class responsible for calculating the price for a preorder visit.
+ * The strategy receives preorder details from the client, checks the visitor type,
+ * calculates the correct price, and sends the result back to the client.
+ */
 public class CalculatePricePreorderStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the preorder price calculation command.
+	 * The method extracts the order data from the message, checks the visitor type,
+	 * determines the correct visit type and payment status, calculates the final price,
+	 * and sends the price result back to the client.
+	 *
+	 * @param msg the message received from the client
+	 * @param client the client connection that sent the message
+	 * @param server the server that handles the request and provides database access
+	 */
 	@Override
 	public void execute(Message msg, ConnectionToClient client, EchoServer server) {
 

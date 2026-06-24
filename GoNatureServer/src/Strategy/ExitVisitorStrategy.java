@@ -6,8 +6,24 @@ import Common.Message;
 import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
+/**
+ * Strategy class responsible for handling visitor exit from a park.
+ * The strategy receives visitor or worker exit data, identifies the park,
+ * updates the database, and sends the exit result back to the client.
+ */
 public class ExitVisitorStrategy implements MessageStrategy {
 
+    /**
+     * Executes the exit visitor command.
+     * The method extracts the visitor identifier, park data, and exit amount
+     * from the message, converts the park data to a park ID if needed,
+     * updates the visitor exit information in the database,
+     * and sends the result message back to the client.
+     *
+     * @param message the message received from the client
+     * @param client the client connection that sent the message
+     * @param server the server that handles the request and provides database access
+     */
     @Override
     public void execute(Message message, ConnectionToClient client, EchoServer server) {
         try {

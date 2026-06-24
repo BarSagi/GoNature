@@ -12,7 +12,7 @@
 <VBox alignment="CENTER" prefHeight="500.0" prefWidth="450.0"
 	spacing="20.0" style="-fx-background-color: #f4f4f4;"
 	xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
-	fx:controller="GUI.VisitorMyDetailsPanelController">
+	fx:controller="GUI_Visitor.VisitorMyDetailsPanelController">
 
 	<children>
 		<VBox alignment="CENTER" maxWidth="500.0" spacing="20.0"

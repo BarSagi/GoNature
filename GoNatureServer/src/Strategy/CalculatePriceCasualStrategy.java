@@ -8,8 +8,24 @@ import PricingService.PricingService;
 import OCSFUtils.ConnectionToClient;
 import Server.EchoServer;
 
+/**
+ * Strategy class responsible for calculating the price for a casual visit.
+ * The strategy receives visit details from the client, checks the visitor type,
+ * calculates the correct price, and sends the result back to the client.
+ */
 public class CalculatePriceCasualStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the casual price calculation command.
+	 * The method extracts the visitor data from the message, gets the park ID
+	 * and visitor type from the database, calculates the final price,
+	 * and sends the price result back to the client.
+	 *
+	 * @param msg the message received from the client
+	 * @param client the client connection that sent the message
+	 * @param server the server that handles the request and provides database access
+	 * @throws Exception if an error occurs while calculating the price or sending the response
+	 */
 	@Override
 	public void execute(Message msg, ConnectionToClient client, EchoServer server) throws Exception {
 

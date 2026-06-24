@@ -125,19 +125,19 @@ public class StrategyFactory {
 
 		case "SAVE_REPORT_RESULT":
 			return new SaveReportResultStrategy();
-
+			
 		case "VISITOR_DETAILS_RESULT":
 			return new VisitorDetailsResultStrategy();
 
 		case "UPDATE_VISITOR_DETAILS_RESULT":
 			return new UpdateVisitorDetailsResultStrategy();
-
+			
 		case "EMPLOYEE_DETAILS_RESULT":
 			return new EmployeeDetailsResultStrategy();
-
+			
 		case "SUBSCRIBER_DETAILS_RESULT":
 			return new SubscriberDetailsResultStrategy();
-
+			
 		default:
 			return null;
 		}
