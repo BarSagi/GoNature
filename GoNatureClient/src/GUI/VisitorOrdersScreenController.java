@@ -277,11 +277,12 @@ public class VisitorOrdersScreenController {
 	 */
 	@FXML
 	void showMyDetails(ActionEvent event) {
+		/*
 		if (GoNatureClient.currentVisitor == null
 				|| !"Subscriber".equalsIgnoreCase(GoNatureClient.currentVisitor.getVisitorType())) {
 			showErrorAlert("Only subscribers can see their personal details.");
 			return;
-		}
+		}*/
 
 		try {
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("/GUI/VisitorMyDetailsPanel.fxml"));

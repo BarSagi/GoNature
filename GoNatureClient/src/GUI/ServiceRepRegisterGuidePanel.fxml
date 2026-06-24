@@ -15,7 +15,10 @@
 
     <Label text="Please fill in the guide details"
            style="-fx-font-size: 14px; -fx-text-fill: #7f8c8d;" />
-
+           
+	<Label text="Note: If this ID is already registered in the system, the existing details will be updated."
+       style="-fx-font-size: 14px; -fx-text-fill: #e74c3c;" />
+	
     <GridPane hgap="15.0" vgap="15.0">
         <Label text="First Name:" GridPane.rowIndex="0" GridPane.columnIndex="0" />
         <TextField fx:id="firstNameField" promptText="First Name"
