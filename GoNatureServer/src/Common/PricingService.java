@@ -1,4 +1,4 @@
-package PricingService;
+package Common;
 
 import java.time.LocalDate;
 
