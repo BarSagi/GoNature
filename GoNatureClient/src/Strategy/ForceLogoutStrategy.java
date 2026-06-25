@@ -1,17 +1,28 @@
 package Strategy;
 
+import Common.Message;
 import Client.ClientUI;
 import Client.GoNatureClient;
-import Common.Message;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 
 /**
- * Handles the force logout process when a client is deemed idle by the server.
- * Triggers a UI alert and routes the user back to the login screen.
+ * Strategy responsible for handling forced logout commands initiated by the server.
+ * <p>
+ * This strategy clears local session data, displays a notification alert to the 
+ * user regarding inactivity, and routes the application interface back to the 
+ * login screen.
  */
 public class ForceLogoutStrategy implements MessageStrategy {
 
+	/**
+	 * Executes the logout process.
+	 * <p>
+	 * Clears the current visitor session, displays an information alert, and
+	 * navigates the application back to the login screen.
+	 *
+	 * @param message The message received from the server triggering the force logout.
+	 */
 	@Override
 	public void execute(Message message) {
 		// 1. Clear local session data

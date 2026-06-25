@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.?>
-<?import javafx.scene.layout.?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 <?import javafx.scene.chart.PieChart?>
 
 <VBox alignment="CENTER" spacing="15.0"
@@ -19,7 +19,7 @@
 		<ComboBox fx:id="yearCombo" promptText="Year" />
 
 		<Button text="Generate" onAction="#generateReport"
-			style="-fx-background-color: #27ae60; -fx-text-fill: white;" />
+				style="-fx-background-color: #27ae60; -fx-text-fill: white;" />
 	</HBox>
 
 	<Label fx:id="noDataLabel"
@@ -36,7 +36,7 @@
 	</VBox>
 
 	<Button fx:id="saveReportBtn" text="Save Report"
-		onAction="#saveReport"
-		style="-fx-background-color: #27ae60; -fx-text-fill: white;" />
+			onAction="#saveReport"
+			style="-fx-background-color: #27ae60; -fx-text-fill: white;" />
 
 </VBox>
