@@ -260,7 +260,7 @@ public class ParkWorkerCreateOrderController {
 		paymentData.add(pendingVisitorCount);
 		paymentData.add(pendingPayment);
 		paymentData.add(pendingParkName);
-		paymentData.add(LocalDate.now().toString());
+		paymentData.add(pendingDate);
 
 		try {
 			ClientUI.send(new Message("CALCULATE_PRICE_PREORDER", paymentData));

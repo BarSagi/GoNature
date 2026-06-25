@@ -27,28 +27,33 @@ import javafx.scene.text.Text;
 import javafx.application.Platform;
 
 /**
- * Controller for the visitor orders screen. Manages the display of a visitor's
- * orders in a table, allowing for viewing, editing, canceling, and confirming
- * orders, as well as reporting exits from the park.
+ * Controller class for the visitor orders management screen. This class handles
+ * the display, interaction, and lifecycle of visitor orders, including editing,
+ * canceling, confirming, and reporting exits.
  */
 public class VisitorOrdersScreenController {
 
 	/**
-	 * Static instance of this controller for external access.
+	 * Singleton instance of this controller to allow access from other controllers.
 	 */
 	public static VisitorOrdersScreenController instance;
 
+	/** Internal cache for mapping park IDs to park names. */
 	private ArrayList<String> dbParksList = new ArrayList<>();
 
+	/** The TableView displaying the list of visitor orders. */
 	@FXML
 	private TableView<Order> ordersTable;
 
+	/** Displays the visitor's name. */
 	@FXML
 	private Label welcomeLabel;
 
+	/** Displays the role of the logged-in visitor. */
 	@FXML
 	private Label roleLabel;
 
+	/** Table columns bound to Order properties. */
 	@FXML
 	private TableColumn<Order, Integer> colPark;
 	@FXML
@@ -64,14 +69,16 @@ public class VisitorOrdersScreenController {
 	@FXML
 	private TableColumn<Order, Integer> colVisitors;
 
+	/** Observable list containing the orders currently displayed in the table. */
 	private ObservableList<Order> tableData = FXCollections.observableArrayList();
 
+	/** Main container for the screen. */
 	@FXML
 	private BorderPane mainBorderPane;
 
 	/**
 	 * Initializes the controller, configures table columns, sets up cell factories,
-	 * and loads initial data.
+	 * and requests initial data from the server.
 	 */
 	@FXML
 	public void initialize() {
@@ -202,9 +209,10 @@ public class VisitorOrdersScreenController {
 	}
 
 	/**
-	 * Updates the internal list of park names based on data from the server.
+	 * Updates the internal list of park names based on data received from the
+	 * server.
 	 *
-	 * @param parks The list of available park names.
+	 * @param parks The list of available park names to cache.
 	 */
 	public void loadParks(ArrayList<String> parks) {
 		if (parks != null) {
@@ -214,7 +222,7 @@ public class VisitorOrdersScreenController {
 	}
 
 	/**
-	 * Clears and populates the order table data.
+	 * Clears and populates the table with new order data.
 	 *
 	 * @param rawOrders The list of orders to display.
 	 */
@@ -224,9 +232,10 @@ public class VisitorOrdersScreenController {
 	}
 
 	/**
-	 * Navigates to the edit order screen for the selected order.
+	 * Navigates the UI to the edit order screen if an order is selected and
+	 * eligible for editing.
 	 *
-	 * @param event The action event.
+	 * @param event The action event triggering the navigation.
 	 */
 	@FXML
 	void editOrder(ActionEvent event) {
@@ -237,8 +246,8 @@ public class VisitorOrdersScreenController {
 			return;
 		}
 
-		if ("Canceled".equalsIgnoreCase(selectedOrder.getOrderStatus())) {
-			showErrorAlert("You cannot edit a cancelled order!");
+		if (!"Approved".equalsIgnoreCase(selectedOrder.getOrderStatus())) {
+			showErrorAlert("You can only edit approved orders!");
 			return;
 		}
 
@@ -257,9 +266,9 @@ public class VisitorOrdersScreenController {
 	}
 
 	/**
-	 * Navigates to the create order screen.
+	 * Navigates the user to the "Create Order" screen.
 	 *
-	 * @param event The action event.
+	 * @param event The action event triggering the navigation.
 	 */
 	@FXML
 	void createNewOrder(ActionEvent event) {
@@ -271,10 +280,9 @@ public class VisitorOrdersScreenController {
 	}
 
 	/**
-	 * Displays the visitor's personal details panel. All visitors can view their
-	 * details, but only subscribers can edit them.
+	 * Loads and displays the visitor's personal details panel in the center pane.
 	 *
-	 * @param event The action event.
+	 * @param event The action event triggering the display.
 	 */
 	@FXML
 	void showMyDetails(ActionEvent event) {
@@ -291,9 +299,10 @@ public class VisitorOrdersScreenController {
 	}
 
 	/**
-	 * Initiates the cancellation process for a selected order.
+	 * Initiates the cancellation process for a selected order. Validates the order
+	 * status to ensure it is eligible for cancellation.
 	 *
-	 * @param event The action event.
+	 * @param event The action event triggering the cancellation.
 	 */
 	@FXML
 	void cancelOrder(ActionEvent event) {
@@ -304,8 +313,10 @@ public class VisitorOrdersScreenController {
 			return;
 		}
 
-		if ("Canceled".equalsIgnoreCase(selectedOrder.getOrderStatus())) {
-			showErrorAlert("This order is already cancelled!");
+		String status = selectedOrder.getOrderStatus();
+		if ("Canceled".equalsIgnoreCase(status) || "Fulfilled".equalsIgnoreCase(status)
+				|| "Entered".equalsIgnoreCase(status)) {
+			showErrorAlert("Cannot cancel this order!");
 			return;
 		}
 
@@ -328,9 +339,9 @@ public class VisitorOrdersScreenController {
 	}
 
 	/**
-	 * Displays an error dialog to the user.
+	 * Displays an error dialog to the user with a specific message.
 	 *
-	 * @param message The error message to display.
+	 * @param message The error message text to display.
 	 */
 	private void showErrorAlert(String message) {
 		Alert alert = new Alert(AlertType.ERROR);
@@ -341,9 +352,10 @@ public class VisitorOrdersScreenController {
 	}
 
 	/**
-	 * Displays the QR code ticket for the selected order if it is approved.
+	 * Displays the QR code ticket for the selected order. Only allowed if the order
+	 * is in 'Approved' status.
 	 *
-	 * @param event The action event.
+	 * @param event The action event triggering the ticket display.
 	 */
 	@FXML
 	void showTicket(ActionEvent event) {
@@ -369,9 +381,10 @@ public class VisitorOrdersScreenController {
 	}
 
 	/**
-	 * Handles the visitor logout process, notifying the server.
+	 * Handles the visitor logout process, notifying the server and switching
+	 * screens.
 	 *
-	 * @param event The action event.
+	 * @param event The action event triggering logout.
 	 */
 	@FXML
 	void logout(ActionEvent event) {
@@ -379,8 +392,8 @@ public class VisitorOrdersScreenController {
 			String userID = GoNatureClient.currentVisitor.getVisitorId();
 			GoNatureClient.currentVisitor = null;
 			if (CreateOrderController.instance != null) {
-                CreateOrderController.instance = null;
-            }
+				CreateOrderController.instance = null;
+			}
 			Message msg = new Message("CLIENT_LOGOUT", userID);
 
 			try {
@@ -398,7 +411,7 @@ public class VisitorOrdersScreenController {
 	/**
 	 * Handles the manual confirmation of a pending order.
 	 *
-	 * @param event The action event.
+	 * @param event The action event triggering confirmation.
 	 */
 	@FXML
 	void confirmOrder(ActionEvent event) {
@@ -426,9 +439,9 @@ public class VisitorOrdersScreenController {
 	}
 
 	/**
-	 * Refreshes the orders list from the server.
+	 * Requests the latest order list from the server to refresh the table.
 	 *
-	 * @param event The action event.
+	 * @param event The action event triggering the refresh.
 	 */
 	@FXML
 	public void refreshOrders(ActionEvent event) {
@@ -448,9 +461,9 @@ public class VisitorOrdersScreenController {
 	}
 
 	/**
-	 * Initiates the report exit process for a selected order.
+	 * Initiates the exit reporting process for a selected order.
 	 *
-	 * @param event The action event.
+	 * @param event The action event triggering the exit report.
 	 */
 	@FXML
 	void reportExit(ActionEvent event) {

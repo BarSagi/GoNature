@@ -16,9 +16,9 @@ public class ReturnNotificationsStrategy implements MessageStrategy {
 	/**
 	 * Executes the strategy for displaying unread notifications.
 	 * <p>
-	 * The message data is expected to contain an {@code ArrayList<String>}
-	 * where each notification may include a contact method and message content,
-	 * separated by the "|" delimiter.
+	 * The message data is expected to contain an {@code ArrayList<String>} where
+	 * each notification may include a contact method and message content, separated
+	 * by the "|" delimiter.
 	 *
 	 * @param message the message received from the server containing notifications
 	 */
@@ -51,18 +51,18 @@ public class ReturnNotificationsStrategy implements MessageStrategy {
 
 				// Make the title dynamic based on the contact method!
 				if ("SMS".equalsIgnoreCase(method)) {
-					alert.setTitle("New SMS Received on Phone");
+					alert.setTitle("[SIMULATION] New SMS Received on Phone");
 				} else if ("Email".equalsIgnoreCase(method)) {
-					alert.setTitle("New Email in Inbox");
+					alert.setTitle("[SIMULATION] New Email in Inbox");
 				} else {
-					alert.setTitle("New Notification");
+					alert.setTitle("[SIMULATION] New Notification");
 				}
 
 				alert.setHeaderText("GoNature System Alert");
 				alert.setContentText(content);
 
 				// showAndWait pauses the loop until the user clicks "OK"
-				alert.showAndWait();
+				alert.show();
 			}
 		});
 	}

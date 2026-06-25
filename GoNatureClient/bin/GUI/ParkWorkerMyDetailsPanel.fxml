@@ -53,8 +53,8 @@
 							GridPane.columnIndex="1" GridPane.rowIndex="5" />
 					</children>
 				</GridPane>
+
 			</children>
 		</VBox>
-		
 	</children>
 </VBox>

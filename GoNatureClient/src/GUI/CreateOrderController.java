@@ -280,13 +280,11 @@ public class CreateOrderController implements Initializable {
 	void goBack(ActionEvent event) {
 		try {
 			if (GoNatureClient.currentVisitor != null) {
-				
 				ClientUI.send(new Message("FETCH_VISITOR_ORDERS", GoNatureClient.currentVisitor.getVisitorId()));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
-		finally {
+		} finally {
 			instance = null;
 		}
 	}
