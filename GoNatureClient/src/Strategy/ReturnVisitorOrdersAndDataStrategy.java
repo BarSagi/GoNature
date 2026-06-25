@@ -51,6 +51,7 @@ public class ReturnVisitorOrdersAndDataStrategy implements MessageStrategy {
 				String lastName = visitor.get(2);
 				String phone = visitor.get(3);
 				String email = visitor.get(4);
+				System.out.println(email + " KAKI" + phone);
 				String visitorType = visitor.get(5);
 				int subscriptionNumber = Integer.parseInt(visitor.get(6));
 				int familyMembers = Integer.parseInt(visitor.get(7));
