@@ -194,7 +194,7 @@ public class ParkWorkerCreateOrderController {
 		if (emailFromServer != null && !emailFromServer.isEmpty()) {
 			pendingEmail = emailFromServer;
 		} else {
-			Platform.runLater(() -> statusLabel.setText("Failed to fetch email."));
+			Platform.runLater(() -> statusLabel.setText("Failed to fetch email.\nVisitor might not be registered."));
 			btnSubmit.setDisable(false);
 			return;
 		}

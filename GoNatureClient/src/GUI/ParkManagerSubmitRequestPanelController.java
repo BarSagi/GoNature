@@ -135,7 +135,7 @@ public class ParkManagerSubmitRequestPanelController {
 					statusLabel.setText("Must be a number");
 				}
 			}
-			if (requestType.equals("AvgStayDuration")) {
+			else if (requestType.equals("AvgStayDuration")) {
 				try {
 					if (Double.parseDouble(newValue) <= 0) {
 						statusLabel.setText("New value can't be less than 0 or equal to 0.");
@@ -216,5 +216,20 @@ public class ParkManagerSubmitRequestPanelController {
 	 */
 	public void setCurrentValue(String value) {
 		oldValueField.setText(value);
+	}
+	
+	/**
+	 * Clears all input fields and resets the UI to its default state.
+	 * This should be called only after a successful response from the server.
+	 */
+	public void clearFields() {
+		requestTypeComboBox.getSelectionModel().clearSelection();
+		oldValueField.clear();
+		newValueField.clear();
+		startDatePicker.setValue(null);
+		endDatePicker.setValue(null);
+		
+		// Hide the date pickers again since no request type is selected
+		handlePromotionFieldsVisibility();
 	}
 }

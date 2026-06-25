@@ -1,6 +1,8 @@
 package GUI;
 
 import java.util.ArrayList;
+
+
 import Client.ClientUI;
 import Common.Message;
 import javafx.application.Platform;
@@ -27,7 +29,6 @@ public class DeptManagerApproveRejectPanelController {
 
 	@FXML
 	private TableView<PendingRequestRow> requestsTable;
-
 	@FXML
 	private TableColumn<PendingRequestRow, Integer> colRequestId;
 	@FXML
@@ -40,6 +41,10 @@ public class DeptManagerApproveRejectPanelController {
 	private TableColumn<PendingRequestRow, String> colNewValue;
 	@FXML
 	private TableColumn<PendingRequestRow, String> colStatus;
+	@FXML
+	private TableColumn<PendingRequestRow, String> colStartDate;
+	@FXML
+	private TableColumn<PendingRequestRow, String> colEndDate;
 
 	@FXML
 	private Label statusLabel;
@@ -60,7 +65,8 @@ public class DeptManagerApproveRejectPanelController {
 		colOldValue.setCellValueFactory(new PropertyValueFactory<>("oldValue"));
 		colNewValue.setCellValueFactory(new PropertyValueFactory<>("newValue"));
 		colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
-
+		colStartDate.setCellValueFactory(new PropertyValueFactory<>("startDate"));
+		colEndDate.setCellValueFactory(new PropertyValueFactory<>("endDate"));
 		requestsTable.setItems(tableData);
 
 		Platform.runLater(() -> {
@@ -137,31 +143,36 @@ public class DeptManagerApproveRejectPanelController {
 		tableData.clear();
 
 		for (ArrayList<String> row : rawRequests) {
-			String requestType;
-			String value = row.get(4);
-			switch (row.get(2)) {
-			case "CasualGap":
-				requestType = "Casual Gap Change Request";
-				break;
+            String requestType;
+            String value;
+            switch (row.get(2)) {
+            case "CasualGap":
+                requestType = "Casual Gap Change Request";
+                value = String.valueOf(Integer.parseInt(row.get(4)));
+                break;
 
-			case "AvgStayDuration":
-				requestType = "Average Stay Duration Change Request";
-				break;
+            case "AvgStayDuration":
+                requestType = "Average Stay Duration Change Request";
+                value = String.valueOf(Double.parseDouble(row.get(4)));
+                break;
 
-			case "Promotion":
-				requestType = "New Promotion Request";
-				value += "%";
-				break;
+            case "Promotion":
+                requestType = "New Promotion Request";
+                value = String.valueOf(Double.parseDouble(row.get(4)));
+                value += "%";
+                break;
 
-			case "MaxCapacity":
-				requestType = "Max Capacity Change Request";
-				break;
+            case "MaxCapacity":
+                requestType = "Max Capacity Change Request";
+                value = String.valueOf(Integer.parseInt(row.get(4)));
+                break;
 
-			default:
-				requestType = "Uknown";
-			}
+            default:
+                requestType = "Uknown";
+                value = "Unkown";
+            }
 			tableData.add(new PendingRequestRow(Integer.parseInt(row.get(0)), row.get(1), requestType, row.get(3),
-					value, row.get(5)));
+					value, row.get(5), row.get(6), row.get(7)));
 		}
 	}
 
@@ -184,18 +195,31 @@ public class DeptManagerApproveRejectPanelController {
 		private final String oldValue;
 		private final String newValue;
 		private final String status;
+		private final String startDate;
+		private final String endDate;
 
 		/**
 		 * Constructs a new row for the request table.
 		 */
 		public PendingRequestRow(int requestId, String parkName, String requestType, String oldValue, String newValue,
-				String status) {
+				String status, String startDate, String endDate) {
 			this.requestId = requestId;
 			this.parkName = parkName;
 			this.requestType = requestType;
 			this.oldValue = oldValue;
 			this.newValue = newValue;
 			this.status = status;
+			this.startDate = startDate;
+			this.endDate = endDate;
+		}
+
+
+		public String getStartDate() {
+			return startDate;
+		}
+
+		public String getEndDate() {
+			return endDate;
 		}
 
 		public int getRequestId() {

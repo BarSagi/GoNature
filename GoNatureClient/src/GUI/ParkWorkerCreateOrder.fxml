@@ -59,21 +59,23 @@
 				prefHeight="35.0" promptText="Enter Email" GridPane.columnIndex="1"
 				GridPane.rowIndex="2" />
 
-
 			<Label text="Date:" GridPane.columnIndex="0"
-				GridPane.rowIndex="4" />
+				GridPane.rowIndex="3" />
 			<DatePicker fx:id="visitDatePicker" prefWidth="220.0"
-				prefHeight="35.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+				prefHeight="35.0" promptText="Select Date" GridPane.columnIndex="1"
+				GridPane.rowIndex="3" />
 
 			<Label text="Time:" GridPane.columnIndex="0"
 				GridPane.rowIndex="4" />
 			<ComboBox fx:id="timeComboBox" prefWidth="220.0"
-				prefHeight="35.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+				prefHeight="35.0" promptText="Select Time" GridPane.columnIndex="1"
+				GridPane.rowIndex="4" />
 
 			<Label text="Visitors:" GridPane.columnIndex="0"
 				GridPane.rowIndex="5" />
 			<TextField fx:id="visitorCountField" prefWidth="220.0"
-				prefHeight="35.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+				prefHeight="35.0" promptText="Number of Visitors"
+				GridPane.columnIndex="1" GridPane.rowIndex="5" />
 
 			<Label text="Payment Method:" GridPane.columnIndex="0"
 				GridPane.rowIndex="6" />

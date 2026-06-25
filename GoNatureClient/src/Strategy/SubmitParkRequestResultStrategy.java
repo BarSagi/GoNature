@@ -28,8 +28,10 @@ public class SubmitParkRequestResultStrategy implements MessageStrategy {
             if (ParkManagerSubmitRequestPanelController.instance != null) {
                 if (success) {
                     ParkManagerSubmitRequestPanelController.instance.showStatus("Request submitted successfully.");
+                    ParkManagerSubmitRequestPanelController.instance.clearFields();
                 } else {
                     ParkManagerSubmitRequestPanelController.instance.showStatus("Failed to submit request.");
+                    
                 }
             }
         });
