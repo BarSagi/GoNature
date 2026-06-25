@@ -78,7 +78,7 @@ public class TimeSlotFullStrategy implements MessageStrategy {
 					System.out.println("Failed to send ADD_TO_WAITING_LIST message");
 					e.printStackTrace();
 				}
-			} else if (result.isPresent() && result.get() == cancelBtn) { // enable the button again
+			} else if (result.isPresent() && result.get() == cancelBtn) {
 				if (ParkWorkerCreateOrderController.instance != null) {
 					ParkWorkerCreateOrderController.instance.btnSubmit.setDisable(false);
 				}

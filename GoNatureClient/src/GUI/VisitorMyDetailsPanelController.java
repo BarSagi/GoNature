@@ -224,7 +224,7 @@ public class VisitorMyDetailsPanelController {
 			statusLabel.setText("Failed to update details.");
 		}
 	}
-
+	
 	@FXML
 	void goBack(ActionEvent event) {
 		Message msg = new Message("FETCH_VISITOR_ORDERS", GoNatureClient.currentVisitor.getVisitorId());

@@ -52,12 +52,15 @@ public class AddToWaitingListResultStrategy implements MessageStrategy {
 						System.out.println("Error sending message to server");
 						e.printStackTrace();
 					}
+
 				} else if (GoNatureClient.currentEmployee != null) {
 
 					ClientUI.changeScreen("/GUI/ParkWorker.fxml", "Park Worker");
-				} else
-					ClientUI.changeScreen("/GUI/LoginVisitor.fxml", "GoNature - Enter ID");
 
+				} else {
+
+					ClientUI.changeScreen("/GUI/LoginVisitor.fxml", "GoNature - Enter ID");
+				}
 			} else {
 				alert = new Alert(Alert.AlertType.ERROR);
 				alert.setTitle("Waiting List Failed");

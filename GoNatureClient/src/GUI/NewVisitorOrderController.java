@@ -140,8 +140,8 @@ public class NewVisitorOrderController {
 		visitorInfo.add(id);
 		visitorInfo.add(firstName);
 		visitorInfo.add(lastName);
-		visitorInfo.add(phone);
 		visitorInfo.add(email);
+		visitorInfo.add(phone);
 
 		Order order = new Order();
 		order.setVisitorId(id);

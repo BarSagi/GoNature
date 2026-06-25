@@ -86,9 +86,9 @@
 					</VBox.margin>
 				</HBox>
 				<Button text="back" onAction="#goBack" prefWidth="120.0"
-					prefHeight="35.0"
-					style="-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" />
-
+						prefHeight="35.0"
+						style="-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" />
+				
 			</children>
 		</VBox>
 	</children>

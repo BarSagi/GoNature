@@ -43,4 +43,6 @@ public class ParkWorkerMyDetailsPanelController {
 			affiliationField.setText(GoNatureClient.currentEmployee.getAffiliation());
 		}
 	}
+	
+	
 }

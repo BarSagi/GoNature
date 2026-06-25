@@ -320,88 +320,33 @@ public class DBController {
 	 *         if a database error occurred.
 	 */
 	public int cancelExpiredOrders() {
-		Connection conn = null;
-		PreparedStatement selectPs = null;
-		PreparedStatement updatePs = null;
-		PreparedStatement notifPs = null;
-		ResultSet rs = null;
 		int rowsAffected = 0;
+		Connection conn = null;
+		PreparedStatement stmt = null;
 
 		try {
 			conn = pool.getConnection();
-			conn.setAutoCommit(false); // Start transaction
-
-			// 1. Select the orders that need to be canceled
-			String selectQuery = "SELECT orderId, email FROM Orders "
-					+ "WHERE status IN ('Approved', 'PendingConfirmation', 'WaitingList', 'PendingVisitReminder') "
+			// SQL query to cancel orders that are 30+ minutes past visitDate/visitTime
+			String query = "UPDATE orders SET status = 'Canceled' "
+					+ "WHERE status IN ('Approved', 'PendingConfirmation', 'WaitingList') "
 					+ "AND ADDDATE(TIMESTAMP(visitDate, visitTime), INTERVAL 30 MINUTE) <= NOW()";
 
-			selectPs = conn.prepareStatement(selectQuery);
-			rs = selectPs.executeQuery();
-
-			List<Integer> expiredIds = new ArrayList<>();
-			List<String> emails = new ArrayList<>();
-
-			while (rs.next()) {
-				expiredIds.add(rs.getInt("orderId"));
-				emails.add(rs.getString("email"));
-			}
-
-			if (!expiredIds.isEmpty()) {
-				// 2. Perform the cancellation update
-				String updateQuery = "UPDATE Orders SET status = 'Canceled' WHERE status IN ('Approved', 'PendingConfirmation', 'WaitingList', 'PendingVisitReminder') "
-						+ "AND ADDDATE(TIMESTAMP(visitDate, visitTime), INTERVAL 30 MINUTE) <= NOW()";
-				updatePs = conn.prepareStatement(updateQuery);
-				rowsAffected = updatePs.executeUpdate();
-
-				// 3. Insert both Email and SMS notification records for each canceled order
-				String notifSql = "INSERT INTO Notifications (orderId, notificationType, contactMethod, destinationAddress, messageContent, scheduledTime, isSent) "
-						+ "VALUES (?, 'Expired', ?, ?, 'Your order was canceled because the visit time has passed.', NOW(), false)";
-				notifPs = conn.prepareStatement(notifSql);
-
-				for (int i = 0; i < expiredIds.size(); i++) {
-					// Insert Email
-					notifPs.setInt(1, expiredIds.get(i));
-					notifPs.setString(2, "Email");
-					notifPs.setString(3, emails.get(i));
-					notifPs.executeUpdate();
-
-					// Insert SMS
-					notifPs.setInt(1, expiredIds.get(i));
-					notifPs.setString(2, "SMS");
-					notifPs.setString(3, emails.get(i));
-					notifPs.executeUpdate();
-				}
-			}
-
-			conn.commit(); // Commit transaction
+			stmt = conn.prepareStatement(query);
+			rowsAffected = stmt.executeUpdate();
 
 		} catch (SQLException e) {
 			System.out.println("Error executing auto-cancel query.");
 			e.printStackTrace();
-			if (conn != null) {
-				try {
-					conn.rollback();
-				} catch (SQLException ex) {
-					ex.printStackTrace();
-				}
-			}
 		} finally {
+			// Guaranteed cleanup
 			try {
-				if (rs != null)
-					rs.close();
-				if (selectPs != null)
-					selectPs.close();
-				if (updatePs != null)
-					updatePs.close();
-				if (notifPs != null)
-					notifPs.close();
-				if (conn != null) {
-					conn.setAutoCommit(true);
-					pool.releaseConnection(conn);
-				}
+				if (stmt != null)
+					stmt.close();
 			} catch (SQLException e) {
 				e.printStackTrace();
+			}
+			if (conn != null) {
+				pool.releaseConnection(conn);
 			}
 		}
 		return rowsAffected;
@@ -551,7 +496,7 @@ public class DBController {
 	 */
 	public boolean updateOrder(Order order) {
 		// The SQL UPDATE statement
-		String query = "UPDATE Orders SET visitDate = ?, visitTime = ?, visitorCount = ? WHERE orderId = ? AND status = 'Approved'";
+		String query = "UPDATE Orders SET visitDate = ?, visitTime = ?, visitorCount = ? WHERE orderId = ?";
 
 		Connection conn = null;
 		PreparedStatement pstmt = null;
@@ -2225,7 +2170,7 @@ public class DBController {
 		try {
 			conn = pool.getConnection();
 
-			String selectQuery = "SELECT parkId, visitDate, visitTime, status FROM Orders WHERE orderId = ? AND status NOT IN ('Canceled', 'Entered', 'Fulfilled')";
+			String selectQuery = "SELECT parkId, visitDate, visitTime, status FROM Orders WHERE orderId = ?";
 			selectPs = conn.prepareStatement(selectQuery);
 			selectPs.setInt(1, orderId);
 
@@ -2238,12 +2183,20 @@ public class DBController {
 			int parkId = rs.getInt("parkId");
 			Date visitDate = rs.getDate("visitDate");
 			Time visitTime = rs.getTime("visitTime");
+			String status = rs.getString("status");
+
+			if ("Canceled".equalsIgnoreCase(status)) {
+				System.out.println("[CANCEL ORDER] Order " + orderId + " is already canceled.");
+				return false;
+			}
 
 			// Combine the visit date and visit time into one date-time object
 			LocalDateTime visitDateTime = LocalDateTime.of(visitDate.toLocalDate(), visitTime.toLocalTime());
 
 			// If the visit time already arrived or passed, cancellation is not allowed
 			if (!visitDateTime.isAfter(LocalDateTime.now())) {
+				System.out.println(
+						"[CANCEL ORDER] Cannot cancel order " + orderId + " because visit time already arrived.");
 				return false;
 			}
 
