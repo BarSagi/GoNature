@@ -329,19 +329,36 @@ public class EchoServer extends AbstractServer {
 		Thread t = new Thread(() -> {
 			while (true) {
 				try {
+					// Check every 5 seconds
 					Thread.sleep(5000);
 					long now = System.currentTimeMillis();
 
 					for (ConnectionToClient client : lastActivityMap.keySet()) {
 						long last = lastActivityMap.get(client);
 
-						if (now - last > 180_000) {
+						long idleTime = now - last;
+
+						// 1. Send warning at 13 minutes (780,000 ms)
+						if (idleTime > 780_000 && idleTime < 785_000) {
+							client.sendToClient(new Message("IDLE_WARNING", "Warning"));
+						}
+
+						// 900,000 milliseconds = 15 minutes
+						if (idleTime > 900_000) {
 							String clientIp = "Unknown";
 							if (client != null && client.getInetAddress() != null) {
 								clientIp = client.getInetAddress().getHostAddress();
 							}
 
 							log("[IDLE TIMEOUT] Disconnecting client: " + clientIp);
+
+							try {
+								client.sendToClient(new Message("FORCE_LOGOUT", "Idle Timeout"));
+
+								Thread.sleep(100);
+							} catch (Exception ex) {
+								// Ignore if the socket is already completely dead
+							}
 
 							logoutUser(client);
 							client.close();
