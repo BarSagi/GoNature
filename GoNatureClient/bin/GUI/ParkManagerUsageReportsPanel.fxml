@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.?>
+<?import javafx.scene.layout.?>
 
 <VBox alignment="CENTER" spacing="15.0"
 	xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
@@ -19,7 +19,9 @@
 		<Label text="Year:" />
 		<ComboBox fx:id="yearCombo" />
 
-		<Button text="Generate" onAction="#generateReport" />
+		<Button text="Generate" onAction="#generateReport"
+			prefHeight="40.0" prefWidth="160.0"
+			style="-fx-background-color: #2980b9; -fx-text-fill: white;" />
 
 		<Button fx:id="saveReportBtn" text="Save Report"
 			onAction="#saveReport"

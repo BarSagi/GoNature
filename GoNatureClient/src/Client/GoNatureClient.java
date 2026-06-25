@@ -56,10 +56,8 @@ public class GoNatureClient extends AbstractClient {
 			Message message = (Message) msg;
 			String command = message.getCommand();
 
-			// 1. Ask the factory for the appropriate strategy
 			MessageStrategy strategy = StrategyFactory.getStrategy(command);
 
-			// 2. Execute it if it exists
 			if (strategy != null) {
 				strategy.execute(message);
 			} else {
@@ -119,48 +117,4 @@ public class GoNatureClient extends AbstractClient {
 			e.printStackTrace();
 		}
 	}
-
-	/**
-	 * A==================================================DONT THINK THIS IS USED
-	 * Sends a request to the server to fetch all orders.
-	 */
-	/*
-	 * public void getOrders() { try { Message msg = new Message("GET_ORDERS",
-	 * null); ClientUI.send(msg); } catch (Exception e) { e.printStackTrace(); } }
-	 * 
-	 * /** ===============================DONT THINK THIS IS USED Sends a request to
-	 * the server to update a specific order's visit date and visitor count.
-	 * * @param orderId The ID of the order to update.
-	 * 
-	 * @param visitDate The new date for the visit.
-	 * 
-	 * @param visitorCount The new count of visitors.
-	 */
-	/*
-	 * public void updateOrder(int orderId, String visitDate, int visitorCount) {
-	 * try { ArrayList<Object> data = new ArrayList<>(); data.add(orderId);
-	 * data.add(visitDate); data.add(visitorCount);
-	 * 
-	 * Message msg = new Message("UPDATE_ORDER", data); ClientUI.send(msg); } catch
-	 * (Exception e) { e.printStackTrace(); } }
-	 * 
-	 * /**===============================DONT THINK THIS IS USED Sends a request to
-	 * the server to cancel a specific order. * @param orderId The ID of the order
-	 * to cancel.
-	 */
-	/*
-	 * public void cancelOrder(int orderId) { try { Message msg = new
-	 * Message("CANCEL_ORDER", orderId); ClientUI.send(msg); } catch (Exception e) {
-	 * e.printStackTrace(); } }
-	 * 
-	 * /**===============================DONT THINK THIS IS USED Sends a request to
-	 * the server to add a new order to the waiting list. * @param orderData An
-	 * ArrayList containing the details of the order to be waitlisted.
-	 */
-	/*
-	 * public void addToWaitingList(ArrayList<String> orderData) { try { Message msg
-	 * = new Message("ADD_TO_WAITING_LIST", orderData); ClientUI.send(msg); } catch
-	 * (Exception e) { e.printStackTrace(); } }
-	 */
-
 }

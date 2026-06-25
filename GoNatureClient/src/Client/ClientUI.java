@@ -1,7 +1,5 @@
 package Client;
 
-import java.util.Timer;
-import java.util.TimerTask;
 import javafx.scene.Parent;
 import Common.Message;
 import javafx.scene.Scene;
@@ -12,9 +10,9 @@ import javafx.application.Application;
 import javafx.application.Platform;
 
 /**
- * The main entry point for the client-side application.
- * This class handles the JavaFX lifecycle, manages the primary stage,
- * establishes the connection to the server, and tracks application idle time.
+ * The main entry point for the client-side application. This class handles the
+ * JavaFX lifecycle, manages the primary stage, establishes the connection to
+ * the server, and tracks application idle time.
  */
 public class ClientUI extends Application {
 
@@ -51,30 +49,8 @@ public class ClientUI extends Application {
 	public static int serverPort; // current server port
 
 	/**
-	 * Timestamp of the last recorded user or system activity.
-	 * Marked as volatile to ensure thread safety between the UI thread and timer thread.
-	 */
-	private static volatile long lastActivityTime = System.currentTimeMillis();
-
-	/**
-	 * The allowed timeout duration in milliseconds before the client is disconnected.
-	 * Set to 120,000 milliseconds (2 minutes).
-	 */
-	private static final long TIMEOUT = 120_000;
-
-	/**
-	 * Timer used to monitor user inactivity.
-	 */
-	private static Timer idleTimer;
-	
-	/**
-	 * The specific timer task tracking inactivity, saved so it can be canceled to prevent duplicates.
-	 */
-	private static TimerTask currentTask;
-
-	/**
-	 * The main method that launches the JavaFX application.
-	 * * @param args Command line arguments.
+	 * The main method that launches the JavaFX application. * @param args Command
+	 * line arguments.
 	 */
 	public static void main(String[] args) {
 		launch(); // call start method
@@ -82,8 +58,8 @@ public class ClientUI extends Application {
 
 	/**
 	 * The starting point of the JavaFX application. Loads the initial Connection
-	 * FXML screen and displays it.
-	 * * @param primaryStage The primary stage for this application.
+	 * FXML screen and displays it. * @param primaryStage The primary stage for this
+	 * application.
 	 */
 	@Override
 	public void start(Stage primaryStage) {
@@ -107,10 +83,12 @@ public class ClientUI extends Application {
 
 	/**
 	 * Connects the client to the server using the provided IP and port, starts the
-	 * idle monitor, and loads the LoginRoute UI.
-	 * * @param ip   The IP address of the server.
+	 * idle monitor, and loads the LoginRoute UI. * @param ip The IP address of the
+	 * server.
+	 * 
 	 * @param port The port number of the server.
-	 * @throws Exception If the connection fails or if there is an error loading the FXML.
+	 * @throws Exception If the connection fails or if there is an error loading the
+	 *                   FXML.
 	 */
 	public static void startClient(String ip, int port) throws Exception {
 		serverIP = ip;
@@ -134,9 +112,6 @@ public class ClientUI extends Application {
 		if (!client.isConnected()) {
 			throw new Exception("Connection failed");
 		}
-
-		updateActivity();
-		startIdleMonitor();
 
 		// load the UI
 		try {
@@ -162,9 +137,10 @@ public class ClientUI extends Application {
 	}
 
 	/**
-	 * A generic method to switch screens in the application.
-	 * * @param fxmlPath The path to the FXML file
-	 * @param title    The title to display at the top of the window
+	 * A generic method to switch screens in the application. * @param fxmlPath The
+	 * path to the FXML file
+	 * 
+	 * @param title The title to display at the top of the window
 	 */
 	public static void changeScreen(String fxmlPath, String title) {
 		Platform.runLater(new Runnable() {
@@ -223,61 +199,13 @@ public class ClientUI extends Application {
 	}
 
 	/**
-	 * Updates the last activity timestamp to the current time, preventing idle timeout.
-	 */
-	public static void updateActivity() {
-		lastActivityTime = System.currentTimeMillis();
-	}
-
-	/**
-	 * Starts a background timer task that periodically checks if the client has
-	 * been idle longer than the defined TIMEOUT. If so, it closes the connection.
-	 * Ensures previous tasks are canceled to avoid memory leaks.
-	 */
-	public static void startIdleMonitor() {
-		// If there is an old task running, cancel it so we don't get duplicates!
-		if (currentTask != null) {
-			currentTask.cancel();
-		}
-
-		// If we don't have a timer yet, make one
-		if (idleTimer == null) {
-			idleTimer = new Timer(true);
-		}
-
-		currentTask = new TimerTask() {
-			@Override
-			public void run() {
-				if (client == null)
-					return;
-
-				if (client.isConnected()) {
-					long now = System.currentTimeMillis();
-					if (now - lastActivityTime > TIMEOUT) {
-						try {
-							System.out.println("Idle timeout - closing connection");
-							client.closeConnection();
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-					}
-				}
-			}
-		};
-
-		// Schedule the clean, newly created task
-		idleTimer.scheduleAtFixedRate(currentTask, 1000, 1000);
-	}
-
-	/**
 	 * Sends a message to the server synchronously. Updates the activity timer and
-	 * attempts to reconnect if the client is not connected.
-	 * * @param msg The message object to be sent.
+	 * attempts to reconnect if the client is not connected. * @param msg The
+	 * message object to be sent.
+	 * 
 	 * @throws Exception If an error occurs during sending or reconnection.
 	 */
 	public static synchronized void send(Message msg) throws Exception {
-
-		updateActivity();
 
 		if (client == null || !client.isConnected()) {
 			reconnect();
@@ -288,7 +216,8 @@ public class ClientUI extends Application {
 
 	/**
 	 * Attempts to reconnect to the server using the previously saved IP and port.
-	 * * @throws Exception If there is no saved connection info or if the connection fails.
+	 * * @throws Exception If there is no saved connection info or if the connection
+	 * fails.
 	 */
 	public static void reconnect() throws Exception {
 		if (serverIP == null || serverPort == 0) {

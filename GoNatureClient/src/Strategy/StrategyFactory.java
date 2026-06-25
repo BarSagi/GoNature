@@ -22,6 +22,12 @@ public class StrategyFactory {
 
 		switch (command) {
 
+		case "FORCE_LOGOUT":
+			return new ForceLogoutStrategy();
+
+		case "IDLE_WARNING":
+			return new IdleWarningStrategy();
+
 		case "ORDER_CREATION_RESULT":
 			return new OrderCreationStrategy();
 
