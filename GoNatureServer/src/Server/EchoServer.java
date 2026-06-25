@@ -231,8 +231,9 @@ public class EchoServer extends AbstractServer {
 	}
 
 	/**
-	 * Handles an abrupt client disconnection due to an exception. Cleans up
-	 * tracking maps for the disconnected client.
+	 * Handles an abrupt client disconnection due to an exception (or standard
+	 * socket closure). Cleans up tracking maps for the disconnected client and logs
+	 * the event gracefully.
 	 *
 	 * @param client    the disconnected client
 	 * @param exception the exception that caused the disconnection
@@ -241,7 +242,22 @@ public class EchoServer extends AbstractServer {
 	synchronized protected void clientException(ConnectionToClient client, Throwable exception) {
 		logoutUser(client);
 		lastActivityMap.remove(client);
-		log("[SYSTEM] Client disconnected abruptly: " + exception.getMessage());
+
+		// Pull the saved name from OCSF memory instead of the dead socket!
+		String clientIp = (String) client.getInfo("hostName");
+		if (clientIp == null) {
+			clientIp = "Unknown Client";
+		}
+
+		String reason = exception.getMessage();
+
+		// EOFException or null message usually means a standard app closure/disconnect
+		if (reason == null || exception instanceof java.io.EOFException || reason.equals("Connection reset")) {
+			log("[SYSTEM] Client disconnected: " + clientIp);
+		} else {
+			// Print the actual error if it was a real crash
+			log("[SYSTEM] Client disconnected abruptly (" + clientIp + "): " + reason);
+		}
 	}
 
 	/**
@@ -319,7 +335,7 @@ public class EchoServer extends AbstractServer {
 					for (ConnectionToClient client : lastActivityMap.keySet()) {
 						long last = lastActivityMap.get(client);
 
-						if (now - last > 200000_000) {
+						if (now - last > 180_000) {
 							String clientIp = "Unknown";
 							if (client != null && client.getInetAddress() != null) {
 								clientIp = client.getInetAddress().getHostAddress();
