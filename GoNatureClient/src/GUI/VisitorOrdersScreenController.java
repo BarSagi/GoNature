@@ -391,6 +391,9 @@ public class VisitorOrdersScreenController {
 		try {
 			String userID = GoNatureClient.currentVisitor.getVisitorId();
 			GoNatureClient.currentVisitor = null;
+			if (CreateOrderController.instance != null) {
+				CreateOrderController.instance = null;
+			}
 			Message msg = new Message("CLIENT_LOGOUT", userID);
 
 			try {

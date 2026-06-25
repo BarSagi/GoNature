@@ -1,6 +1,8 @@
 package Strategy;
 
 import Common.Message;
+import GUI.CreateOrderController;
+import GUI.ParkWorkerCreateOrderController;
 import Client.ClientUI;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
@@ -20,11 +22,12 @@ public class TimeSlotFullStrategy implements MessageStrategy {
 	/**
 	 * Executes the strategy for handling a full time slot response.
 	 * <p>
-	 * The message data is expected to contain an {@code ArrayList<Object>}
-	 * where the first element contains alternative time slots, and the second
-	 * element contains the original order data.
+	 * The message data is expected to contain an {@code ArrayList<Object>} where
+	 * the first element contains alternative time slots, and the second element
+	 * contains the original order data.
 	 *
-	 * @param message the message received from the server containing alternatives and order data
+	 * @param message the message received from the server containing alternatives
+	 *                and order data
 	 */
 	@Override
 	public void execute(Message message) {
@@ -57,7 +60,7 @@ public class TimeSlotFullStrategy implements MessageStrategy {
 			alert.setContentText(contentText.toString());
 
 			// 3. Create Custom Buttons for the Alert
-			ButtonType waitingListBtn = new ButtonType("Join Waiting List");
+			ButtonType waitingListBtn = new ButtonType("Join Waiting List", ButtonBar.ButtonData.OK_DONE);
 			ButtonType cancelBtn = new ButtonType("Choose Another Date", ButtonBar.ButtonData.CANCEL_CLOSE);
 
 			alert.getButtonTypes().setAll(waitingListBtn, cancelBtn);
@@ -74,6 +77,13 @@ public class TimeSlotFullStrategy implements MessageStrategy {
 				} catch (Exception e) {
 					System.out.println("Failed to send ADD_TO_WAITING_LIST message");
 					e.printStackTrace();
+				}
+			} else if (result.isPresent() && result.get() == cancelBtn) { // enable the button again
+				if (ParkWorkerCreateOrderController.instance != null) {
+					ParkWorkerCreateOrderController.instance.btnSubmit.setDisable(false);
+				}
+				if (CreateOrderController.instance != null) {
+					CreateOrderController.instance.createOrderButton.setDisable(false);
 				}
 			}
 		});

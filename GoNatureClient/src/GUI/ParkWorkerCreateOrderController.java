@@ -35,7 +35,7 @@ public class ParkWorkerCreateOrderController {
 	@FXML
 	private Spinner<Integer> visitorsSpinner;
 	@FXML
-	private Button btnSubmit;
+	public Button btnSubmit;
 
 	/**
 	 * Static instance of this controller for external access.

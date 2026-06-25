@@ -37,7 +37,7 @@ public class CreateOrderController implements Initializable {
 	@FXML
 	private ComboBox<String> paymentComboBox;
 	@FXML
-	private Button createOrderButton;
+	public Button createOrderButton;
 
 	/**
 	 * Static instance of this controller for external access.
@@ -284,6 +284,8 @@ public class CreateOrderController implements Initializable {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			instance = null;
 		}
 	}
 }
