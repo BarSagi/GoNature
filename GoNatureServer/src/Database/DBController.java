@@ -49,6 +49,7 @@ import Server.EchoServer;
  * custom connection pool, allowing the multi-threaded server to handle
  * concurrent client requests without resource exhaustion.
  * 
+ * @author Reut Dahan
  */
 public class DBController {
 
@@ -311,8 +312,8 @@ public class DBController {
 		try {
 			conn = pool.getConnection();
 			// SQL query to cancel orders that are 30+ minutes past visitDate/visitTime
-			String query = "UPDATE orders " + "SET status = 'Canceled' "
-					+ "WHERE status IN ('Approved', 'PendingConfirmation', 'WaitingList') "
+			String query = "UPDATE orders " + "SET orderStatus = 'Canceled' "
+					+ "WHERE orderStatus IN ('Approved', 'PendingConfirmation', 'WaitingList') "
 					+ "AND ADDDATE(TIMESTAMP(visitDate, visitTime), INTERVAL 30 MINUTE) <= NOW()";
 
 			PreparedStatement stmt = conn.prepareStatement(query);
@@ -1330,7 +1331,7 @@ public class DBController {
 				columnName = "GREATEST((maxCapacity - CurrentVisitorCount), 0)";
 				break;
 			case "Promotion":
-				return "------------";
+				return "Promotion request";
 			default:
 				System.out.println("[DEBUG] ERROR: requestType fell into DEFAULT block!");
 				return null;
@@ -2556,86 +2557,48 @@ public class DBController {
 	// =========================================================
 	// GET PENDING REQUESTS
 	// =========================================================
-
 	/**
-	 * Retrieves all pending configuration and promotion requests from the database.
-	 * Maps each request to an ArrayList of Strings. For 'Promotion' requests, the
-	 * start and end dates are also appended to the list. For other request types,
-	 * empty strings are appended to maintain a consistent list size.
+	 * Retrieves all requests currently pending approval from the database.
 	 *
-	 * @return An {@link ArrayList} of {@link ArrayList} of {@link String}
-	 *         containing the pending requests. Index mapping: [0] requestId, [1]
-	 *         parkName, [2] requestType, [3] oldValue, [4] newValue, [5] status,
-	 *         [6] startDate (or empty), [7] endDate (or empty).
+	 * @return An {@link ArrayList} of {@link ArrayList} of {@link String}, where
+	 *         each inner list represents a request record (ID, Park Name, Type, Old
+	 *         Value, New Value, Status), or an empty list if no pending requests
+	 *         are found or an error occurs.
 	 */
 	public ArrayList<ArrayList<String>> getPendingRequests() {
 
 		ArrayList<ArrayList<String>> result = new ArrayList<>();
-
-		// 1. Added startDate and endDate to the SELECT query
-		String query = "SELECT requestId, parkId, requestType, oldValue, newValue, status, startDate, endDate "
+		String query = "SELECT requestId, parkId, requestType, oldValue, newValue, status "
 				+ "FROM Requests WHERE status = 'Pending'";
 
 		Connection conn = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
 
 		try {
 			conn = pool.getConnection();
 
-			ps = conn.prepareStatement(query);
-			rs = ps.executeQuery();
+			PreparedStatement ps = conn.prepareStatement(query);
+			ResultSet rs = ps.executeQuery();
 
 			while (rs.next()) {
 				ArrayList<String> row = new ArrayList<>();
-
-				row.add(String.valueOf(rs.getInt("requestId"))); // 0
-
-				
-				row.add(getParkNameById(rs.getInt("parkId"))); // 1
-
-				String requestType = rs.getString("requestType");
-				row.add(requestType); // 2
-				row.add(rs.getString("oldValue")); // 3
-				row.add(rs.getString("newValue")); // 4
-				row.add(rs.getString("status")); // 5
-
-				// Conditionally add dates for Promotions, or empty strings otherwise
-				if ("Promotion".equals(requestType)) {
-					Date startDate = rs.getDate("startDate");
-					Date endDate = rs.getDate("endDate");
-
-					row.add(startDate != null ? startDate.toString() : ""); // 6
-					row.add(endDate != null ? endDate.toString() : ""); // 7
-				} else {
-					row.add(""); // 6
-					row.add(""); // 7
-				}
-
+				row.add(String.valueOf(rs.getInt("requestId")));
+				row.add(getParkNameById(Integer.valueOf(rs.getInt("parkId"))));
+				row.add(rs.getString("requestType"));
+				row.add(rs.getString("oldValue"));
+				row.add(rs.getString("newValue"));
+				row.add(rs.getString("status"));
 				result.add(row);
+
 			}
+
+			rs.close();
+			ps.close();
 
 		} catch (SQLException e) {
 			e.printStackTrace();
 
 		} finally {
-			if (rs != null) {
-				try {
-					rs.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			}
-			if (ps != null) {
-				try {
-					ps.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			}
-			if (conn != null) {
-				pool.releaseConnection(conn);
-			}
+			pool.releaseConnection(conn);
 		}
 
 		return result;
