@@ -316,7 +316,7 @@ public class VisitorOrdersScreenController {
 		String status = selectedOrder.getOrderStatus();
 		if ("Canceled".equalsIgnoreCase(status) || "Fulfilled".equalsIgnoreCase(status)
 				|| "Entered".equalsIgnoreCase(status)) {
-			showErrorAlert("This order is already cancelled!");
+			showErrorAlert("Cannot cancel this order!");
 			return;
 		}
 
